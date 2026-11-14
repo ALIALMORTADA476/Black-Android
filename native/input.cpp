@@ -13,6 +13,7 @@
 #include <SDL3/SDL.h>
 
 #include "app/app.h"
+#include "common/menu.h"
 #include "common/options.h"
 #include "core/log.h"
 #include "host.h"
@@ -213,6 +214,27 @@ Pad Poll(int port) {
     auto pushed = [](int16_t v) { return v > kStickPushed || v < -kStickPushed; };
     if (port == 0) MergeLoose(p);
     ShapeSticks(p);
+
+    // Controller shortcut: L3 + R3 (thumbstick click combo) or Start + Back toggles in-game menu
+    if (port == 0) {
+        static bool s_combo_pressed = false;
+        bool l3_r3 = (p.buttons & (1 << 6)) && (p.buttons & (1 << 7));
+        bool start_back = (p.buttons & (1 << 4)) && (p.buttons & (1 << 5));
+        if ((l3_r3 || start_back) && !s_combo_pressed) {
+            s_combo_pressed = true;
+            app::ToggleMenu();
+        } else if (!l3_r3 && !start_back) {
+            s_combo_pressed = false;
+        }
+    }
+
+    // Input isolation: when tactical menu is open, silence gameplay buttons and sticks
+    if (app::MenuOpen()) {
+        p.buttons = 0;
+        std::fill(std::begin(p.analog), std::end(p.analog), 0);
+        p.lx = p.ly = p.rx = p.ry = 0;
+    }
+
     bool analog = std::any_of(std::begin(p.analog), std::end(p.analog), [](uint8_t a) { return a > 0x20; });
     if (p.buttons || analog || pushed(p.lx) || pushed(p.ly) || pushed(p.rx) || pushed(p.ry)) touch::PadUsed();
     touch::Apply(port, p);

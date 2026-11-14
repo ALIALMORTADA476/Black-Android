@@ -1,0 +1,15 @@
+# BLACK Enhanced Edition — Stage 6: Physics Implementation Matrix
+
+| System / Feature | Control Name | XBE Function / Address | Hook Symbol (`config/game.toml`) | Host / Guest Path | Original Default | Range & Preset (`Classic` / `Realistic` / `Cinematic`) | Validation Status |
+|---|---|---|---|---|---|---|---|
+| **A. Explosion Physics** | Explosion Force (`explosion_force`) | `sub_001E3FA0 @ 0x1E4034`, `sub_001E5410 @ 0x1E568E`, `sub_001E8D80 @ 0x1E8EFC` -> `sub_000DCC40` | `PhysicsBlastImpulseA/B/C` | Guest X86 hook (`src/game/physics_lab.cpp`) | `1.00x` (`100%`) | `0.25x–3.00x` (`1.00` / `1.25` / `2.10`) | Verified in XBE; PoC & Device Build |
+| **B. Character Physics** | Character Reaction (`character_reaction`) | `0x00077DA1` (`BodyDamping`), `0x00077DFF` & `0x00077E74` (`BodyTopSpeed` + `after=true`) | `PhysicsRagdollDamping`, `PhysicsRagdollSpeedA/B` | Guest X86 hook (`src/game/physics_lab.cpp`) | `1.00x` (`100%`) | `0.25x–2.50x` (`1.00` / `1.20` / `1.75`) | Verified in XBE; PoC & Device Build |
+| **C. Projectile & Impact** | Impact Force (`impact_force`) | `sub_001E5710 @ 0x1E5952`, `sub_001E8F20 @ 0x1E908D` -> `sub_000DCF80` | `PhysicsImpactImpulseA/B` | Guest X86 hook (`src/game/physics_lab.cpp`) | `1.00x` (`100%`) | `0.25x–3.00x` (`1.00` / `1.30` / `1.85`) | Verified in XBE; PoC & Device Build |
+| **D. Weapon Behavior** | Weapon Recoil (`weapon_recoil`) | `sub_001EEFD0 @ 0x1EFE50` (`[eax+0xC4] == 2` player pitch delta & target) | `PhysicsRecoilKick` | Guest X86 hook (`src/game/physics_lab.cpp`) | `1.00x` (`100%`) | `0.00x–2.50x` (`1.00` / `1.15` / `1.40`) | Verified in XBE; PoC & Device Build |
+| **E. World Physics** | Gravity Scale (`gravity_scale`) | `sub_001F1080 @ 0x1F11D5` (`world+0x364`), `sub_001690D0 @ 0x1693EA` (shards) | `PhysicsGravityPost`, `PhysicsShardGravity` | Guest X86 hook (`src/game/physics_lab.cpp`) | `1.00x` (`100%`, `-600.0f`) | `0.25x–2.50x` (`1.00` / `1.15` / `0.80`) | Verified in XBE; PoC & Device Build |
+| **E. Debris & Particles** | Debris Intensity (`debris_intensity`) | `sub_001690D0 @ 0x1693F6` (`ShardStep`), `0x16DFFF` (`ParticleFade`) | `PhysicsShardDebris`, `PhysicsParticleDebris` | Guest X86 hook (`src/game/physics_lab.cpp`) | `1.00x` (`100%`) | `0.25x–3.00x` (`1.00` / `1.35` / `2.40`) | Verified in XBE; PoC & Device Build |
+| **Profile Selector** | Physics Preset (`preset`) | `SettingsRegistry` / `EnhancedOptions` (`[physics_lab]`) | N/A (Host Config) | Host C++ (`src/common/mod_schema.cpp`) | `classic` | `classic` / `realistic` / `cinematic` / `custom` | Unit tested + Device UI |
+| **Sec 5. Blood Emitters** | Blood Particle Density | `sub_001E74B0`, emitter `sub_00169960` | — | Unhooked | `1x` | `[1..3]` | **Planned (Requires Deep RE)** |
+| **Sec 5. Wall Decals** | Persistent Blood Decals | Static world decal ring buffer | — | Unhooked | `false` | Boolean / Pool | **Planned (Requires Deep RE)** |
+| **Sec 5. Corpse Persistence** | Extended Corpse Pool / Timeout | `sub_001DF440` (`0x14` = 20-slot `[0x2960]`), `sub_001DA240` (`0x2F8`) | — | Unhooked | Default (`20` slots) | N/A | **Planned (Requires Deep RE)** |
+

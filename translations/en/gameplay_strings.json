@@ -1,0 +1,642 @@
+[
+  {
+    "id": "0X00422B61",
+    "id_int": 4336481,
+    "text": "destruction %1 of %2",
+    "context": "HUD: Destruction progress",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X0062482C",
+    "id_int": 6441004,
+    "text": "change weapon up",
+    "context": "HUD: Next weapon",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X01BBE675",
+    "id_int": 29091445,
+    "text": "press Â² for info",
+    "context": "HUD: Press for info",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X01CA3726",
+    "id_int": 30029606,
+    "text": "hunt down seventh wave suspect lennox",
+    "context": "Mission 8: Spetriniv Gulag — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X01F00F8E",
+    "id_int": 32509838,
+    "text": "black intel: the p90 is a medium range weapon",
+    "context": "Tactical Intel: P90",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X01F2AC9D",
+    "id_int": 32681117,
+    "text": "you destroyed details of european cia camp \"bondsteel\"",
+    "context": "Recon Objective: Bondsteel",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X020BE815",
+    "id_int": 34334741,
+    "text": "eliminate valencio's bodyguards",
+    "context": "Mission 5: Tivliz Asylum — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X022F7FC6",
+    "id_int": 36667334,
+    "text": "total enemy count:",
+    "context": "HUD: Total enemy count",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X02368776",
+    "id_int": 37128054,
+    "text": "black intel: explore your surroundings to find suppressors",
+    "context": "Tactical Intel: Silencer",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0240ACF0",
+    "id_int": 37793008,
+    "text": "eliminate the rpg enemy",
+    "context": "Mission 7: Graznei Bridge — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0372231D",
+    "id_int": 57811741,
+    "text": "black intel: fallen enemies drop first aid kits",
+    "context": "Tactical Intel: Health drops",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X03AB5B62",
+    "id_int": 61561698,
+    "text": "mission info",
+    "context": "HUD: Mission info",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X03CCD097",
+    "id_int": 63754391,
+    "text": "crouch",
+    "context": "Action Prompt: Crouch",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X04550FFD",
+    "id_int": 72683517,
+    "text": "primary objective update",
+    "context": "HUD: Primary objective update",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0618C791",
+    "id_int": 102287249,
+    "text": "gasometer %1 of %2 destroyed",
+    "context": "Mission 2: Trenches — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X069DCB97",
+    "id_int": 111004567,
+    "text": "black intel: Shoot hand grenades mid air to kill nearby enemies.",
+    "context": "Tactical Intel: Mid-air grenade",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X06DD643B",
+    "id_int": 115172411,
+    "text": "find the shotgun",
+    "context": "Prompt: Find shotgun",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X074A6CBC",
+    "id_int": 122318012,
+    "text": "eliminate all enemies",
+    "context": "Mission 1: Veblensk Streets — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X077ADBAA",
+    "id_int": 125492138,
+    "text": "no current primary objective",
+    "context": "HUD: No active primary objective",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X07A9F7A3",
+    "id_int": 128579491,
+    "text": "you discovered detailed blueprints of the new york subway system",
+    "context": "Recon Objective: Subway blueprints",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X07DAADA6",
+    "id_int": 131771814,
+    "text": "rpg enemy %1 of %2 has been eliminated",
+    "context": "Mission 7: Graznei Bridge — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X08073598",
+    "id_int": 134690200,
+    "text": "%s - %s complete",
+    "context": "Mission complete banner",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X084643A5",
+    "id_int": 138822565,
+    "text": "black intel: are you good enough to unlock the m16a2?",
+    "context": "Tactical Intel: M16A2",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X084A379A",
+    "id_int": 139081626,
+    "text": "you found a document stamped wi-99-eye",
+    "context": "Recon Objective: Secret document",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X090F77E3",
+    "id_int": 152008675,
+    "text": "find the armoury",
+    "context": "Mission 1: Veblensk — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X09443306",
+    "id_int": 155464454,
+    "text": "capture seventh wave suspects",
+    "context": "Mission 5: Tivliz Asylum — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0980DEFA",
+    "id_int": 159440634,
+    "text": "explore to find health packs",
+    "context": "Prompt: Find health pack",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X0B80CB5D",
+    "id_int": 192990045,
+    "text": "black intel: crouch behind cover to hide from enemies",
+    "context": "Tactical Intel: Crouch cover",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0BB31A06",
+    "id_int": 196286982,
+    "text": "intel objective %1/%2",
+    "context": "Intel objective status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X0CE62CB0",
+    "id_int": 216411312,
+    "text": "you found fake id cards from chelyabinsk obast nuclear facility",
+    "context": "Recon Objective: Fake ID",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0CED0F44",
+    "id_int": 216862532,
+    "text": "black intel: collect mission information to complete recon objectives",
+    "context": "Tactical Intel: Recon collection",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0E98F9CA",
+    "id_int": 244906442,
+    "text": "WEAPON MACHINERY 3 OF 4 DESTROYED",
+    "context": "Mission 2: Trenches — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X0EED1AE3",
+    "id_int": 250419939,
+    "text": "red hit ring indicates attack direction",
+    "context": "Tactical Intel: Direction ring",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0F465F7D",
+    "id_int": 256270205,
+    "text": "primary objective complete",
+    "context": "HUD: Primary objective complete",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0FD34110",
+    "id_int": 265502992,
+    "text": "",
+    "context": "Mission 1: Veblensk — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X10A8BF83",
+    "id_int": 279494531,
+    "text": "",
+    "context": "Mission 1: Veblensk — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X112EB5FA",
+    "id_int": 288273914,
+    "text": "",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X125BF0D9",
+    "id_int": 308015321,
+    "text": "",
+    "context": "HUD: Checkpoint reached",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X138A7F41",
+    "id_int": 327843649,
+    "text": "",
+    "context": "HUD: Mission failed",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X14C0385E",
+    "id_int": 348141662,
+    "text": "",
+    "context": "HUD: Mission accomplished",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X15D90B38",
+    "id_int": 366545720,
+    "text": "",
+    "context": "Mission 4: Nazran Foundry — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X16F48A2C",
+    "id_int": 385124908,
+    "text": "",
+    "context": "Dialogue / Radio: Keller",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X17E2B04D",
+    "id_int": 400732237,
+    "text": "",
+    "context": "Dialogue / Radio: MacCallum",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X18B90F21",
+    "id_int": 414781217,
+    "text": "",
+    "context": "Dialogue / Radio: Cellar",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X19A07E3F",
+    "id_int": 429948479,
+    "text": "",
+    "context": "Dialogue / Radio: HQ",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X80238916",
+    "id_int": 2149812502,
+    "text": "Primary objectives only. Lots of Healthpacks. No rewards.",
+    "context": "Difficulty: Easy description",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X8024F22A",
+    "id_int": 2149904938,
+    "text": "use gravestones for cover",
+    "context": "Mission 3: Nazran Cemetery — Tactical hint",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X81E26F75",
+    "id_int": 2179100533,
+    "text": "black intel: hand grenades can be shot in mid air",
+    "context": "Tactical Intel: Grenades",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X832FDFD9",
+    "id_int": 2200952793,
+    "text": "SMELTER 2 OF 3 DESTROYED",
+    "context": "Mission 4: Nazran Foundry — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X836043E6",
+    "id_int": 2204124134,
+    "text": "black intel: red health bar indicates health is running low",
+    "context": "Tactical Intel: Health bar",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X840D87FF",
+    "id_int": 2215479295,
+    "text": "black intel: red hit ring indicates direction of attack",
+    "context": "Tactical Intel: Hit ring",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X855C6280",
+    "id_int": 2237424256,
+    "text": "destruction objective update",
+    "context": "HUD: Destruction objective update",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X858C8013",
+    "id_int": 2240577555,
+    "text": "you destroyed\r\nsmuggled cctv footage from camp x-ray",
+    "context": "Recon Objective: Camp X-Ray",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X85FBCC48",
+    "id_int": 2247871560,
+    "text": "hold breath",
+    "context": "Sniper: Hold breath",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X8675C49B",
+    "id_int": 2255864987,
+    "text": "destroy metal smelter control panels",
+    "context": "Mission 4: Nazran Foundry — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X868FAB6C",
+    "id_int": 2257562476,
+    "text": "black intel: objects marked with a yellow triangle explode when shot",
+    "context": "Tactical Intel: Exploding objects",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X887B9B21",
+    "id_int": 2289802017,
+    "text": "eliminate all snipers",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8992BE01",
+    "id_int": 2308095489,
+    "text": "find weapons for armament objectives",
+    "context": "Armament Objective hint",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8B92ABA6",
+    "id_int": 2341645222,
+    "text": "black intel: you can carry 2 weapons at once",
+    "context": "Tactical Intel: Carrying weapons",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X8BD3CB27",
+    "id_int": 2345913127,
+    "text": "complete %d objectives",
+    "context": "Mission summary: Objectives complete",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X8CFF6FBF",
+    "id_int": 2365550527,
+    "text": "black intel: smash windows with a melee attack",
+    "context": "Tactical Intel: Melee windows",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X8D715B6D",
+    "id_int": 2373016429,
+    "text": "destroy the gasometers",
+    "context": "Mission 2: Trenches — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8EC35B00",
+    "id_int": 2395167488,
+    "text": "you destroyed documents explaining cell phone \"meaconing\"",
+    "context": "Recon Objective: Meaconing",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8EFF7A18",
+    "id_int": 2399107608,
+    "text": "destroy info for blackmail objectives",
+    "context": "Blackmail Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8FF5C427",
+    "id_int": 2415248423,
+    "text": "you discovered blueprints marked phased plasma rifles (40w range)",
+    "context": "Recon Objective: Blueprints",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X905E4EE0",
+    "id_int": 2422099680,
+    "text": "press start",
+    "context": "Prompt: Press start",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X92899AE7",
+    "id_int": 2458491623,
+    "text": "black intel: crouch behind cover to avoid enemy fire",
+    "context": "Tactical Intel: Crouch cover",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X95E45EFE",
+    "id_int": 2514771710,
+    "text": "black intel: find weapons to complete armament objectives",
+    "context": "Tactical Intel: Armament",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X9652662B",
+    "id_int": 2521982507,
+    "text": "new destruction objective",
+    "context": "HUD: New destruction objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X974F1125",
+    "id_int": 2538541349,
+    "text": "Complete %d of %d secondary objectives",
+    "context": "HUD: Secondary objectives progress",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X98F95E34",
+    "id_int": 2566479412,
+    "text": "black intel: the magnum takes down enemies with one shot",
+    "context": "Tactical Intel: Magnum",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X9F949A2D",
+    "id_int": 2677316141,
+    "text": "black intel: silver weapons have unlimited ammunition",
+    "context": "Tactical Intel: Silver weapons",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X9F96393E",
+    "id_int": 2677422398,
+    "text": "you destroyed audiotapes marked copper green",
+    "context": "Recon Objective: Audiotapes",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA0DA797C",
+    "id_int": 2698672508,
+    "text": "destroy the control panels",
+    "context": "Mission 4: Destroy control panels",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA11CE423",
+    "id_int": 2703025187,
+    "text": "black intel: recon objectives provide information for future missions",
+    "context": "Tactical Intel: Recon",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0XA14008B3",
+    "id_int": 2705328307,
+    "text": "use shotgun to blast doors",
+    "context": "Prompt: Shotgun doors",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0XA1C29808",
+    "id_int": 2713884680,
+    "text": "eliminate gulag entry defences",
+    "context": "Mission 8: Spetriniv Gulag — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA2BBD5E7",
+    "id_int": 2730218983,
+    "text": "weapon machinery %1 of %2 destroyed",
+    "context": "Mission 4: Nazran Foundry — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0XA4831CA1",
+    "id_int": 2760055969,
+    "text": "cross sniper alley",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA4C85844",
+    "id_int": 2764593220,
+    "text": "eliminate the sniper",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  }
+]

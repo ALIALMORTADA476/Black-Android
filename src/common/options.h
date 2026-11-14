@@ -7,9 +7,9 @@
 // the game's own settings, in the settings file through app::kGame.options
 namespace game {
 
-// the languages, saved by these codes: English, French, German, Italian, Spanish, Indonesian. Indonesian is the
-// recomp's own text only: the game files have none, so the game itself stays in English
-inline constexpr const char* kLanguages[] = {"int", "fra", "deu", "ita", "esp", "ind"};
+// the languages, saved by these codes: English, French, German, Italian, Spanish, Indonesian, Arabic.
+// Indonesian and Arabic translate the recomp's text and mod console; Arabic is the primary default.
+inline constexpr const char* kLanguages[] = {"int", "fra", "deu", "ita", "esp", "ind", "ara"};
 
 struct Options {
     bool skip_intros = false;  // logos at boot and the film after pressing start
@@ -45,7 +45,7 @@ struct Options {
     float left_sensitivity = 1.0f;
     float right_sensitivity = 1.0f;
     uint32_t audio_output = 0;  // audio::kOutputAuto, kOutputStereo, kOutputSurround or kOutputMono
-    std::string language = "int";  // one of kLanguages
+    std::string language = "ara";  // one of kLanguages: default Arabic-first
     bool infinite_ammo = false;  // cheat: the player's magazine and reserve never go down
     uint32_t rapid_fire = 1;  // cheat: times the player's rate of fire, 1 the game's
     bool no_recoil = false;  // cheat: the player's shots do not kick the view
@@ -71,6 +71,9 @@ inline std::atomic<bool> g_hide_hud{false};  // the toggle HUD key: the gameplay
 inline std::atomic<float> g_zoom{1.0f};
 inline std::atomic<bool> g_focus_paused{false};  // the game thread waits while the app is in the background
 inline std::atomic<uint32_t> g_focus_pauses{0};  // focus pauses ended so far
+inline std::atomic<float> g_player_health_ratio{1.0f};  // 1.0 = full HP, 0.0 = critical/dead (updated in gameplay)
+inline std::atomic<float> g_recent_damage{0.0f};        // 0..1 recent damage pulse for vignette feedback
+inline std::atomic<float> g_blast_lens_pulse{0.0f};     // 0..1 shockwave chromatic/exposure pulse on explosions
 void WaitWhileUnfocused();  // native/game_host.cpp: game thread, before the present
 bool HudShown();  // src/game/hud.cpp: the player's HUD drew lately, a hint's pause too
 

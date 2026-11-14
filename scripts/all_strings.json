@@ -1,0 +1,8622 @@
+[
+  {
+    "id": "0x80238916",
+    "id_int": 2149812502,
+    "english": "Primary objectives only. Lots of Healthpacks. No rewards."
+  },
+  {
+    "id": "0x8024F22A",
+    "id_int": 2149904938,
+    "english": "use gravestones for cover"
+  },
+  {
+    "id": "0x8026E5C0",
+    "id_int": 2150032832,
+    "english": "Blank"
+  },
+  {
+    "id": "0x8030D514",
+    "id_int": 2150683924,
+    "english": "Chris Baker"
+  },
+  {
+    "id": "0x809B1981",
+    "id_int": 2157648257,
+    "english": "enemy count"
+  },
+  {
+    "id": "0x809E41C7",
+    "id_int": 2157855175,
+    "english": "rpg"
+  },
+  {
+    "id": "0x80DC9B79",
+    "id_int": 2161941369,
+    "english": "danger room"
+  },
+  {
+    "id": "0x81400B89",
+    "id_int": 2168458121,
+    "english": "right thumbstick"
+  },
+  {
+    "id": "0x819F8C6F",
+    "id_int": 2174717039,
+    "english": "Craig Sullivan"
+  },
+  {
+    "id": "0x81B0F54B",
+    "id_int": 2175857995,
+    "english": "primary fire"
+  },
+  {
+    "id": "0x81D0E0BA",
+    "id_int": 2177949882,
+    "english": "brightness"
+  },
+  {
+    "id": "0x81E26F75",
+    "id_int": 2179100533,
+    "english": "black intel: hand grenades can be shot in mid air"
+  },
+  {
+    "id": "0x81F2BF23",
+    "id_int": 2180169507,
+    "english": "*"
+  },
+  {
+    "id": "0x8212BC4F",
+    "id_int": 2182265935,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x823437DB",
+    "id_int": 2184460251,
+    "english": "Claudine Joris"
+  },
+  {
+    "id": "0x8283A804",
+    "id_int": 2189666308,
+    "english": "time up"
+  },
+  {
+    "id": "0x828C71F9",
+    "id_int": 2190242297,
+    "english": "Igor Kitaev"
+  },
+  {
+    "id": "0x832A770B",
+    "id_int": 2200598283,
+    "english": "*"
+  },
+  {
+    "id": "0x832A835A",
+    "id_int": 2200601434,
+    "english": "criterion a"
+  },
+  {
+    "id": "0x832FDFD9",
+    "id_int": 2200952793,
+    "english": "SMELTER 2 OF 3 DESTROYED"
+  },
+  {
+    "id": "0x83344032",
+    "id_int": 2201239602,
+    "english": "eliminate all enemies"
+  },
+  {
+    "id": "0x833BBAE9",
+    "id_int": 2201729769,
+    "english": "primary fire"
+  },
+  {
+    "id": "0x834E1BCE",
+    "id_int": 2202934222,
+    "english": "James Dorney"
+  },
+  {
+    "id": "0x836043E6",
+    "id_int": 2204124134,
+    "english": "black intel: red health bar indicates health is running low"
+  },
+  {
+    "id": "0x83923129",
+    "id_int": 2207396137,
+    "english": "*"
+  },
+  {
+    "id": "0x839B22A8",
+    "id_int": 2207982248,
+    "english": "-"
+  },
+  {
+    "id": "0x839F5D50",
+    "id_int": 2208259408,
+    "english": "Location"
+  },
+  {
+    "id": "0x83D7DB2D",
+    "id_int": 2211961645,
+    "english": "you found reconnaissance photographs of prairie chapel ranch, texas"
+  },
+  {
+    "id": "0x83F65DEC",
+    "id_int": 2213961196,
+    "english": "SOUND DESIGNER"
+  },
+  {
+    "id": "0x83FCE7B5",
+    "id_int": 2214389685,
+    "english": "congratulations"
+  },
+  {
+    "id": "0x840D87FF",
+    "id_int": 2215479295,
+    "english": "black intel: red hit ring indicates direction of attack"
+  },
+  {
+    "id": "0x8423DFD7",
+    "id_int": 2216943575,
+    "english": "Sean Francis"
+  },
+  {
+    "id": "0x8447B312",
+    "id_int": 2219291410,
+    "english": "David Addis"
+  },
+  {
+    "id": "0x84492FD0",
+    "id_int": 2219388880,
+    "english": "r"
+  },
+  {
+    "id": "0x849B99F5",
+    "id_int": 2224790005,
+    "english": "*"
+  },
+  {
+    "id": "0x84D8E37D",
+    "id_int": 2228806525,
+    "english": "mono"
+  },
+  {
+    "id": "0x84FFF530",
+    "id_int": 2231366960,
+    "english": "Teresa Bajo"
+  },
+  {
+    "id": "0x8534C08E",
+    "id_int": 2234826894,
+    "english": "Richard Parr"
+  },
+  {
+    "id": "0x8559F3C2",
+    "id_int": 2237264834,
+    "english": "*"
+  },
+  {
+    "id": "0x855C6280",
+    "id_int": 2237424256,
+    "english": "destruction objective update"
+  },
+  {
+    "id": "0x858C8013",
+    "id_int": 2240577555,
+    "english": "you destroyed\r\nsmuggled cctv footage from camp x-ray"
+  },
+  {
+    "id": "0x85E1B5E0",
+    "id_int": 2246161888,
+    "english": "*"
+  },
+  {
+    "id": "0x85FBCC48",
+    "id_int": 2247871560,
+    "english": "hold breath"
+  },
+  {
+    "id": "0x863E807E",
+    "id_int": 2252243070,
+    "english": "eliminate the heavy machine gunners"
+  },
+  {
+    "id": "0x8675C49B",
+    "id_int": 2255864987,
+    "english": "destroy metal smelter control panels"
+  },
+  {
+    "id": "0x868FAB6C",
+    "id_int": 2257562476,
+    "english": "black intel: objects marked with a yellow triangle explode when shot"
+  },
+  {
+    "id": "0x868FBF41",
+    "id_int": 2257567553,
+    "english": "FIND THE HIDDEN WEAPON."
+  },
+  {
+    "id": "0x86DD3152",
+    "id_int": 2262643026,
+    "english": "action"
+  },
+  {
+    "id": "0x86F24876",
+    "id_int": 2264025206,
+    "english": "*"
+  },
+  {
+    "id": "0x87109CA3",
+    "id_int": 2266012835,
+    "english": "%i/%i"
+  },
+  {
+    "id": "0x872EE562",
+    "id_int": 2267997538,
+    "english": "find and kill the 6 most wanted"
+  },
+  {
+    "id": "0x87397DC8",
+    "id_int": 2268691912,
+    "english": "*"
+  },
+  {
+    "id": "0x87471DCB",
+    "id_int": 2269584843,
+    "english": "normal"
+  },
+  {
+    "id": "0x875E2F24",
+    "id_int": 2271096612,
+    "english": "IF YOUR PROGRESS HAS NOT BEEN SAVED THEN IT WILL BE LOST. CONTINUE ANYWAY?"
+  },
+  {
+    "id": "0x8844F308",
+    "id_int": 2286220040,
+    "english": "Paul Pape"
+  },
+  {
+    "id": "0x887B9B21",
+    "id_int": 2289802017,
+    "english": "eliminate all snipers"
+  },
+  {
+    "id": "0x88921A8F",
+    "id_int": 2291276431,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x8898003E",
+    "id_int": 2291662910,
+    "english": "you found details of the t-stas system"
+  },
+  {
+    "id": "0x88FCB52A",
+    "id_int": 2298262826,
+    "english": "EAUK STUDIO EXEC TEAM"
+  },
+  {
+    "id": "0x893EDF1D",
+    "id_int": 2302598941,
+    "english": "*"
+  },
+  {
+    "id": "0x89475A8D",
+    "id_int": 2303154829,
+    "english": "none"
+  },
+  {
+    "id": "0x895AB3D8",
+    "id_int": 2304422872,
+    "english": "*"
+  },
+  {
+    "id": "0x89695F41",
+    "id_int": 2305384257,
+    "english": "-"
+  },
+  {
+    "id": "0x8986993F",
+    "id_int": 2307299647,
+    "english": "Steve Wilding"
+  },
+  {
+    "id": "0x898D403A",
+    "id_int": 2307735610,
+    "english": "gain entry to underground complex"
+  },
+  {
+    "id": "0x8992BE01",
+    "id_int": 2308095489,
+    "english": "find weapons for armament objectives"
+  },
+  {
+    "id": "0x89999274",
+    "id_int": 2308543092,
+    "english": "silver"
+  },
+  {
+    "id": "0x89B8B776",
+    "id_int": 2310584182,
+    "english": "symbols"
+  },
+  {
+    "id": "0x89BE6887",
+    "id_int": 2310957191,
+    "english": "continue mission"
+  },
+  {
+    "id": "0x89D919EC",
+    "id_int": 2312706540,
+    "english": "commando"
+  },
+  {
+    "id": "0x89E2F5FA",
+    "id_int": 2313352698,
+    "english": "Joao Roseta"
+  },
+  {
+    "id": "0x8A1F9509",
+    "id_int": 2317325577,
+    "english": "DO YOU WANT TO SAVE YOUR PROFILE NOW?"
+  },
+  {
+    "id": "0x8A2D6E83",
+    "id_int": 2318233219,
+    "english": "-"
+  },
+  {
+    "id": "0x8A4011C7",
+    "id_int": 2319454663,
+    "english": "Peter Cusack"
+  },
+  {
+    "id": "0x8AA64300",
+    "id_int": 2326151936,
+    "english": "Blank"
+  },
+  {
+    "id": "0x8B2683DD",
+    "id_int": 2334557149,
+    "english": "normal difficulty"
+  },
+  {
+    "id": "0x8B827BF0",
+    "id_int": 2340584432,
+    "english": "Patrick Buechner"
+  },
+  {
+    "id": "0x8B92ABA6",
+    "id_int": 2341645222,
+    "english": "black intel: you can carry 2 weapons at once"
+  },
+  {
+    "id": "0x8BB0C868",
+    "id_int": 2343618664,
+    "english": "RETRY"
+  },
+  {
+    "id": "0x8BD3CB27",
+    "id_int": 2345913127,
+    "english": "complete %d objectives"
+  },
+  {
+    "id": "0x8BEF48BC",
+    "id_int": 2347714748,
+    "english": "Pete Hawley"
+  },
+  {
+    "id": "0x8C828CA5",
+    "id_int": 2357365925,
+    "english": "*"
+  },
+  {
+    "id": "0x8CFF6FBF",
+    "id_int": 2365550527,
+    "english": "black intel: smash windows with a melee attack"
+  },
+  {
+    "id": "0x8D194B52",
+    "id_int": 2367245138,
+    "english": "CLICK â â¥â¥â¥â¥L  :"
+  },
+  {
+    "id": "0x8D40AA9A",
+    "id_int": 2369825434,
+    "english": "killing time"
+  },
+  {
+    "id": "0x8D49B91B",
+    "id_int": 2370418971,
+    "english": "Renaud L. Gonzalez"
+  },
+  {
+    "id": "0x8D4DC802",
+    "id_int": 2370684930,
+    "english": "magnum"
+  },
+  {
+    "id": "0x8D715B6D",
+    "id_int": 2373016429,
+    "english": "destroy the gasometers"
+  },
+  {
+    "id": "0x8E049B58",
+    "id_int": 2382666584,
+    "english": "gun run"
+  },
+  {
+    "id": "0x8E1A96E7",
+    "id_int": 2384107239,
+    "english": "shuffle"
+  },
+  {
+    "id": "0x8E2D5C29",
+    "id_int": 2385337385,
+    "english": "SAVE SUCCESSFUL."
+  },
+  {
+    "id": "0x8E3777C1",
+    "id_int": 2385999809,
+    "english": "*"
+  },
+  {
+    "id": "0x8E434CF6",
+    "id_int": 2386775286,
+    "english": "kill book"
+  },
+  {
+    "id": "0x8E51437D",
+    "id_int": 2387690365,
+    "english": "ak 47"
+  },
+  {
+    "id": "0x8E531B04",
+    "id_int": 2387811076,
+    "english": "*"
+  },
+  {
+    "id": "0x8E8F31E3",
+    "id_int": 2391749091,
+    "english": "Olivier Cornu"
+  },
+  {
+    "id": "0x8E9DF8B0",
+    "id_int": 2392717488,
+    "english": "custom soundtrack"
+  },
+  {
+    "id": "0x8EC35B00",
+    "id_int": 2395167488,
+    "english": "you destroyed documents explaining cell phone \"meaconing\""
+  },
+  {
+    "id": "0x8EEB5D26",
+    "id_int": 2397789478,
+    "english": "Damien Rayfield"
+  },
+  {
+    "id": "0x8EFF7A18",
+    "id_int": 2399107608,
+    "english": "destroy info for blackmail objectives"
+  },
+  {
+    "id": "0x8F04CF0E",
+    "id_int": 2399457038,
+    "english": "YOUR XBOX DOESN'T HAVE ENOUGH FREE BLOCKS TO SAVE GAMES."
+  },
+  {
+    "id": "0x8F13ACE2",
+    "id_int": 2400431330,
+    "english": "challenge mode"
+  },
+  {
+    "id": "0x8F293711",
+    "id_int": 2401842961,
+    "english": "*"
+  },
+  {
+    "id": "0x8F44045D",
+    "id_int": 2403599453,
+    "english": "Tommy Hudson"
+  },
+  {
+    "id": "0x8F917133",
+    "id_int": 2408673587,
+    "english": "*"
+  },
+  {
+    "id": "0x8FF5C427",
+    "id_int": 2415248423,
+    "english": "you discovered blueprints marked phased plasma rifles (40w range)"
+  },
+  {
+    "id": "0x9025EE5C",
+    "id_int": 2418404956,
+    "english": "Karl Witham"
+  },
+  {
+    "id": "0x902DFC7A",
+    "id_int": 2418932858,
+    "english": "turn left/right"
+  },
+  {
+    "id": "0x90418299",
+    "id_int": 2420212377,
+    "english": "VISUAL EFFECTS ARTIST"
+  },
+  {
+    "id": "0x905E4EE0",
+    "id_int": 2422099680,
+    "english": "press start"
+  },
+  {
+    "id": "0x90898F40",
+    "id_int": 2424934208,
+    "english": "heartbeat indicates health is low"
+  },
+  {
+    "id": "0x909DA87E",
+    "id_int": 2426251390,
+    "english": "Craig Moore"
+  },
+  {
+    "id": "0x90F9C4BB",
+    "id_int": 2432287931,
+    "english": "Santiago Capa"
+  },
+  {
+    "id": "0x915FC249",
+    "id_int": 2438971977,
+    "english": "Cole Schreiber"
+  },
+  {
+    "id": "0x91E7846B",
+    "id_int": 2447869035,
+    "english": "SPANISH VOICE TALENTS"
+  },
+  {
+    "id": "0x92007BBF",
+    "id_int": 2449505215,
+    "english": "operator name"
+  },
+  {
+    "id": "0x92899AE7",
+    "id_int": 2458491623,
+    "english": "black intel: crouch behind cover to avoid enemy fire"
+  },
+  {
+    "id": "0x92994AB1",
+    "id_int": 2459519665,
+    "english": "*"
+  },
+  {
+    "id": "0x92F479FD",
+    "id_int": 2465495549,
+    "english": "*"
+  },
+  {
+    "id": "0x93261C1D",
+    "id_int": 2468748317,
+    "english": "you found a hidden M203"
+  },
+  {
+    "id": "0x935B2086",
+    "id_int": 2472222854,
+    "english": "*"
+  },
+  {
+    "id": "0x93AE5B67",
+    "id_int": 2477677415,
+    "english": "several controls are assigned to the same action."
+  },
+  {
+    "id": "0x93F62A8B",
+    "id_int": 2482383499,
+    "english": "eliminate all rpg enemies"
+  },
+  {
+    "id": "0x942AF02F",
+    "id_int": 2485841967,
+    "english": "destruction"
+  },
+  {
+    "id": "0x94A8C5A7",
+    "id_int": 2494088615,
+    "english": "black"
+  },
+  {
+    "id": "0x951C9E4E",
+    "id_int": 2501680718,
+    "english": "output"
+  },
+  {
+    "id": "0x955FC667",
+    "id_int": 2506081895,
+    "english": "9mm lead tip"
+  },
+  {
+    "id": "0x9599BDE4",
+    "id_int": 2509880804,
+    "english": "*"
+  },
+  {
+    "id": "0x95E45EFE",
+    "id_int": 2514771710,
+    "english": "black intel: find weapons to complete armament objectives"
+  },
+  {
+    "id": "0x95EF7D0A",
+    "id_int": 2515500298,
+    "english": "you found a security pass for hays house"
+  },
+  {
+    "id": "0x962EA239",
+    "id_int": 2519638585,
+    "english": "you found plans marked operation urban warrior"
+  },
+  {
+    "id": "0x96320650",
+    "id_int": 2519860816,
+    "english": "Art Direction by Rudy Poat"
+  },
+  {
+    "id": "0x9652662B",
+    "id_int": 2521982507,
+    "english": "new destruction objective"
+  },
+  {
+    "id": "0x965F351C",
+    "id_int": 2522821916,
+    "english": "*"
+  },
+  {
+    "id": "0x968A4072",
+    "id_int": 2525642866,
+    "english": "Pepa Castro"
+  },
+  {
+    "id": "0x96B4D587",
+    "id_int": 2528433543,
+    "english": "-"
+  },
+  {
+    "id": "0x96D51E8D",
+    "id_int": 2530549389,
+    "english": "08:42hrs"
+  },
+  {
+    "id": "0x9720A6A5",
+    "id_int": 2535499429,
+    "english": "eliminate reinforcements"
+  },
+  {
+    "id": "0x972C4680",
+    "id_int": 2536261248,
+    "english": "*"
+  },
+  {
+    "id": "0x97482A45",
+    "id_int": 2538089029,
+    "english": "*"
+  },
+  {
+    "id": "0x974F1125",
+    "id_int": 2538541349,
+    "english": "Complete %d of %d secondary objectives"
+  },
+  {
+    "id": "0x97778514",
+    "id_int": 2541192468,
+    "english": "customise"
+  },
+  {
+    "id": "0x97846764",
+    "id_int": 2542036836,
+    "english": "challenge mode details"
+  },
+  {
+    "id": "0x979400A2",
+    "id_int": 2543059106,
+    "english": "InÃ©s Hernandez"
+  },
+  {
+    "id": "0x97E44B59",
+    "id_int": 2548321113,
+    "english": "use health packs when health bar is red"
+  },
+  {
+    "id": "0x97F06C67",
+    "id_int": 2549116007,
+    "english": "Remi Lefort"
+  },
+  {
+    "id": "0x97F08120",
+    "id_int": 2549121312,
+    "english": "pause menu"
+  },
+  {
+    "id": "0x9869C70E",
+    "id_int": 2557069070,
+    "english": "you found a hidden rpg"
+  },
+  {
+    "id": "0x986F5DB5",
+    "id_int": 2557435317,
+    "english": "headhunter"
+  },
+  {
+    "id": "0x9884BD2E",
+    "id_int": 2558836014,
+    "english": "*"
+  },
+  {
+    "id": "0x98AD5785",
+    "id_int": 2561496965,
+    "english": "choose your weapon challenge:"
+  },
+  {
+    "id": "0x98B9F198",
+    "id_int": 2562322840,
+    "english": "clear all outbuildings without being injured"
+  },
+  {
+    "id": "0x98C3669C",
+    "id_int": 2562942620,
+    "english": "gain entry to underground complex"
+  },
+  {
+    "id": "0x98E98E62",
+    "id_int": 2565443170,
+    "english": "Film supplied by Image Bank Film / Getty Images"
+  },
+  {
+    "id": "0x98F95E34",
+    "id_int": 2566479412,
+    "english": "black intel: the magnum takes down enemies with one shot"
+  },
+  {
+    "id": "0x992BE455",
+    "id_int": 2569790549,
+    "english": "Young Jin Park"
+  },
+  {
+    "id": "0x993FC36B",
+    "id_int": 2571092843,
+    "english": "fallen enemies drop first aid kits"
+  },
+  {
+    "id": "0x99705C2C",
+    "id_int": 2574277676,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x99BC3D07",
+    "id_int": 2579250439,
+    "english": "time"
+  },
+  {
+    "id": "0x9A31464A",
+    "id_int": 2586920522,
+    "english": "LEAD WORLD PROGRAMMER"
+  },
+  {
+    "id": "0x9A321BB5",
+    "id_int": 2586975157,
+    "english": "kill enemies for time"
+  },
+  {
+    "id": "0x9A38BEB8",
+    "id_int": 2587410104,
+    "english": "SAVING PROFILE. PLEASE DON'T TURN OFF YOUR XBOX CONSOLE."
+  },
+  {
+    "id": "0x9A552A8F",
+    "id_int": 2589272719,
+    "english": "James Herman"
+  },
+  {
+    "id": "0x9A5BFFD0",
+    "id_int": 2589720528,
+    "english": "change weapon"
+  },
+  {
+    "id": "0x9ADFB9DD",
+    "id_int": 2598353373,
+    "english": "mission briefing"
+  },
+  {
+    "id": "0x9AED6CAD",
+    "id_int": 2599251117,
+    "english": "FOLEY RECORDING"
+  },
+  {
+    "id": "0x9B101711",
+    "id_int": 2601522961,
+    "english": "%d:%02d:%02d"
+  },
+  {
+    "id": "0x9B2B6C77",
+    "id_int": 2603314295,
+    "english": "-"
+  },
+  {
+    "id": "0x9B2F069A",
+    "id_int": 2603550362,
+    "english": "TV SPOT CREATION"
+  },
+  {
+    "id": "0x9B9740B8",
+    "id_int": 2610380984,
+    "english": "Anne Jolivet"
+  },
+  {
+    "id": "0x9C2FF1CF",
+    "id_int": 2620387791,
+    "english": "SENIOR PROGRAMMERS"
+  },
+  {
+    "id": "0x9C42C283",
+    "id_int": 2621620867,
+    "english": "Eric Kress"
+  },
+  {
+    "id": "0x9C46A86E",
+    "id_int": 2621876334,
+    "english": "-"
+  },
+  {
+    "id": "0x9C6F7DB6",
+    "id_int": 2624552374,
+    "english": "find entry to lower levels"
+  },
+  {
+    "id": "0x9C7560CA",
+    "id_int": 2624938186,
+    "english": "?"
+  },
+  {
+    "id": "0x9CFA84A1",
+    "id_int": 2633663649,
+    "english": "ITALIAN VOICE TALENTS"
+  },
+  {
+    "id": "0x9D38EE96",
+    "id_int": 2637754006,
+    "english": "Weng Lam"
+  },
+  {
+    "id": "0x9D5C8253",
+    "id_int": 2640085587,
+    "english": "LEAD VISUAL EFFECTS PROGRAMMER"
+  },
+  {
+    "id": "0x9D80A8B4",
+    "id_int": 2642454708,
+    "english": "Paul Gorman"
+  },
+  {
+    "id": "0x9D9AC59E",
+    "id_int": 2644166046,
+    "english": "05:03hrs"
+  },
+  {
+    "id": "0x9E224C89",
+    "id_int": 2653047945,
+    "english": "Stephan Poelwijk"
+  },
+  {
+    "id": "0x9E433D06",
+    "id_int": 2655206662,
+    "english": "assist the second black ops team"
+  },
+  {
+    "id": "0x9EA0A619",
+    "id_int": 2661328409,
+    "english": "you obtained login details to the nsa echelon system"
+  },
+  {
+    "id": "0x9EECB8E3",
+    "id_int": 2666313955,
+    "english": "control setup"
+  },
+  {
+    "id": "0x9EEDADCC",
+    "id_int": 2666376652,
+    "english": "locked"
+  },
+  {
+    "id": "0x9F0299AC",
+    "id_int": 2667747756,
+    "english": "-"
+  },
+  {
+    "id": "0x9F1DD6A5",
+    "id_int": 2669532837,
+    "english": "blasted"
+  },
+  {
+    "id": "0x9F949A2D",
+    "id_int": 2677316141,
+    "english": "black intel: silver weapons have unlimited ammunition"
+  },
+  {
+    "id": "0x9F96393E",
+    "id_int": 2677422398,
+    "english": "you destroyed audiotapes marked copper green"
+  },
+  {
+    "id": "0x9F98EE12",
+    "id_int": 2677599762,
+    "english": "you found a videotape filmed in yamantau mountain, beloretsk"
+  },
+  {
+    "id": "0x9FE97937",
+    "id_int": 2682878263,
+    "english": "*"
+  },
+  {
+    "id": "0x9FFC7E80",
+    "id_int": 2684124800,
+    "english": "widescreen"
+  },
+  {
+    "id": "0xA000994C",
+    "id_int": 2684393804,
+    "english": "bronze medal awarded"
+  },
+  {
+    "id": "0xA01274A5",
+    "id_int": 2685564069,
+    "english": "Peter Bishop"
+  },
+  {
+    "id": "0xA025A352",
+    "id_int": 2686821202,
+    "english": "*"
+  },
+  {
+    "id": "0xA039666A",
+    "id_int": 2688116330,
+    "english": "get to the steel works"
+  },
+  {
+    "id": "0xA07438E8",
+    "id_int": 2691971304,
+    "english": "restart mission"
+  },
+  {
+    "id": "0xA0761860",
+    "id_int": 2692094048,
+    "english": "Gareth Ludlow"
+  },
+  {
+    "id": "0xA0CE5E42",
+    "id_int": 2697879106,
+    "english": "*"
+  },
+  {
+    "id": "0xA0DA797C",
+    "id_int": 2698672508,
+    "english": "destroy the control panels"
+  },
+  {
+    "id": "0xA10C3475",
+    "id_int": 2701931637,
+    "english": "SPECIAL THANKS TO"
+  },
+  {
+    "id": "0xA1108E5A",
+    "id_int": 2702216794,
+    "english": "long range"
+  },
+  {
+    "id": "0xA11CE423",
+    "id_int": 2703025187,
+    "english": "black intel: recon objectives provide information for future missions"
+  },
+  {
+    "id": "0xA1210317",
+    "id_int": 2703295255,
+    "english": "you found \r\ndetails of how to make a dirty bomb"
+  },
+  {
+    "id": "0xA139B898",
+    "id_int": 2704914584,
+    "english": "select weapon"
+  },
+  {
+    "id": "0xA14008B3",
+    "id_int": 2705328307,
+    "english": "use shotgun to blast doors"
+  },
+  {
+    "id": "0xA16A25B5",
+    "id_int": 2708088245,
+    "english": "-"
+  },
+  {
+    "id": "0xA16EE1FE",
+    "id_int": 2708398590,
+    "english": "mission status: %d%%"
+  },
+  {
+    "id": "0xA1B47257",
+    "id_int": 2712957527,
+    "english": "Aessandra Felletti"
+  },
+  {
+    "id": "0xA1C29808",
+    "id_int": 2713884680,
+    "english": "eliminate gulag entry defences"
+  },
+  {
+    "id": "0xA1EC5F6C",
+    "id_int": 2716622700,
+    "english": "Black Mode Complete"
+  },
+  {
+    "id": "0xA2905836",
+    "id_int": 2727368758,
+    "english": "Timothy King"
+  },
+  {
+    "id": "0xA2A78FC1",
+    "id_int": 2728890305,
+    "english": "Mitsuo Hirakawa"
+  },
+  {
+    "id": "0xA2BBD5E7",
+    "id_int": 2730218983,
+    "english": "weapon machinery %1 of %2 destroyed"
+  },
+  {
+    "id": "0xA2F434F3",
+    "id_int": 2733913331,
+    "english": "James Kneen"
+  },
+  {
+    "id": "0xA30F5BF2",
+    "id_int": 2735692786,
+    "english": "killing time"
+  },
+  {
+    "id": "0xA33357E0",
+    "id_int": 2738051040,
+    "english": "60hz"
+  },
+  {
+    "id": "0xA3365EC4",
+    "id_int": 2738249412,
+    "english": "Nabeel Akhter"
+  },
+  {
+    "id": "0xA3A69E19",
+    "id_int": 2745605657,
+    "english": "toggle crouch"
+  },
+  {
+    "id": "0xA3D4FC5D",
+    "id_int": 2748644445,
+    "english": "Jon Neill"
+  },
+  {
+    "id": "0xA45B9ADD",
+    "id_int": 2757466845,
+    "english": "Iain Spoors"
+  },
+  {
+    "id": "0xA4831CA1",
+    "id_int": 2760055969,
+    "english": "cross sniper alley"
+  },
+  {
+    "id": "0xA4C85844",
+    "id_int": 2764593220,
+    "english": "eliminate the sniper"
+  },
+  {
+    "id": "0xA4DD5481",
+    "id_int": 2765968513,
+    "english": "Andrew Twiss"
+  },
+  {
+    "id": "0xA51DED91",
+    "id_int": 2770202001,
+    "english": "restart"
+  },
+  {
+    "id": "0xA51F3EB6",
+    "id_int": 2770288310,
+    "english": "Morgan Hughes"
+  },
+  {
+    "id": "0xA540D672",
+    "id_int": 2772489842,
+    "english": "M203 ammo full"
+  },
+  {
+    "id": "0xA599F0EA",
+    "id_int": 2778329322,
+    "english": "John Brunton"
+  },
+  {
+    "id": "0xA5CA4BD8",
+    "id_int": 2781498328,
+    "english": "PRODUCTION SUPPORT"
+  },
+  {
+    "id": "0xA5FD9C2F",
+    "id_int": 2784861231,
+    "english": "Richard Franke"
+  },
+  {
+    "id": "0xA6171539",
+    "id_int": 2786530617,
+    "english": "black ops rating on all missions"
+  },
+  {
+    "id": "0xA64CC70E",
+    "id_int": 2790049550,
+    "english": "you found planning documents of\r\na poisoning of the los angeles municipal water supply"
+  },
+  {
+    "id": "0xA661F06C",
+    "id_int": 2791436396,
+    "english": "Steve Cuss"
+  },
+  {
+    "id": "0xA679536F",
+    "id_int": 2792969071,
+    "english": "ammo for shotgun"
+  },
+  {
+    "id": "0xA67A8B99",
+    "id_int": 2793048985,
+    "english": "clear all outbuildings"
+  },
+  {
+    "id": "0xA6D9B64E",
+    "id_int": 2799285838,
+    "english": "JAPANESE VOICE TALENTS"
+  },
+  {
+    "id": "0xA71BDC79",
+    "id_int": 2803620985,
+    "english": "Edward Pinnock"
+  },
+  {
+    "id": "0xA748674B",
+    "id_int": 2806540107,
+    "english": "*"
+  },
+  {
+    "id": "0xA77A5829",
+    "id_int": 2809813033,
+    "english": "you destroyed treneska witness accounts"
+  },
+  {
+    "id": "0xA77FB0BC",
+    "id_int": 2810163388,
+    "english": "Graham Daniell"
+  },
+  {
+    "id": "0xA7A39A5B",
+    "id_int": 2812516955,
+    "english": "Siouxsie Stewart"
+  },
+  {
+    "id": "0xA7B7BD65",
+    "id_int": 2813836645,
+    "english": "shoot the mines to take down enemies"
+  },
+  {
+    "id": "0xA8396770",
+    "id_int": 2822334320,
+    "english": "s m16 suppressor pickup"
+  },
+  {
+    "id": "0xA83CB602",
+    "id_int": 2822551042,
+    "english": "Guy Miller"
+  },
+  {
+    "id": "0xA87AC155",
+    "id_int": 2826617173,
+    "english": "CLEARED OUTBUILDING 2 OF 5"
+  },
+  {
+    "id": "0xA8AAA808",
+    "id_int": 2829756424,
+    "english": "black intel: use the glock for short range headshots"
+  },
+  {
+    "id": "0xA8D74B12",
+    "id_int": 2832681746,
+    "english": "*"
+  },
+  {
+    "id": "0xA8DB94AF",
+    "id_int": 2832962735,
+    "english": "perform 10 headshot kills"
+  },
+  {
+    "id": "0xA8DC699E",
+    "id_int": 2833017246,
+    "english": "-"
+  },
+  {
+    "id": "0xA8F64498",
+    "id_int": 2834711704,
+    "english": "ï to switch weapon fire modes"
+  },
+  {
+    "id": "0xA900DFA1",
+    "id_int": 2835406753,
+    "english": "sniper %1 of %2 has been eliminated"
+  },
+  {
+    "id": "0xA9A4388E",
+    "id_int": 2846111886,
+    "english": "*"
+  },
+  {
+    "id": "0xA9FEDC35",
+    "id_int": 2852052021,
+    "english": "RECORDING PRODUCER"
+  },
+  {
+    "id": "0xAA06DCB3",
+    "id_int": 2852576435,
+    "english": "*"
+  },
+  {
+    "id": "0xAA62B076",
+    "id_int": 2858594422,
+    "english": "Samuel White"
+  },
+  {
+    "id": "0xAA6ED804",
+    "id_int": 2859390980,
+    "english": "you found a blueprint for Cinema of Ukraine"
+  },
+  {
+    "id": "0xAA8012EF",
+    "id_int": 2860520175,
+    "english": "Lee Appleton"
+  },
+  {
+    "id": "0xAA8D431B",
+    "id_int": 2861384475,
+    "english": "make it across the minefield"
+  },
+  {
+    "id": "0xAAAABDAF",
+    "id_int": 2863316399,
+    "english": "ï to set sniper zoom"
+  },
+  {
+    "id": "0xAABE9A91",
+    "id_int": 2864618129,
+    "english": "*"
+  },
+  {
+    "id": "0xAADAF654",
+    "id_int": 2866476628,
+    "english": "Synthesis International"
+  },
+  {
+    "id": "0xAB4278D8",
+    "id_int": 2873260248,
+    "english": "*"
+  },
+  {
+    "id": "0xAB7CF0A6",
+    "id_int": 2877092006,
+    "english": "*"
+  },
+  {
+    "id": "0xAB98585C",
+    "id_int": 2878888028,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0xABB040EE",
+    "id_int": 2880454894,
+    "english": "<EMPTY>"
+  },
+  {
+    "id": "0xABC4B684",
+    "id_int": 2881795716,
+    "english": "Gareth Rogers"
+  },
+  {
+    "id": "0xABF9818B",
+    "id_int": 2885255563,
+    "english": "RPG ENEMY 3 OF 5 HAS BEEN ELIMINATED"
+  },
+  {
+    "id": "0xAC1134BF",
+    "id_int": 2886808767,
+    "english": "*"
+  },
+  {
+    "id": "0xAC132742",
+    "id_int": 2886936386,
+    "english": "mission failed"
+  },
+  {
+    "id": "0xAC2A9FE3",
+    "id_int": 2888474595,
+    "english": "LOAD SUCCESSFUL."
+  },
+  {
+    "id": "0xAC35833A",
+    "id_int": 2889188154,
+    "english": "you destroyed schematics of camp peary, virginia"
+  },
+  {
+    "id": "0xAC492D93",
+    "id_int": 2890476947,
+    "english": "destruction objective complete"
+  },
+  {
+    "id": "0xAC4BD004",
+    "id_int": 2890649604,
+    "english": "*"
+  },
+  {
+    "id": "0xACA9729D",
+    "id_int": 2896786077,
+    "english": "Gareth Harding"
+  },
+  {
+    "id": "0xACF59C45",
+    "id_int": 2901777477,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0xAD031C1D",
+    "id_int": 2902662173,
+    "english": "you found flight plans relating to operation \"reverse rendition\""
+  },
+  {
+    "id": "0xAD0F746F",
+    "id_int": 2903471215,
+    "english": "*"
+  },
+  {
+    "id": "0xAD6B18AA",
+    "id_int": 2909477034,
+    "english": "Natalie Francis"
+  },
+  {
+    "id": "0xADB7324D",
+    "id_int": 2914464333,
+    "english": "Kei Iwamoto"
+  },
+  {
+    "id": "0xADC779B6",
+    "id_int": 2915531190,
+    "english": "ï¡ to use stored health packs"
+  },
+  {
+    "id": "0xADD35E88",
+    "id_int": 2916310664,
+    "english": "Stephen Root"
+  },
+  {
+    "id": "0xAE385F05",
+    "id_int": 2922929925,
+    "english": "?"
+  },
+  {
+    "id": "0xAE93182C",
+    "id_int": 2928875564,
+    "english": "Artem Kolpakov"
+  },
+  {
+    "id": "0xAEAD9052",
+    "id_int": 2930610258,
+    "english": "Abdul Salako"
+  },
+  {
+    "id": "0xAEB376B1",
+    "id_int": 2930996913,
+    "english": "secs"
+  },
+  {
+    "id": "0xAEF0E4FD",
+    "id_int": 2935022845,
+    "english": "destruction objective failed"
+  },
+  {
+    "id": "0xAF270B15",
+    "id_int": 2938571541,
+    "english": "pull the trigger on the worldâs most explosive modern weapons"
+  },
+  {
+    "id": "0xAF51721B",
+    "id_int": 2941350427,
+    "english": "*"
+  },
+  {
+    "id": "0xAF54A369",
+    "id_int": 2941559657,
+    "english": "s tricked out uzi suppressor pickup"
+  },
+  {
+    "id": "0xAF6FFA65",
+    "id_int": 2943351397,
+    "english": "Hochu Ohtsuka"
+  },
+  {
+    "id": "0xAF878357",
+    "id_int": 2944893783,
+    "english": "find the M203"
+  },
+  {
+    "id": "0xAF9B8081",
+    "id_int": 2946203777,
+    "english": "ï to fire weapon"
+  },
+  {
+    "id": "0xAFB1AD87",
+    "id_int": 2947657095,
+    "english": "headhunter"
+  },
+  {
+    "id": "0xAFBA8F0B",
+    "id_int": 2948239115,
+    "english": "David Harvey"
+  },
+  {
+    "id": "0xAFC76C11",
+    "id_int": 2949082129,
+    "english": "black intel: used suppressed weapons to kill your enemies without alerting others"
+  },
+  {
+    "id": "0xAFCCC7B2",
+    "id_int": 2949433266,
+    "english": "cross the vlodnik canal"
+  },
+  {
+    "id": "0xAFCEB4B8",
+    "id_int": 2949559480,
+    "english": "black mission objectives"
+  },
+  {
+    "id": "0xB0224641",
+    "id_int": 2955036225,
+    "english": "Â°"
+  },
+  {
+    "id": "0xB02EC8FE",
+    "id_int": 2955856126,
+    "english": "Unlocked"
+  },
+  {
+    "id": "0xB0B644B6",
+    "id_int": 2964735158,
+    "english": "SMG Suppressor"
+  },
+  {
+    "id": "0xB0B7B202",
+    "id_int": 2964828674,
+    "english": "sergeant"
+  },
+  {
+    "id": "0xB0BF09CF",
+    "id_int": 2965309903,
+    "english": "CONCEPT ARTIST"
+  },
+  {
+    "id": "0xB0E5ED74",
+    "id_int": 2967858548,
+    "english": "*"
+  },
+  {
+    "id": "0xB100F2B1",
+    "id_int": 2969629361,
+    "english": "eliminate all rpg enemies"
+  },
+  {
+    "id": "0xB1278743",
+    "id_int": 2972157763,
+    "english": "Score by Chris Tilton"
+  },
+  {
+    "id": "0xB15A9357",
+    "id_int": 2975503191,
+    "english": "Mission Complete"
+  },
+  {
+    "id": "0xB1814713",
+    "id_int": 2978039571,
+    "english": "gold"
+  },
+  {
+    "id": "0xB1B19949",
+    "id_int": 2981206345,
+    "english": "black intel: the mac 10 is a short range weapon"
+  },
+  {
+    "id": "0xB1CA083A",
+    "id_int": 2982807610,
+    "english": "body count: %d"
+  },
+  {
+    "id": "0xB1CAF959",
+    "id_int": 2982869337,
+    "english": "weapons found: %d/%d"
+  },
+  {
+    "id": "0xB1CC7A53",
+    "id_int": 2982967891,
+    "english": "AUDIO PROGRAMMERS"
+  },
+  {
+    "id": "0xB1D0C427",
+    "id_int": 2983248935,
+    "english": "you found a hidden magnum"
+  },
+  {
+    "id": "0xB1DE74E3",
+    "id_int": 2984146147,
+    "english": "kill book kills"
+  },
+  {
+    "id": "0xB22B7CA4",
+    "id_int": 2989194404,
+    "english": "1000 enemies killed"
+  },
+  {
+    "id": "0xB2594999",
+    "id_int": 2992195993,
+    "english": "INTEGRATION TEAM"
+  },
+  {
+    "id": "0xB26226A6",
+    "id_int": 2992776870,
+    "english": "mission mode select"
+  },
+  {
+    "id": "0xB267C1E7",
+    "id_int": 2993144295,
+    "english": "IT SUPPORT ENGINEERS"
+  },
+  {
+    "id": "0xB27711B1",
+    "id_int": 2994147761,
+    "english": "black intel: objects enemies use as cover can often be destroyed"
+  },
+  {
+    "id": "0xB277D9CF",
+    "id_int": 2994198991,
+    "english": "black intel: shoot red objects to make them explode"
+  },
+  {
+    "id": "0xB281581C",
+    "id_int": 2994821148,
+    "english": "difficulty select"
+  },
+  {
+    "id": "0xB283213D",
+    "id_int": 2994938173,
+    "english": "you destroyed a cia torture manual"
+  },
+  {
+    "id": "0xB2ACD172",
+    "id_int": 2997670258,
+    "english": "multi kill"
+  },
+  {
+    "id": "0xB2B0B487",
+    "id_int": 2997924999,
+    "english": "challenge medals"
+  },
+  {
+    "id": "0xB2DF87C5",
+    "id_int": 3000993733,
+    "english": "CHIEF FINANCIAL OFFICER"
+  },
+  {
+    "id": "0xB31DEDF2",
+    "id_int": 3005083122,
+    "english": "*"
+  },
+  {
+    "id": "0xB32277AE",
+    "id_int": 3005380526,
+    "english": "-"
+  },
+  {
+    "id": "0xB36409F1",
+    "id_int": 3009677809,
+    "english": "b"
+  },
+  {
+    "id": "0xB3796625",
+    "id_int": 3011077669,
+    "english": "THERE ARE NO PROFILES TO LOAD."
+  },
+  {
+    "id": "0xB3798137",
+    "id_int": 3011084599,
+    "english": "Gabriel Gelade"
+  },
+  {
+    "id": "0xB39B23AE",
+    "id_int": 3013288878,
+    "english": "Darren Culley"
+  },
+  {
+    "id": "0xB3A5ABD0",
+    "id_int": 3013979088,
+    "english": "Matt Taylor"
+  },
+  {
+    "id": "0xB3B3F891",
+    "id_int": 3014916241,
+    "english": "black ops"
+  },
+  {
+    "id": "0xB3C1C715",
+    "id_int": 3015821077,
+    "english": "Julian Born"
+  },
+  {
+    "id": "0xB40BD50E",
+    "id_int": 3020674318,
+    "english": "%i new challenges unlocked!"
+  },
+  {
+    "id": "0xB414452E",
+    "id_int": 3021227310,
+    "english": "SENIOR ANIMATOR"
+  },
+  {
+    "id": "0xB423C6B7",
+    "id_int": 3022243511,
+    "english": "19:14hrs"
+  },
+  {
+    "id": "0xB445D29A",
+    "id_int": 3024474778,
+    "english": "-"
+  },
+  {
+    "id": "0xB44FB3B7",
+    "id_int": 3025122231,
+    "english": "gun run"
+  },
+  {
+    "id": "0xB46BD216",
+    "id_int": 3026965014,
+    "english": "hold %s to pick up"
+  },
+  {
+    "id": "0xB47029EB",
+    "id_int": 3027249643,
+    "english": "Leon Pozo"
+  },
+  {
+    "id": "0xB4AC030C",
+    "id_int": 3031171852,
+    "english": "*"
+  },
+  {
+    "id": "0xB4C86FC9",
+    "id_int": 3033034697,
+    "english": "Yukiko Konno"
+  },
+  {
+    "id": "0xB50A05FE",
+    "id_int": 3037332990,
+    "english": "*"
+  },
+  {
+    "id": "0xB51A1DD6",
+    "id_int": 3038387670,
+    "english": "black intel: the uzi is not accurate at long range"
+  },
+  {
+    "id": "0xB550E145",
+    "id_int": 3041976645,
+    "english": "Quyen Lam"
+  },
+  {
+    "id": "0xB5B243DC",
+    "id_int": 3048358876,
+    "english": "Sue Eilfield"
+  },
+  {
+    "id": "0xB5D67E9F",
+    "id_int": 3050733215,
+    "english": "rv with second black ops team"
+  },
+  {
+    "id": "0xB5EEE524",
+    "id_int": 3052332324,
+    "english": "you destroyed a list of domestic subversives"
+  },
+  {
+    "id": "0xB62F3A17",
+    "id_int": 3056548375,
+    "english": "you destroyed transport logs showing movement of iraqi wmd's"
+  },
+  {
+    "id": "0xB64A435A",
+    "id_int": 3058320218,
+    "english": "Alex Ward"
+  },
+  {
+    "id": "0xB674CB24",
+    "id_int": 3061107492,
+    "english": "Lennart KrÃ¼ger"
+  },
+  {
+    "id": "0xB68DC9C9",
+    "id_int": 3062745545,
+    "english": "Blank"
+  },
+  {
+    "id": "0xB696C275",
+    "id_int": 3063333493,
+    "english": "combat range"
+  },
+  {
+    "id": "0xB6A1BE4A",
+    "id_int": 3064053322,
+    "english": "*"
+  },
+  {
+    "id": "0xB6DC5D50",
+    "id_int": 3067895120,
+    "english": "black intel: use grenades to take down enemies with shields"
+  },
+  {
+    "id": "0xB788296D",
+    "id_int": 3079154029,
+    "english": "RECORDING ENGINEER"
+  },
+  {
+    "id": "0xB7B6A113",
+    "id_int": 3082199315,
+    "english": "Byron Wessels"
+  },
+  {
+    "id": "0xB7DA761B",
+    "id_int": 3084547611,
+    "english": "perfect"
+  },
+  {
+    "id": "0xB7DB80AF",
+    "id_int": 3084615855,
+    "english": "G36C Suppressor"
+  },
+  {
+    "id": "0xB7E3170E",
+    "id_int": 3085113102,
+    "english": "Â®â¢Â©Â ÃÃÃ¼ÃÃÃÃÃ Ã¢Ã¤Ã¨Ã«ÃªÃ©Ã¹Ã¼Ã»Ã®Ã¯Ã´Ã§ÅÃ¦ÃOEÃÃ¨Ã©Ã¬Ã²Ã³Ã¹Ã ÃÃÃÃÃÃÃÃ©Ã­ Ã³ÃºÃ±Ã¼Ã§ Â¿ Â¡Âª Âº ÃÃÃÃÃÃ ÃÃì§ì´ë¦¬íì¤ì¸ë§¨ëãããããã¢ã¤ã¦ã¨ãªï½±ï½²ï½³ï½´ï½µãããããã«\r\nãªã¾íææ¥ã å¾è¦æçªç± ä¿¡ì± ëë¸"
+  },
+  {
+    "id": "0xB7FA3E2F",
+    "id_int": 3086630447,
+    "english": "find the entrance to valencio's lair"
+  },
+  {
+    "id": "0xB807D562",
+    "id_int": 3087521122,
+    "english": "black intel: the M203 is a medium range weapon"
+  },
+  {
+    "id": "0xB8170534",
+    "id_int": 3088516404,
+    "english": "Recorded at MuZa-Games Studio"
+  },
+  {
+    "id": "0xB84D4A47",
+    "id_int": 3092073031,
+    "english": "treneska border crossing"
+  },
+  {
+    "id": "0xB86D0A88",
+    "id_int": 3094153864,
+    "english": "NO"
+  },
+  {
+    "id": "0xB8AF4316",
+    "id_int": 3098493718,
+    "english": "Michie Tomizawa"
+  },
+  {
+    "id": "0xB8BAAC75",
+    "id_int": 3099241589,
+    "english": "PROFILE APPEARS TO BE DAMAGED AND CANNOT BE USED."
+  },
+  {
+    "id": "0xB900C989",
+    "id_int": 3103836553,
+    "english": "CLICK â â¥â¥â¥â¥R  :"
+  },
+  {
+    "id": "0xB90945E4",
+    "id_int": 3104392676,
+    "english": "*"
+  },
+  {
+    "id": "0xB93E9213",
+    "id_int": 3107885587,
+    "english": "Ben Woodhouse"
+  },
+  {
+    "id": "0xB96D2921",
+    "id_int": 3110938913,
+    "english": "Hassan Sammak"
+  },
+  {
+    "id": "0xB9D56F03",
+    "id_int": 3117772547,
+    "english": "MARKETING ARTIST"
+  },
+  {
+    "id": "0xB9DA6B6A",
+    "id_int": 3118099306,
+    "english": "gun run"
+  },
+  {
+    "id": "0xBA06AB13",
+    "id_int": 3120999187,
+    "english": "none"
+  },
+  {
+    "id": "0xBA2D6F85",
+    "id_int": 3123539845,
+    "english": "Leon Chua"
+  },
+  {
+    "id": "0xBA89DE5C",
+    "id_int": 3129597532,
+    "english": "sound setup"
+  },
+  {
+    "id": "0xBA9E5AA8",
+    "id_int": 3130940072,
+    "english": "killing time"
+  },
+  {
+    "id": "0xBA9F1F34",
+    "id_int": 3130990388,
+    "english": "you found a hidden RPG"
+  },
+  {
+    "id": "0xBACFCD1C",
+    "id_int": 3134180636,
+    "english": "Chris Healy"
+  },
+  {
+    "id": "0xBB8906E1",
+    "id_int": 3146319585,
+    "english": "PRESS â² :"
+  },
+  {
+    "id": "0xBB8B6977",
+    "id_int": 3146475895,
+    "english": "WORLD ARTISTS"
+  },
+  {
+    "id": "0xBBBCBE80",
+    "id_int": 3149708928,
+    "english": "*"
+  },
+  {
+    "id": "0xBBC15D9A",
+    "id_int": 3150011802,
+    "english": "black intel: are you good enough to use the silver weapons?"
+  },
+  {
+    "id": "0xBBD82125",
+    "id_int": 3151503653,
+    "english": "destroy troop truck"
+  },
+  {
+    "id": "0xBBEF05B2",
+    "id_int": 3153003954,
+    "english": "Sandra Picaper"
+  },
+  {
+    "id": "0xBC040FF7",
+    "id_int": 3154382839,
+    "english": "*"
+  },
+  {
+    "id": "0xBC0D6F09",
+    "id_int": 3154997001,
+    "english": "Blank"
+  },
+  {
+    "id": "0xBC48069E",
+    "id_int": 3158836894,
+    "english": "Objective Target"
+  },
+  {
+    "id": "0xBC567E23",
+    "id_int": 3159784995,
+    "english": "you recovered a design document marked \"dust storm\""
+  },
+  {
+    "id": "0xBC82C1AB",
+    "id_int": 3162685867,
+    "english": "STUDIO LOCALISATION"
+  },
+  {
+    "id": "0xBCAABED7",
+    "id_int": 3165306583,
+    "english": "silver medals"
+  },
+  {
+    "id": "0xBCAC51FD",
+    "id_int": 3165409789,
+    "english": "black intel: complete armament objectives by finding hidden weapons"
+  },
+  {
+    "id": "0xBCAC9983",
+    "id_int": 3165428099,
+    "english": "black intel: use suppressed weapons to kill your enemies silently"
+  },
+  {
+    "id": "0xBCB29E70",
+    "id_int": 3165822576,
+    "english": "Objectives Target"
+  },
+  {
+    "id": "0xBCB5E53C",
+    "id_int": 3166037308,
+    "english": "get to the crossroads"
+  },
+  {
+    "id": "0xBCBBFDF2",
+    "id_int": 3166436850,
+    "english": "PULL â  â¥â¥R   :"
+  },
+  {
+    "id": "0xBCD17A99",
+    "id_int": 3167845017,
+    "english": "*"
+  },
+  {
+    "id": "0xBCE6AD6E",
+    "id_int": 3169234286,
+    "english": "Nicole Coleman"
+  },
+  {
+    "id": "0xBD0051F0",
+    "id_int": 3170914800,
+    "english": "Mission Objectives Achieved"
+  },
+  {
+    "id": "0xBD40AB9C",
+    "id_int": 3175132060,
+    "english": "Aaron Avery"
+  },
+  {
+    "id": "0xBD6FDFC3",
+    "id_int": 3178225603,
+    "english": "UNABLE TO SAVE PROFILE."
+  },
+  {
+    "id": "0xBDC665C0",
+    "id_int": 3183896000,
+    "english": "Mohamed Elwakili"
+  },
+  {
+    "id": "0xBDF39EB1",
+    "id_int": 3186859697,
+    "english": "-"
+  },
+  {
+    "id": "0xBE00ED38",
+    "id_int": 3187731768,
+    "english": "Emma Slater"
+  },
+  {
+    "id": "0xBE2AC76C",
+    "id_int": 3190474604,
+    "english": "scout"
+  },
+  {
+    "id": "0xBE53560A",
+    "id_int": 3193132554,
+    "english": "Martino Figueroa"
+  },
+  {
+    "id": "0xBE6481FD",
+    "id_int": 3194257917,
+    "english": "*"
+  },
+  {
+    "id": "0xBEAC8C24",
+    "id_int": 3198979108,
+    "english": "health packs full"
+  },
+  {
+    "id": "0xBEB7AF73",
+    "id_int": 3199709043,
+    "english": "-"
+  },
+  {
+    "id": "0xBEB8AB1A",
+    "id_int": 3199773466,
+    "english": "Lyndon Munt"
+  },
+  {
+    "id": "0xBF208E5E",
+    "id_int": 3206581854,
+    "english": "naszran town"
+  },
+  {
+    "id": "0xBF4A3FD5",
+    "id_int": 3209314261,
+    "english": "easy"
+  },
+  {
+    "id": "0xBF6C1DA4",
+    "id_int": 3211533732,
+    "english": "18:37hrs"
+  },
+  {
+    "id": "0xBF6F04F5",
+    "id_int": 3211724021,
+    "english": "?"
+  },
+  {
+    "id": "0xBF768146",
+    "id_int": 3212214598,
+    "english": "Suppressor for Shotgun"
+  },
+  {
+    "id": "0xBF7AC12D",
+    "id_int": 3212493101,
+    "english": "*"
+  },
+  {
+    "id": "0xBF902A7A",
+    "id_int": 3213896314,
+    "english": "Secondary Objectives Target Update"
+  },
+  {
+    "id": "0xBFC2870F",
+    "id_int": 3217196815,
+    "english": "Sascha Rotermund"
+  },
+  {
+    "id": "0xBFD3259C",
+    "id_int": 3218285980,
+    "english": "options"
+  },
+  {
+    "id": "0xC08875B9",
+    "id_int": 3230168505,
+    "english": "current record"
+  },
+  {
+    "id": "0xC08BEB00",
+    "id_int": 3230395136,
+    "english": "%d new kill book kills"
+  },
+  {
+    "id": "0xC08F19FB",
+    "id_int": 3230603771,
+    "english": "*"
+  },
+  {
+    "id": "0xC0979B56",
+    "id_int": 3231161174,
+    "english": "M203"
+  },
+  {
+    "id": "0xC0B19185",
+    "id_int": 3232862597,
+    "english": "Kory Vandenberg"
+  },
+  {
+    "id": "0xC0DCB039",
+    "id_int": 3235688505,
+    "english": "AK47 Suppressor"
+  },
+  {
+    "id": "0xC1280A81",
+    "id_int": 3240626817,
+    "english": "you have destroyed documents marked flight 800 cover-up"
+  },
+  {
+    "id": "0xC13F318C",
+    "id_int": 3242144140,
+    "english": "click the left thumbstick"
+  },
+  {
+    "id": "0xC14D73CC",
+    "id_int": 3243078604,
+    "english": "STORY"
+  },
+  {
+    "id": "0xC173FBB2",
+    "id_int": 3245603762,
+    "english": "Jennifer BÃ¶ttcher"
+  },
+  {
+    "id": "0xC191F2E3",
+    "id_int": 3247567587,
+    "english": "spetriniv gulag"
+  },
+  {
+    "id": "0xC1A68EDC",
+    "id_int": 3248918236,
+    "english": "*"
+  },
+  {
+    "id": "0xC1DB6DC6",
+    "id_int": 3252383174,
+    "english": "black intel: shoot through the walls at tivliz"
+  },
+  {
+    "id": "0xC20D3568",
+    "id_int": 3255645544,
+    "english": "*"
+  },
+  {
+    "id": "0xC21D2D40",
+    "id_int": 3256692032,
+    "english": "black intel: destroy vehicles to kill nearby enemies"
+  },
+  {
+    "id": "0xC257D1D3",
+    "id_int": 3260535251,
+    "english": "Ben Hayden"
+  },
+  {
+    "id": "0xC285FD84",
+    "id_int": 3263561092,
+    "english": "m249"
+  },
+  {
+    "id": "0xC2B5734A",
+    "id_int": 3266671434,
+    "english": "*"
+  },
+  {
+    "id": "0xC2D14E09",
+    "id_int": 3268496905,
+    "english": "access main shipment area"
+  },
+  {
+    "id": "0xC2E9D5B2",
+    "id_int": 3270104498,
+    "english": "you destroyed burnout rendering secrets"
+  },
+  {
+    "id": "0xC31375B8",
+    "id_int": 3272832440,
+    "english": "Neil Manners"
+  },
+  {
+    "id": "0xC342E20C",
+    "id_int": 3275940364,
+    "english": "-"
+  },
+  {
+    "id": "0xC3488321",
+    "id_int": 3276309281,
+    "english": "-"
+  },
+  {
+    "id": "0xC3646E4B",
+    "id_int": 3278138955,
+    "english": "hold %s to swap"
+  },
+  {
+    "id": "0xC377197D",
+    "id_int": 3279362429,
+    "english": "Constantin Yacoumis"
+  },
+  {
+    "id": "0xC378D0FC",
+    "id_int": 3279474940,
+    "english": "continue configuring"
+  },
+  {
+    "id": "0xC37EABFB",
+    "id_int": 3279858683,
+    "english": "combat range start"
+  },
+  {
+    "id": "0xC3AB339A",
+    "id_int": 3282776986,
+    "english": "Bernd Niemietz"
+  },
+  {
+    "id": "0xC3B34468",
+    "id_int": 3283305576,
+    "english": "destruction complete: %d/%d"
+  },
+  {
+    "id": "0xC3B7063C",
+    "id_int": 3283551804,
+    "english": "objective"
+  },
+  {
+    "id": "0xC3CF5F5F",
+    "id_int": 3285147487,
+    "english": "George Hull"
+  },
+  {
+    "id": "0xC41ADD64",
+    "id_int": 3290094948,
+    "english": "COMPLIANCE TESTERS"
+  },
+  {
+    "id": "0xC4254738",
+    "id_int": 3290777400,
+    "english": "-"
+  },
+  {
+    "id": "0xC4511593",
+    "id_int": 3293648275,
+    "english": "find bunker entrance"
+  },
+  {
+    "id": "0xC4633967",
+    "id_int": 3294837095,
+    "english": "c"
+  },
+  {
+    "id": "0xC47EB1A1",
+    "id_int": 3296637345,
+    "english": "John Lee"
+  },
+  {
+    "id": "0xC49C1338",
+    "id_int": 3298562872,
+    "english": "Tim Comerford"
+  },
+  {
+    "id": "0xC4A29B46",
+    "id_int": 3298990918,
+    "english": "Lee Taylor"
+  },
+  {
+    "id": "0xC4C2869A",
+    "id_int": 3301082778,
+    "english": "magnum"
+  },
+  {
+    "id": "0xC4C6F783",
+    "id_int": 3301373827,
+    "english": "Robert BÃ¶ck"
+  },
+  {
+    "id": "0xC55E790F",
+    "id_int": 3311302927,
+    "english": "*"
+  },
+  {
+    "id": "0xC560F171",
+    "id_int": 3311464817,
+    "english": "*"
+  },
+  {
+    "id": "0xC5702127",
+    "id_int": 3312460071,
+    "english": "black intel: shoot off an enemyâs helmet to take him down quickly"
+  },
+  {
+    "id": "0xC570E959",
+    "id_int": 3312511321,
+    "english": "black intel: the ak47 is a medium range rifle"
+  },
+  {
+    "id": "0xC5A7CE88",
+    "id_int": 3316108936,
+    "english": "cross naszran town with mccarver"
+  },
+  {
+    "id": "0xC5BC8A10",
+    "id_int": 3317467664,
+    "english": "find second black ops team"
+  },
+  {
+    "id": "0xC5D8B753",
+    "id_int": 3319314259,
+    "english": "John Ward"
+  },
+  {
+    "id": "0xC5E216C8",
+    "id_int": 3319928520,
+    "english": "SMG ammo full"
+  },
+  {
+    "id": "0xC607C227",
+    "id_int": 3322397223,
+    "english": "destroy both gasometers"
+  },
+  {
+    "id": "0xC620B7D5",
+    "id_int": 3324032981,
+    "english": "Main theme by Michael Giacchino and Chris Tilton"
+  },
+  {
+    "id": "0xC632C396",
+    "id_int": 3325215638,
+    "english": "Blank"
+  },
+  {
+    "id": "0xC645CE98",
+    "id_int": 3326463640,
+    "english": "you destroyed documents stamped pentagon \"polo step\""
+  },
+  {
+    "id": "0xC65083F4",
+    "id_int": 3327165428,
+    "english": "next music track"
+  },
+  {
+    "id": "0xC67A279D",
+    "id_int": 3329894301,
+    "english": "primary"
+  },
+  {
+    "id": "0xC694F9D2",
+    "id_int": 3331652050,
+    "english": "remington 870"
+  },
+  {
+    "id": "0xC6B6A9DF",
+    "id_int": 3333859807,
+    "english": "black intel: the m16a2 has a grenade launcher attachment"
+  },
+  {
+    "id": "0xC6CB4AC5",
+    "id_int": 3335211717,
+    "english": "Zsolt Marx"
+  },
+  {
+    "id": "0xC7B08294",
+    "id_int": 3350233748,
+    "english": "commando"
+  },
+  {
+    "id": "0xC7B17420",
+    "id_int": 3350295584,
+    "english": "Glock Suppressor"
+  },
+  {
+    "id": "0xC7B83959",
+    "id_int": 3350739289,
+    "english": "*"
+  },
+  {
+    "id": "0xC7C0F0C4",
+    "id_int": 3351310532,
+    "english": "walther 2000"
+  },
+  {
+    "id": "0xC7E2DDE2",
+    "id_int": 3353533922,
+    "english": "Daniel Demchenko"
+  },
+  {
+    "id": "0xC827BEC8",
+    "id_int": 3358047944,
+    "english": "tivliz asylum"
+  },
+  {
+    "id": "0xC87DF1BB",
+    "id_int": 3363697083,
+    "english": "*"
+  },
+  {
+    "id": "0xC8C2BA90",
+    "id_int": 3368204944,
+    "english": "hard"
+  },
+  {
+    "id": "0xC8C5B799",
+    "id_int": 3368400793,
+    "english": "GERMAN VOICE TALENTS"
+  },
+  {
+    "id": "0xC907DDAE",
+    "id_int": 3372735918,
+    "english": "Jim Slarke"
+  },
+  {
+    "id": "0xC954669C",
+    "id_int": 3377751708,
+    "english": "Rob Cowsill"
+  },
+  {
+    "id": "0xC963B16B",
+    "id_int": 3378753899,
+    "english": "*"
+  },
+  {
+    "id": "0xC9ABBCB2",
+    "id_int": 3383475378,
+    "english": "checkpoint reached"
+  },
+  {
+    "id": "0xC9B09FE5",
+    "id_int": 3383795685,
+    "english": "-"
+  },
+  {
+    "id": "0xC9BF9B8C",
+    "id_int": 3384777612,
+    "english": "Roger Schembri"
+  },
+  {
+    "id": "0xCA479B0A",
+    "id_int": 3393690378,
+    "english": "Simon Arnold"
+  },
+  {
+    "id": "0xCA47AFA2",
+    "id_int": 3393695650,
+    "english": "PRESS â¼ :"
+  },
+  {
+    "id": "0xCA7E60F9",
+    "id_int": 3397279993,
+    "english": "PRESS Â¹ :"
+  },
+  {
+    "id": "0xCA9AEA76",
+    "id_int": 3399150198,
+    "english": "assault"
+  },
+  {
+    "id": "0xCAA31B5C",
+    "id_int": 3399687004,
+    "english": "AUTOSAVE WILL BE DISABLED. ARE YOU SURE YOU WANT TO CONTINUE WITHOUT SAVING?"
+  },
+  {
+    "id": "0xCAC15556",
+    "id_int": 3401667926,
+    "english": "Anthony Karavias"
+  },
+  {
+    "id": "0xCAF4AE27",
+    "id_int": 3405032999,
+    "english": "-"
+  },
+  {
+    "id": "0xCB033F61",
+    "id_int": 3405987681,
+    "english": "FRANCHISE TEST MANAGER"
+  },
+  {
+    "id": "0xCB514EB5",
+    "id_int": 3411103413,
+    "english": "you found cctv footage of a robbery at bank of hanoi"
+  },
+  {
+    "id": "0xCB63BDD4",
+    "id_int": 3412311508,
+    "english": "Suppressor for Sniper Rifle"
+  },
+  {
+    "id": "0xCB85F13D",
+    "id_int": 3414552893,
+    "english": "*"
+  },
+  {
+    "id": "0xCB928DD8",
+    "id_int": 3415379416,
+    "english": "blown away"
+  },
+  {
+    "id": "0xCB960ADB",
+    "id_int": 3415608027,
+    "english": "%s Difficulty Completed"
+  },
+  {
+    "id": "0xCBAB616B",
+    "id_int": 3417006443,
+    "english": "black intel: complete intel objectives by finding hidden information"
+  },
+  {
+    "id": "0xCBABA915",
+    "id_int": 3417024789,
+    "english": "black intel: use the black reticule to find explosive objects"
+  },
+  {
+    "id": "0xCBD64A0F",
+    "id_int": 3419818511,
+    "english": "Jon Lawrence"
+  },
+  {
+    "id": "0xCBE19DF8",
+    "id_int": 3420560888,
+    "english": "Tony Cartwright"
+  },
+  {
+    "id": "0xCBF3D3C0",
+    "id_int": 3421754304,
+    "english": "%i"
+  },
+  {
+    "id": "0xCC8C59E1",
+    "id_int": 3431750113,
+    "english": "*"
+  },
+  {
+    "id": "0xCC94F2A9",
+    "id_int": 3432313513,
+    "english": "%s (locked)"
+  },
+  {
+    "id": "0xCCB26556",
+    "id_int": 3434243414,
+    "english": "Blank"
+  },
+  {
+    "id": "0xCCBB8E16",
+    "id_int": 3434843670,
+    "english": "*"
+  },
+  {
+    "id": "0xCCC66D0C",
+    "id_int": 3435556108,
+    "english": "black intel: use grenades to clear rooms"
+  },
+  {
+    "id": "0xCCDF11B3",
+    "id_int": 3437171123,
+    "english": "assault the museum"
+  },
+  {
+    "id": "0xCCE83524",
+    "id_int": 3437770020,
+    "english": "Masataka Nemoto"
+  },
+  {
+    "id": "0xCCFFBEC6",
+    "id_int": 3439312582,
+    "english": "m16"
+  },
+  {
+    "id": "0xCD0A158B",
+    "id_int": 3439990155,
+    "english": "you destroyed details of operation \"extraordinary rendition\""
+  },
+  {
+    "id": "0xCD0FAFDA",
+    "id_int": 3440357338,
+    "english": "look up/down"
+  },
+  {
+    "id": "0xCD2A5F13",
+    "id_int": 3442106131,
+    "english": "Jonathan Burroughs"
+  },
+  {
+    "id": "0xCD481934",
+    "id_int": 3444054324,
+    "english": "perform 3 minefield kills"
+  },
+  {
+    "id": "0xCD996A3E",
+    "id_int": 3449383486,
+    "english": "headhunter"
+  },
+  {
+    "id": "0xCDB7DA0E",
+    "id_int": 3451378190,
+    "english": "standard"
+  },
+  {
+    "id": "0xCDC8FD8A",
+    "id_int": 3452501386,
+    "english": "*"
+  },
+  {
+    "id": "0xCE0E7572",
+    "id_int": 3457054066,
+    "english": "*"
+  },
+  {
+    "id": "0xCE39A285",
+    "id_int": 3459883653,
+    "english": "James Trubridge"
+  },
+  {
+    "id": "0xCE4ACBAA",
+    "id_int": 3461008298,
+    "english": "YOUR XBOX DOESN'T HAVE ENOUGH FREE BLOCKS TO SAVE GAMES. YOU NEED TO FREE %i MORE BLOCK(S)."
+  },
+  {
+    "id": "0xCE6A19B7",
+    "id_int": 3463059895,
+    "english": "Marvin Salteras"
+  },
+  {
+    "id": "0xCED25F95",
+    "id_int": 3469893525,
+    "english": "Daniel Porter"
+  },
+  {
+    "id": "0xCEDD5BFC",
+    "id_int": 3470613500,
+    "english": "-"
+  },
+  {
+    "id": "0xCEE8159B",
+    "id_int": 3471316379,
+    "english": "cross the border at treneska checkpoint"
+  },
+  {
+    "id": "0xCEEDB724",
+    "id_int": 3471685412,
+    "english": "recon objective complete"
+  },
+  {
+    "id": "0xCEFE4D98",
+    "id_int": 3472772504,
+    "english": "Suppressor for M203"
+  },
+  {
+    "id": "0xCF00E5F4",
+    "id_int": 3472942580,
+    "english": "black intel: the m16 is a highly accurate medium range rifle"
+  },
+  {
+    "id": "0xCF0AE7AA",
+    "id_int": 3473598378,
+    "english": "this demo is intended for promotional purposes only and may not be sold, rented or reproduced by any unauthorized party.  any unauthorised use of this demo is prohibited by applicable law."
+  },
+  {
+    "id": "0xCF1035A2",
+    "id_int": 3473946018,
+    "english": "*"
+  },
+  {
+    "id": "0xCF4A7AD1",
+    "id_int": 3477764817,
+    "english": "veblensk city street"
+  },
+  {
+    "id": "0xCFA87380",
+    "id_int": 3483923328,
+    "english": "Gou Shinomiya"
+  },
+  {
+    "id": "0xD01CECEF",
+    "id_int": 3491556591,
+    "english": "Gary Oliver"
+  },
+  {
+    "id": "0xD03F6400",
+    "id_int": 3493815296,
+    "english": "eliminate all enemies in this area"
+  },
+  {
+    "id": "0xD04F57DD",
+    "id_int": 3494860765,
+    "english": "Jon Creighton"
+  },
+  {
+    "id": "0xD06FD1C1",
+    "id_int": 3496989121,
+    "english": "\r\n\r\nï to continue"
+  },
+  {
+    "id": "0xD078802A",
+    "id_int": 3497558058,
+    "english": "WORLD PROGRAMMER"
+  },
+  {
+    "id": "0xD07D68BF",
+    "id_int": 3497879743,
+    "english": "you destroyed proof of death of k b baer in 2001"
+  },
+  {
+    "id": "0xD08CD277",
+    "id_int": 3498889847,
+    "english": "Pistol ammo full"
+  },
+  {
+    "id": "0xD0A4AACD",
+    "id_int": 3500452557,
+    "english": "*"
+  },
+  {
+    "id": "0xD0B08DF3",
+    "id_int": 3501231603,
+    "english": "shoot the mines to cause explosions"
+  },
+  {
+    "id": "0xD11F5A72",
+    "id_int": 3508492914,
+    "english": "enemies killed: %d"
+  },
+  {
+    "id": "0xD14BF798",
+    "id_int": 3511416728,
+    "english": "you found details of\r\nseventh wave bank accounts in zurich"
+  },
+  {
+    "id": "0xD166C0FA",
+    "id_int": 3513172218,
+    "english": "John Adams"
+  },
+  {
+    "id": "0xD17DBB0F",
+    "id_int": 3514678031,
+    "english": "rv with mccarver"
+  },
+  {
+    "id": "0xD1DE86D8",
+    "id_int": 3521021656,
+    "english": "*"
+  },
+  {
+    "id": "0xD1E29B3A",
+    "id_int": 3521289018,
+    "english": "mission time: %d:%02d"
+  },
+  {
+    "id": "0xD1F0D39A",
+    "id_int": 3522220954,
+    "english": "picture setup"
+  },
+  {
+    "id": "0xD2180E20",
+    "id_int": 3524791840,
+    "english": "Matt Longley"
+  },
+  {
+    "id": "0xD240BBD8",
+    "id_int": 3527457752,
+    "english": "blackmail objective complete"
+  },
+  {
+    "id": "0xD26C6FFD",
+    "id_int": 3530321917,
+    "english": "ammo for sniper rifle"
+  },
+  {
+    "id": "0xD29EC07C",
+    "id_int": 3533619324,
+    "english": "MASTERING"
+  },
+  {
+    "id": "0xD2CD7B4E",
+    "id_int": 3536681806,
+    "english": "*"
+  },
+  {
+    "id": "0xD2FAACB9",
+    "id_int": 3539643577,
+    "english": "Max Cant"
+  },
+  {
+    "id": "0xD3242A98",
+    "id_int": 3542362776,
+    "english": "Â²"
+  },
+  {
+    "id": "0xD32E415F",
+    "id_int": 3543023967,
+    "english": "load"
+  },
+  {
+    "id": "0xD35CAA4B",
+    "id_int": 3546065483,
+    "english": "Ian Moore"
+  },
+  {
+    "id": "0xD35EA4E7",
+    "id_int": 3546195175,
+    "english": "southpaw"
+  },
+  {
+    "id": "0xD3842C37",
+    "id_int": 3548654647,
+    "english": "enter ressanov tunnel network"
+  },
+  {
+    "id": "0xD39F68AF",
+    "id_int": 3550439599,
+    "english": "rv with second black ops team"
+  },
+  {
+    "id": "0xD3C3ABC3",
+    "id_int": 3552816067,
+    "english": "challenge mode generic objective"
+  },
+  {
+    "id": "0xD3DA6417",
+    "id_int": 3554305047,
+    "english": "*"
+  },
+  {
+    "id": "0xD4316E52",
+    "id_int": 3560009298,
+    "english": "Fraz Ahmed"
+  },
+  {
+    "id": "0xD449EE81",
+    "id_int": 3561614977,
+    "english": "Â³"
+  },
+  {
+    "id": "0xD4A32971",
+    "id_int": 3567462769,
+    "english": "PRESS âº :"
+  },
+  {
+    "id": "0xD4D3CCCB",
+    "id_int": 3570650315,
+    "english": "*"
+  },
+  {
+    "id": "0xD4E9E82E",
+    "id_int": 3572099118,
+    "english": "cross naszran town"
+  },
+  {
+    "id": "0xD4FFCB44",
+    "id_int": 3573533508,
+    "english": "single shot"
+  },
+  {
+    "id": "0xD5155DE0",
+    "id_int": 3574947296,
+    "english": "weapon select"
+  },
+  {
+    "id": "0xD5414728",
+    "id_int": 3577825064,
+    "english": "you found a map of vratska dockyard"
+  },
+  {
+    "id": "0xD59768A0",
+    "id_int": 3583469728,
+    "english": "TECHNICAL ARTIST"
+  },
+  {
+    "id": "0xD5A0BF57",
+    "id_int": 3584081751,
+    "english": "ASSISTANT DEVELOPMENT MANAGERS"
+  },
+  {
+    "id": "0xD5D39A74",
+    "id_int": 3587414644,
+    "english": "Destroy US secrets to keep them hidden"
+  },
+  {
+    "id": "0xD5F30465",
+    "id_int": 3589473381,
+    "english": "Des Gayle"
+  },
+  {
+    "id": "0xD60B04E3",
+    "id_int": 3591046371,
+    "english": "The Gun Store, Las Vegas"
+  },
+  {
+    "id": "0xD61BD4B5",
+    "id_int": 3592148149,
+    "english": "black intel: destroy information to complete blackmail objectives"
+  },
+  {
+    "id": "0xD6473825",
+    "id_int": 3594991653,
+    "english": " ï  for melee attack"
+  },
+  {
+    "id": "0xD66D1523",
+    "id_int": 3597473059,
+    "english": "-"
+  },
+  {
+    "id": "0xD6B342C1",
+    "id_int": 3602072257,
+    "english": "Alessandro D'Errico"
+  },
+  {
+    "id": "0xD7154433",
+    "id_int": 3608495155,
+    "english": "ADDITIONAL PROGRAMMING"
+  },
+  {
+    "id": "0xD72293C4",
+    "id_int": 3609367492,
+    "english": "Davide Pirola"
+  },
+  {
+    "id": "0xD77128F6",
+    "id_int": 3614517494,
+    "english": "Darren Loveless"
+  },
+  {
+    "id": "0xD7C11E04",
+    "id_int": 3619757572,
+    "english": "PRESS â :"
+  },
+  {
+    "id": "0xD7C96ED4",
+    "id_int": 3620302548,
+    "english": "PREVISUALISATION AUDIO LEAD"
+  },
+  {
+    "id": "0xD7DD49EA",
+    "id_int": 3621603818,
+    "english": "destroy the weapon manufacturing equipment"
+  },
+  {
+    "id": "0xD7F19FB1",
+    "id_int": 3622936497,
+    "english": "ammo for M203"
+  },
+  {
+    "id": "0xD8203B83",
+    "id_int": 3625991043,
+    "english": "unleash awesome destruction"
+  },
+  {
+    "id": "0xD85393FF",
+    "id_int": 3629356031,
+    "english": "s smg suppressor pickup"
+  },
+  {
+    "id": "0xD856428D",
+    "id_int": 3629531789,
+    "english": "Adrian Vershinin"
+  },
+  {
+    "id": "0xD868CAF3",
+    "id_int": 3630746355,
+    "english": "Tsuguo Mogami"
+  },
+  {
+    "id": "0xD8747066",
+    "id_int": 3631509606,
+    "english": "UNABLE TO SAVE PROFILE."
+  },
+  {
+    "id": "0xD8954941",
+    "id_int": 3633662273,
+    "english": "DELETE PROFILE"
+  },
+  {
+    "id": "0xD8B69D11",
+    "id_int": 3635846417,
+    "english": "killing time"
+  },
+  {
+    "id": "0xD8BDBF9D",
+    "id_int": 3636314013,
+    "english": "*"
+  },
+  {
+    "id": "0xD8C05C87",
+    "id_int": 3636485255,
+    "english": "black intel: the mac 10 is not accurate at long range"
+  },
+  {
+    "id": "0xD8CBF724",
+    "id_int": 3637245732,
+    "english": "find the merjakni farm"
+  },
+  {
+    "id": "0xD8F1EBC6",
+    "id_int": 3639733190,
+    "english": "g36c"
+  },
+  {
+    "id": "0xD91169FF",
+    "id_int": 3641797119,
+    "english": "Complete your primary mission goals"
+  },
+  {
+    "id": "0xD99428BA",
+    "id_int": 3650365626,
+    "english": "STUDIO ENGINEER"
+  },
+  {
+    "id": "0xD9AAA0C4",
+    "id_int": 3651838148,
+    "english": "Chris Roxburgh"
+  },
+  {
+    "id": "0xDA013F21",
+    "id_int": 3657514785,
+    "english": "armament objective"
+  },
+  {
+    "id": "0xDA042C8B",
+    "id_int": 3657706635,
+    "english": "you found infrared photographs of global thermonuclear war"
+  },
+  {
+    "id": "0xDA0844F9",
+    "id_int": 3657975033,
+    "english": "FRONT END ARTISTS"
+  },
+  {
+    "id": "0xDA6C283C",
+    "id_int": 3664521276,
+    "english": "Laura George"
+  },
+  {
+    "id": "0xDAB002DB",
+    "id_int": 3668968155,
+    "english": "JAPAN LOCALISATION"
+  },
+  {
+    "id": "0xDAC04920",
+    "id_int": 3670034720,
+    "english": "ï¡ to use a stored healthpack.\r\n\r\nyou can carry 3 health packs at once"
+  },
+  {
+    "id": "0xDAD46E1E",
+    "id_int": 3671354910,
+    "english": "AUDIO DIRECTOR"
+  },
+  {
+    "id": "0xDAFF903F",
+    "id_int": 3674181695,
+    "english": "19:38hrs"
+  },
+  {
+    "id": "0xDB160429",
+    "id_int": 3675653161,
+    "english": "Deese Scott"
+  },
+  {
+    "id": "0xDB32B3AC",
+    "id_int": 3677533100,
+    "english": "you destroyed architectural plans of liberty village"
+  },
+  {
+    "id": "0xDB4CE092",
+    "id_int": 3679248530,
+    "english": "Carl Ross"
+  },
+  {
+    "id": "0xDB66E2E4",
+    "id_int": 3680953060,
+    "english": "start mission"
+  },
+  {
+    "id": "0xDB70BF13",
+    "id_int": 3681599251,
+    "english": "perform 5 silent kills"
+  },
+  {
+    "id": "0xDB9B8843",
+    "id_int": 3684403267,
+    "english": "Destruction Objectives"
+  },
+  {
+    "id": "0xDBAE420B",
+    "id_int": 3685630475,
+    "english": "*"
+  },
+  {
+    "id": "0xDBF2ACD3",
+    "id_int": 3690114259,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0xDC1739ED",
+    "id_int": 3692509677,
+    "english": "the display is now in 480p (progressive scan mode).  do you want to keep this display mode?"
+  },
+  {
+    "id": "0xDC45484E",
+    "id_int": 3695528014,
+    "english": "*"
+  },
+  {
+    "id": "0xDC57E320",
+    "id_int": 3696747296,
+    "english": "?"
+  },
+  {
+    "id": "0xDC7BC030",
+    "id_int": 3699097648,
+    "english": "*"
+  },
+  {
+    "id": "0xDC9F68CA",
+    "id_int": 3701434570,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0xDCC38612",
+    "id_int": 3703801362,
+    "english": "*"
+  },
+  {
+    "id": "0xDCC680E2",
+    "id_int": 3703996642,
+    "english": "AUTOSAVE WILL BE DISABLED.\r\nARE YOU SURE?"
+  },
+  {
+    "id": "0xDCFEB11D",
+    "id_int": 3707679005,
+    "english": "RPG ENEMY 2 OF 5 HAS BEEN ELIMINATED"
+  },
+  {
+    "id": "0xDD01EC25",
+    "id_int": 3707890725,
+    "english": "*"
+  },
+  {
+    "id": "0xDD0EBC74",
+    "id_int": 3708730484,
+    "english": "alphabet"
+  },
+  {
+    "id": "0xDD472B82",
+    "id_int": 3712428930,
+    "english": "results"
+  },
+  {
+    "id": "0xDD6580E0",
+    "id_int": 3714416864,
+    "english": "*"
+  },
+  {
+    "id": "0xDD872279",
+    "id_int": 3716620921,
+    "english": "Anish Antony"
+  },
+  {
+    "id": "0xDD8A738D",
+    "id_int": 3716838285,
+    "english": "destroy the ammo machinery"
+  },
+  {
+    "id": "0xDDAD8D39",
+    "id_int": 3719138617,
+    "english": "suppressed weapons are less powerful"
+  },
+  {
+    "id": "0xDDB9AA07",
+    "id_int": 3719932423,
+    "english": "Chris Sweetman"
+  },
+  {
+    "id": "0xDDC13733",
+    "id_int": 3720427315,
+    "english": "PULL â  â¥â¥L   :"
+  },
+  {
+    "id": "0xDDDDC6C2",
+    "id_int": 3722299074,
+    "english": "Stefano Mozzi"
+  },
+  {
+    "id": "0xDE02ED25",
+    "id_int": 3724733733,
+    "english": "reload"
+  },
+  {
+    "id": "0xDE0E9C3B",
+    "id_int": 3725499451,
+    "english": "you found an aerial photo of treneska border checkpoint"
+  },
+  {
+    "id": "0xDEA30818",
+    "id_int": 3735226392,
+    "english": "Jon Head"
+  },
+  {
+    "id": "0xDEF9ECA3",
+    "id_int": 3740920995,
+    "english": "*"
+  },
+  {
+    "id": "0xDF0C92AF",
+    "id_int": 3742143151,
+    "english": "you found a hidden sniper rifle"
+  },
+  {
+    "id": "0xDF3B8694",
+    "id_int": 3745220244,
+    "english": "Alex Ward"
+  },
+  {
+    "id": "0xDF3E57E6",
+    "id_int": 3745404902,
+    "english": "s g36c suppressor pickup"
+  },
+  {
+    "id": "0xDF7DF1C3",
+    "id_int": 3749573059,
+    "english": "CLEARED OUTBUILDING 3 OF 5"
+  },
+  {
+    "id": "0xDFA6333D",
+    "id_int": 3752211261,
+    "english": "find the treneska border crossing"
+  },
+  {
+    "id": "0xDFAD989E",
+    "id_int": 3752695966,
+    "english": "black intel: can you find the sniper rifle near the vlodnik canal?"
+  },
+  {
+    "id": "0xDFD07B84",
+    "id_int": 3754982276,
+    "english": "*"
+  },
+  {
+    "id": "0xDFDB5908",
+    "id_int": 3755694344,
+    "english": "-"
+  },
+  {
+    "id": "0xDFF1740E",
+    "id_int": 3757143054,
+    "english": "press ï to crouch"
+  },
+  {
+    "id": "0xE01D3737",
+    "id_int": 3760011063,
+    "english": "black ops"
+  },
+  {
+    "id": "0xE0279633",
+    "id_int": 3760690739,
+    "english": "assault the museum"
+  },
+  {
+    "id": "0xE02B7616",
+    "id_int": 3760944662,
+    "english": "LEAD VISUAL EFFECTS ARTIST"
+  },
+  {
+    "id": "0xE04F1AD3",
+    "id_int": 3763280595,
+    "english": "QA PROCESS MANAGER"
+  },
+  {
+    "id": "0xE06E4951",
+    "id_int": 3765324113,
+    "english": "health pack"
+  },
+  {
+    "id": "0xE0933034",
+    "id_int": 3767742516,
+    "english": "Mike Harding"
+  },
+  {
+    "id": "0xE098DE54",
+    "id_int": 3768114772,
+    "english": "%1 AMMO FULL"
+  },
+  {
+    "id": "0xE0C4EE4D",
+    "id_int": 3771002445,
+    "english": "no current destruction objective"
+  },
+  {
+    "id": "0xE0CA7C5F",
+    "id_int": 3771366495,
+    "english": "confirm"
+  },
+  {
+    "id": "0xE0E37BCF",
+    "id_int": 3773004751,
+    "english": "red crosshair indicates enemy in range"
+  },
+  {
+    "id": "0xE0F75CF1",
+    "id_int": 3774307569,
+    "english": "Kwok Law"
+  },
+  {
+    "id": "0xE12992AF",
+    "id_int": 3777598127,
+    "english": "you found a dvd called the order of death"
+  },
+  {
+    "id": "0xE13536C6",
+    "id_int": 3778361030,
+    "english": "Edited by Daniel Korb"
+  },
+  {
+    "id": "0xE158058A",
+    "id_int": 3780642186,
+    "english": "*"
+  },
+  {
+    "id": "0xE18D70E4",
+    "id_int": 3784143076,
+    "english": "Roberto Cuenca"
+  },
+  {
+    "id": "0xE1B24C33",
+    "id_int": 3786558515,
+    "english": "assault rifle ammo full"
+  },
+  {
+    "id": "0xE1B3E511",
+    "id_int": 3786663185,
+    "english": "-"
+  },
+  {
+    "id": "0xE207D769",
+    "id_int": 3792164713,
+    "english": "aim"
+  },
+  {
+    "id": "0xE29E8D72",
+    "id_int": 3802041714,
+    "english": "LEAD PROGRAMMER"
+  },
+  {
+    "id": "0xE2A24705",
+    "id_int": 3802285829,
+    "english": "find the border crossing"
+  },
+  {
+    "id": "0xE2B250FD",
+    "id_int": 3803336957,
+    "english": "?"
+  },
+  {
+    "id": "0xE2E36E68",
+    "id_int": 3806555752,
+    "english": "black intel: the dc3 elite is accurate at short range"
+  },
+  {
+    "id": "0xE2E84D9C",
+    "id_int": 3806875036,
+    "english": "you found aerial photographs of rachel, nevada"
+  },
+  {
+    "id": "0xE2FDB5FE",
+    "id_int": 3808278014,
+    "english": "-"
+  },
+  {
+    "id": "0xE3AD0DE5",
+    "id_int": 3819769317,
+    "english": "eliminate rpg enemy"
+  },
+  {
+    "id": "0xE45C1010",
+    "id_int": 3831238672,
+    "english": "*"
+  },
+  {
+    "id": "0xE4AD1525",
+    "id_int": 3836548389,
+    "english": "1 new weapon unlocked!"
+  },
+  {
+    "id": "0xE4F11A1D",
+    "id_int": 3841006109,
+    "english": "perform 10 sniper kills"
+  },
+  {
+    "id": "0xE5368AA2",
+    "id_int": 3845556898,
+    "english": "intel objective complete"
+  },
+  {
+    "id": "0xE58EAA71",
+    "id_int": 3851332209,
+    "english": "black intel: shoot through cover to reach hiding enemies"
+  },
+  {
+    "id": "0xE59E7A27",
+    "id_int": 3852368423,
+    "english": "The Renderware Team"
+  },
+  {
+    "id": "0xE5F3496B",
+    "id_int": 3857926507,
+    "english": "SENIOR LEAD PROGRAMMER"
+  },
+  {
+    "id": "0xE603C322",
+    "id_int": 3859006242,
+    "english": "ammo for rpg"
+  },
+  {
+    "id": "0xE60BD67A",
+    "id_int": 3859535482,
+    "english": "flawless"
+  },
+  {
+    "id": "0xE64456B6",
+    "id_int": 3863238326,
+    "english": "you found contact details of the development team."
+  },
+  {
+    "id": "0xE658F2DF",
+    "id_int": 3864589023,
+    "english": "Nathan Robinson"
+  },
+  {
+    "id": "0xE66A740F",
+    "id_int": 3865736207,
+    "english": "change"
+  },
+  {
+    "id": "0xE6E0B4FD",
+    "id_int": 3873486077,
+    "english": "Juan Arroyo"
+  },
+  {
+    "id": "0xE722DECA",
+    "id_int": 3877822154,
+    "english": "*"
+  },
+  {
+    "id": "0xE72ACC59",
+    "id_int": 3878341721,
+    "english": "bronze"
+  },
+  {
+    "id": "0xE746B20F",
+    "id_int": 3880169999,
+    "english": "Ingmar Clarysse"
+  },
+  {
+    "id": "0xE75116B2",
+    "id_int": 3880851122,
+    "english": "find naszran foundry"
+  },
+  {
+    "id": "0xE78EBFD6",
+    "id_int": 3884892118,
+    "english": "red objects explode when shot"
+  },
+  {
+    "id": "0xE79A98E8",
+    "id_int": 3885668584,
+    "english": "Barry Meade"
+  },
+  {
+    "id": "0xE7F952AD",
+    "id_int": 3891876525,
+    "english": "total game completion:"
+  },
+  {
+    "id": "0xE7FEF42D",
+    "id_int": 3892245549,
+    "english": "Eduardo Belinchon"
+  },
+  {
+    "id": "0xE805A93A",
+    "id_int": 3892685114,
+    "english": "-"
+  },
+  {
+    "id": "0xE87A35F2",
+    "id_int": 3900323314,
+    "english": "caps lock"
+  },
+  {
+    "id": "0xE89109A8",
+    "id_int": 3901819304,
+    "english": "you destroyed evidence relating to rigged elections around the world"
+  },
+  {
+    "id": "0xE893AABB",
+    "id_int": 3901991611,
+    "english": "black intel: use headshots to take out enemies with body armour"
+  },
+  {
+    "id": "0xE89FDE84",
+    "id_int": 3902791300,
+    "english": "you found a soviet nuclear suitcase bomb"
+  },
+  {
+    "id": "0xE8EE49A1",
+    "id_int": 3907930529,
+    "english": "Alex Ward"
+  },
+  {
+    "id": "0xE9257C1F",
+    "id_int": 3911547935,
+    "english": "Aitor Manero"
+  },
+  {
+    "id": "0xE9516DA8",
+    "id_int": 3914427816,
+    "english": "accents"
+  },
+  {
+    "id": "0xE974406F",
+    "id_int": 3916709999,
+    "english": "pick up weapon"
+  },
+  {
+    "id": "0xE97E8E69",
+    "id_int": 3917385321,
+    "english": "%i new weapons unlocked!"
+  },
+  {
+    "id": "0xE9A7968F",
+    "id_int": 3920074383,
+    "english": "you recovered professor janekâs black box"
+  },
+  {
+    "id": "0xEA3026EB",
+    "id_int": 3929024235,
+    "english": "toggle suppressor"
+  },
+  {
+    "id": "0xEA3FDE00",
+    "id_int": 3930054144,
+    "english": "Alex Kemp"
+  },
+  {
+    "id": "0xEA52FABD",
+    "id_int": 3931306685,
+    "english": "-"
+  },
+  {
+    "id": "0xEA5BB2C5",
+    "id_int": 3931878085,
+    "english": "*"
+  },
+  {
+    "id": "0xEA7E0E53",
+    "id_int": 3934129747,
+    "english": "click the right thumbstick"
+  },
+  {
+    "id": "0xEA879822",
+    "id_int": 3934754850,
+    "english": "Charles Maynes"
+  },
+  {
+    "id": "0xEA98C929",
+    "id_int": 3935881513,
+    "english": "Suppressor for Pistol"
+  },
+  {
+    "id": "0xEB28C159",
+    "id_int": 3945316697,
+    "english": "Alex Fry"
+  },
+  {
+    "id": "0xEB4198F8",
+    "id_int": 3946944760,
+    "english": "-"
+  },
+  {
+    "id": "0xEB45F215",
+    "id_int": 3947229717,
+    "english": "David Silverman"
+  },
+  {
+    "id": "0xEB684D20",
+    "id_int": 3949481248,
+    "english": "destroy fortified entry post"
+  },
+  {
+    "id": "0xEBFDB437",
+    "id_int": 3959272503,
+    "english": "*"
+  },
+  {
+    "id": "0xEC058939",
+    "id_int": 3959785785,
+    "english": "apprehend or eliminate operation suspect"
+  },
+  {
+    "id": "0xEC17E8BD",
+    "id_int": 3960989885,
+    "english": "right trigger"
+  },
+  {
+    "id": "0xEC1ECDA1",
+    "id_int": 3961441697,
+    "english": "cross graznei bridge"
+  },
+  {
+    "id": "0xEC28360C",
+    "id_int": 3962058252,
+    "english": "Ian McGregor"
+  },
+  {
+    "id": "0xEC2C5CE1",
+    "id_int": 3962330337,
+    "english": "gun run"
+  },
+  {
+    "id": "0xEC30C2A2",
+    "id_int": 3962618530,
+    "english": "Suppressor for Grenades"
+  },
+  {
+    "id": "0xEC31FAA6",
+    "id_int": 3962698406,
+    "english": "not available"
+  },
+  {
+    "id": "0xEC90702E",
+    "id_int": 3968888878,
+    "english": "Gilbert LÃ©vy"
+  },
+  {
+    "id": "0xED3676DC",
+    "id_int": 3979769564,
+    "english": "*"
+  },
+  {
+    "id": "0xED521A19",
+    "id_int": 3981580825,
+    "english": "Lee Hawkings"
+  },
+  {
+    "id": "0xED7F9EB5",
+    "id_int": 3984563893,
+    "english": "incomplete"
+  },
+  {
+    "id": "0xEDEA5C3B",
+    "id_int": 3991559227,
+    "english": "Jason Swanscott"
+  },
+  {
+    "id": "0xEE2CD4C3",
+    "id_int": 3995915459,
+    "english": "Ian Palmer"
+  },
+  {
+    "id": "0xEE38F3FD",
+    "id_int": 3996709885,
+    "english": "ïï to aim sniper rifle"
+  },
+  {
+    "id": "0xEE6B2446",
+    "id_int": 3999999046,
+    "english": "armament objective complete"
+  },
+  {
+    "id": "0xEF686D23",
+    "id_int": 4016598307,
+    "english": "killing time"
+  },
+  {
+    "id": "0xEF838DB8",
+    "id_int": 4018376120,
+    "english": "CRITERION GAMES CREDITS"
+  },
+  {
+    "id": "0xEFBEC10E",
+    "id_int": 4022255886,
+    "english": "find and eliminate all patrols"
+  },
+  {
+    "id": "0xEFEEBEF4",
+    "id_int": 4025401076,
+    "english": "*"
+  },
+  {
+    "id": "0xEFFCCDB1",
+    "id_int": 4026322353,
+    "english": "you destroyed maps of los angeles stamped project thor"
+  },
+  {
+    "id": "0xEFFE6EA2",
+    "id_int": 4026429090,
+    "english": "black intel: destroy the gasometers at the foundry"
+  },
+  {
+    "id": "0xF0141454",
+    "id_int": 4027847764,
+    "english": "Complete All Primary Objectives"
+  },
+  {
+    "id": "0xF03DA2AF",
+    "id_int": 4030571183,
+    "english": "select your weapon"
+  },
+  {
+    "id": "0xF03E4D5E",
+    "id_int": 4030614878,
+    "english": "Guillaume Moerman"
+  },
+  {
+    "id": "0xF099EF9F",
+    "id_int": 4036620191,
+    "english": "Blank"
+  },
+  {
+    "id": "0xF169B095",
+    "id_int": 4050235541,
+    "english": "capture seventh wave suspects"
+  },
+  {
+    "id": "0xF172F40D",
+    "id_int": 4050842637,
+    "english": "disable weapon manufacturing capacity"
+  },
+  {
+    "id": "0xF17B5150",
+    "id_int": 4051390800,
+    "english": "Suppressor for SMG"
+  },
+  {
+    "id": "0xF1889BFA",
+    "id_int": 4052261882,
+    "english": "black intel: try suppressed headshots for quiet, one-hit kills"
+  },
+  {
+    "id": "0xF1BC0D1B",
+    "id_int": 4055633179,
+    "english": "current record: %d enemies killed"
+  },
+  {
+    "id": "0xF1D819B9",
+    "id_int": 4057471417,
+    "english": "taken sniper position %1 of %2"
+  },
+  {
+    "id": "0xF1DA01C4",
+    "id_int": 4057596356,
+    "english": "crouch"
+  },
+  {
+    "id": "0xF1F578E0",
+    "id_int": 4059396320,
+    "english": "Stuart Black"
+  },
+  {
+    "id": "0xF233F018",
+    "id_int": 4063490072,
+    "english": "*"
+  },
+  {
+    "id": "0xF25EC354",
+    "id_int": 4066296660,
+    "english": "CENTRAL MARKETING TEAM"
+  },
+  {
+    "id": "0xF28BB085",
+    "id_int": 4069240965,
+    "english": "you destroyed\r\ncovert footage of north korean nuclear plants"
+  },
+  {
+    "id": "0xF2ADB610",
+    "id_int": 4071470608,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0xF2C9BC3A",
+    "id_int": 4073307194,
+    "english": "destroy the dry dock controls"
+  },
+  {
+    "id": "0xF2D26C28",
+    "id_int": 4073876520,
+    "english": "silver medal awarded"
+  },
+  {
+    "id": "0xF2E68576",
+    "id_int": 4075193718,
+    "english": "Andrew Yaroslavtsev"
+  },
+  {
+    "id": "0xF30AB769",
+    "id_int": 4077565801,
+    "english": "black intel: blurred crosshair indicates target is out of range"
+  },
+  {
+    "id": "0xF324EF41",
+    "id_int": 4079284033,
+    "english": "Richard Forjoe"
+  },
+  {
+    "id": "0xF333F350",
+    "id_int": 4080268112,
+    "english": "black mission objectives"
+  },
+  {
+    "id": "0xF34077D5",
+    "id_int": 4081088469,
+    "english": "criterion d"
+  },
+  {
+    "id": "0xF3408384",
+    "id_int": 4081091460,
+    "english": "PRESENTATION PROGRAMMERS"
+  },
+  {
+    "id": "0xF371A47E",
+    "id_int": 4084311166,
+    "english": "Collect information on terrorist activity"
+  },
+  {
+    "id": "0xF3971B00",
+    "id_int": 4086766336,
+    "english": "ammo for pistol"
+  },
+  {
+    "id": "0xF39CA963",
+    "id_int": 4087130467,
+    "english": "SENIOR SOUND DESIGNER"
+  },
+  {
+    "id": "0xF3BD2FA2",
+    "id_int": 4089261986,
+    "english": "you found aerial photographs of fighter base at miramar"
+  },
+  {
+    "id": "0xF3F8C5A6",
+    "id_int": 4093167014,
+    "english": "Ãlvaro Corral"
+  },
+  {
+    "id": "0xF42D479D",
+    "id_int": 4096608157,
+    "english": "Sarah Wood"
+  },
+  {
+    "id": "0xF43370A4",
+    "id_int": 4097011876,
+    "english": "find the river crossing"
+  },
+  {
+    "id": "0xF4492B58",
+    "id_int": 4098435928,
+    "english": "Jon Dean"
+  },
+  {
+    "id": "0xF4677370",
+    "id_int": 4100420464,
+    "english": "black intel: the heartbeat sound indicates health is low"
+  },
+  {
+    "id": "0xF4836A77",
+    "id_int": 4102253175,
+    "english": "play mode"
+  },
+  {
+    "id": "0xF49501BF",
+    "id_int": 4103406015,
+    "english": "SPANISH LOCALISATION"
+  },
+  {
+    "id": "0xF49C123E",
+    "id_int": 4103868990,
+    "english": "-"
+  },
+  {
+    "id": "0xF4F16D7A",
+    "id_int": 4109462906,
+    "english": "Joanna Orland"
+  },
+  {
+    "id": "0xF522B878",
+    "id_int": 4112693368,
+    "english": "suppressed uzi"
+  },
+  {
+    "id": "0xF533074D",
+    "id_int": 4113762125,
+    "english": "Steve Kelsey"
+  },
+  {
+    "id": "0xF53F108B",
+    "id_int": 4114550923,
+    "english": "grenades"
+  },
+  {
+    "id": "0xF58B416F",
+    "id_int": 4119544175,
+    "english": "Andrew Daniluk"
+  },
+  {
+    "id": "0xF5CBA8B1",
+    "id_int": 4123764913,
+    "english": "double kill"
+  },
+  {
+    "id": "0xF61F3014",
+    "id_int": 4129239060,
+    "english": "find naszran foundry"
+  },
+  {
+    "id": "0xF6484132",
+    "id_int": 4131930418,
+    "english": "longest black ops run: %d:%d"
+  },
+  {
+    "id": "0xF65EC77A",
+    "id_int": 4133406586,
+    "english": "hollow point"
+  },
+  {
+    "id": "0xF698BCF9",
+    "id_int": 4137204985,
+    "english": "LEAD DESIGNER"
+  },
+  {
+    "id": "0xF6E55FE3",
+    "id_int": 4142227427,
+    "english": "black intel: the walther 2000 has two levels of zoom"
+  },
+  {
+    "id": "0xF6F58FB5",
+    "id_int": 4143288245,
+    "english": "Jason Singer"
+  },
+  {
+    "id": "0xF715803F",
+    "id_int": 4145381439,
+    "english": "quit"
+  },
+  {
+    "id": "0xF7199F2E",
+    "id_int": 4145651502,
+    "english": "AUTOSAVE WILL BE ENABLED.\r\nARE YOU SURE?"
+  },
+  {
+    "id": "0xF723C2BC",
+    "id_int": 4146315964,
+    "english": "enter the building"
+  },
+  {
+    "id": "0xF737E582",
+    "id_int": 4147635586,
+    "english": "Paul Ayliffe"
+  },
+  {
+    "id": "0xF7AB0C53",
+    "id_int": 4155182163,
+    "english": "Primary and Secondary objectives. No healthpacks. Unlocks silver weapons and Black Ops mode"
+  },
+  {
+    "id": "0xF7DBABEF",
+    "id_int": 4158368751,
+    "english": "object viewer"
+  },
+  {
+    "id": "0xF7EEB5C8",
+    "id_int": 4159616456,
+    "english": "stereo"
+  },
+  {
+    "id": "0xF7F196F2",
+    "id_int": 4159805170,
+    "english": "Find the hidden weapon"
+  },
+  {
+    "id": "0xF800F41D",
+    "id_int": 4160812061,
+    "english": "mission rating:"
+  },
+  {
+    "id": "0xF82D10D0",
+    "id_int": 4163702992,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0xF82E0787",
+    "id_int": 4163766151,
+    "english": "Additional film supplied by Korbis"
+  },
+  {
+    "id": "0xF832828B",
+    "id_int": 4164059787,
+    "english": "black"
+  },
+  {
+    "id": "0xF84334CB",
+    "id_int": 4165153995,
+    "english": "Richard Bunn"
+  },
+  {
+    "id": "0xF86C4DEF",
+    "id_int": 4167847407,
+    "english": "suppressor"
+  },
+  {
+    "id": "0xF89641A5",
+    "id_int": 4170596773,
+    "english": "CHIEF OPERATING OFFICER"
+  },
+  {
+    "id": "0xF8F2F4B1",
+    "id_int": 4176671921,
+    "english": "you found files marked seventh wave / headstone (2004)"
+  },
+  {
+    "id": "0xF903ABCE",
+    "id_int": 4177767374,
+    "english": "-"
+  },
+  {
+    "id": "0xF908DA0B",
+    "id_int": 4178106891,
+    "english": "shift"
+  },
+  {
+    "id": "0xF9304757",
+    "id_int": 4180690775,
+    "english": "CHARACTER ARTIST"
+  },
+  {
+    "id": "0xF9542B92",
+    "id_int": 4183042962,
+    "english": "TECHNICAL ANALYSTS"
+  },
+  {
+    "id": "0xF9880175",
+    "id_int": 4186440053,
+    "english": "FRENCH LOCALISATION"
+  },
+  {
+    "id": "0xF9C46B96",
+    "id_int": 4190399382,
+    "english": "you destroyed a recorded interview with general y"
+  },
+  {
+    "id": "0xF9EC6DB0",
+    "id_int": 4193021360,
+    "english": "Adriaan Pottas"
+  },
+  {
+    "id": "0xF9F84A8E",
+    "id_int": 4193798798,
+    "english": "wreck objects for destruction objectives"
+  },
+  {
+    "id": "0xFA19495F",
+    "id_int": 4195961183,
+    "english": "Blank"
+  },
+  {
+    "id": "0xFA266B86",
+    "id_int": 4196821894,
+    "english": "apprehend or eliminate operation suspect"
+  },
+  {
+    "id": "0xFA479A0C",
+    "id_int": 4198996492,
+    "english": "headhunter"
+  },
+  {
+    "id": "0xFA5066C7",
+    "id_int": 4199573191,
+    "english": "left trigger"
+  },
+  {
+    "id": "0xFA607837",
+    "id_int": 4200626231,
+    "english": "All Primary, Secondary and Destruction objectives. No healthpacks. Unlocks M16A2."
+  },
+  {
+    "id": "0xFA9F5D4F",
+    "id_int": 4204748111,
+    "english": "new"
+  },
+  {
+    "id": "0xFAF98B88",
+    "id_int": 4210658184,
+    "english": "headshots"
+  },
+  {
+    "id": "0xFB3D6243",
+    "id_int": 4215104067,
+    "english": "you recovered aerial photographs of the white house"
+  },
+  {
+    "id": "0xFB85BC33",
+    "id_int": 4219845683,
+    "english": "*"
+  },
+  {
+    "id": "0xFBA60C53",
+    "id_int": 4221963347,
+    "english": "special ops"
+  },
+  {
+    "id": "0xFBF85F29",
+    "id_int": 4227358505,
+    "english": "black intel: use weapon aim for more accurate shots"
+  },
+  {
+    "id": "0xFC854B66",
+    "id_int": 4236594022,
+    "english": "Lincoln Hershberger"
+  },
+  {
+    "id": "0xFC959B30",
+    "id_int": 4237663024,
+    "english": "black intel: first aid kits give you an instant health boost"
+  },
+  {
+    "id": "0xFCE8782A",
+    "id_int": 4243093546,
+    "english": "Helen King"
+  },
+  {
+    "id": "0xFCF84401",
+    "id_int": 4244128769,
+    "english": "you found satellite shots of graznei bridge"
+  },
+  {
+    "id": "0xFD0661D1",
+    "id_int": 4245053905,
+    "english": "mission select"
+  },
+  {
+    "id": "0xFD2A5E15",
+    "id_int": 4247412245,
+    "english": "-"
+  },
+  {
+    "id": "0xFD472151",
+    "id_int": 4249297233,
+    "english": "Charles Deenan"
+  },
+  {
+    "id": "0xFD50EB07",
+    "id_int": 4249938695,
+    "english": "cross graznei bridge"
+  },
+  {
+    "id": "0xFE39EF8B",
+    "id_int": 4265209739,
+    "english": "LEAD TECHNICAL ANALYSTS"
+  },
+  {
+    "id": "0xFE5D834E",
+    "id_int": 4267541326,
+    "english": "LEAD ANIMATOR"
+  },
+  {
+    "id": "0xFE6E6FD7",
+    "id_int": 4268650455,
+    "english": "-"
+  },
+  {
+    "id": "0xFE81A9A9",
+    "id_int": 4269910441,
+    "english": "Mark Tatham"
+  },
+  {
+    "id": "0xFE958E97",
+    "id_int": 4271214231,
+    "english": "shoot objects for destruction objectives"
+  },
+  {
+    "id": "0xFEDE297A",
+    "id_int": 4275972474,
+    "english": "special ops"
+  },
+  {
+    "id": "0xFEE5C56C",
+    "id_int": 4276471148,
+    "english": "MarÃ­a Puerta"
+  },
+  {
+    "id": "0xFEF70899",
+    "id_int": 4277602457,
+    "english": "grenade"
+  },
+  {
+    "id": "0xFF23111D",
+    "id_int": 4280488221,
+    "english": "SAVING PROFILE. PLEASE DON'T TURN OFF YOUR XBOX CONSOLE."
+  },
+  {
+    "id": "0xFF43C39E",
+    "id_int": 4282631070,
+    "english": "Marty Papazian"
+  },
+  {
+    "id": "0xFF7CABB7",
+    "id_int": 4286360503,
+    "english": "take the sniper positions"
+  },
+  {
+    "id": "0xFFFB85BC",
+    "id_int": 4294673852,
+    "english": "*"
+  },
+  {
+    "id": "0x00422B61",
+    "id_int": 4336481,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x0062482C",
+    "id_int": 6441004,
+    "english": "change weapon up"
+  },
+  {
+    "id": "0x00E52B33",
+    "id_int": 15018803,
+    "english": "480p"
+  },
+  {
+    "id": "0x00FE9F08",
+    "id_int": 16686856,
+    "english": "*"
+  },
+  {
+    "id": "0x01660C0F",
+    "id_int": 23464975,
+    "english": "gun run"
+  },
+  {
+    "id": "0x018DEC94",
+    "id_int": 26078356,
+    "english": "EXECUTIVE PRODUCERS"
+  },
+  {
+    "id": "0x01BBE675",
+    "id_int": 29091445,
+    "english": "press Â² for info"
+  },
+  {
+    "id": "0x01CA3726",
+    "id_int": 30029606,
+    "english": "hunt down seventh wave suspect lennox"
+  },
+  {
+    "id": "0x01F00F8E",
+    "id_int": 32509838,
+    "english": "black intel: the p90 is a medium range weapon"
+  },
+  {
+    "id": "0x01F2AC9D",
+    "id_int": 32681117,
+    "english": "you destroyed details of european cia camp \"bondsteel\""
+  },
+  {
+    "id": "0x020BE815",
+    "id_int": 34334741,
+    "english": "eliminate valencio's bodyguards"
+  },
+  {
+    "id": "0x02223DCD",
+    "id_int": 35798477,
+    "english": "killing time"
+  },
+  {
+    "id": "0x02265720",
+    "id_int": 36067104,
+    "english": "Wieden & Kennedy"
+  },
+  {
+    "id": "0x022F7FC6",
+    "id_int": 36667334,
+    "english": "total enemy count:"
+  },
+  {
+    "id": "0x02368776",
+    "id_int": 37128054,
+    "english": "black intel: explore your surroundings to find suppressors"
+  },
+  {
+    "id": "0x0240ACF0",
+    "id_int": 37793008,
+    "english": "eliminate the rpg enemy"
+  },
+  {
+    "id": "0x029E1102",
+    "id_int": 43913474,
+    "english": "Damien Boisseau"
+  },
+  {
+    "id": "0x0326CC4F",
+    "id_int": 52874319,
+    "english": "custom setup"
+  },
+  {
+    "id": "0x033817F0",
+    "id_int": 54007792,
+    "english": "Tad Swift"
+  },
+  {
+    "id": "0x0347B3A9",
+    "id_int": 55030697,
+    "english": "spas 12"
+  },
+  {
+    "id": "0x035C7B35",
+    "id_int": 56392501,
+    "english": "Philip Gregory"
+  },
+  {
+    "id": "0x0372231D",
+    "id_int": 57811741,
+    "english": "black intel: fallen enemies drop first aid kits"
+  },
+  {
+    "id": "0x039CA5B2",
+    "id_int": 60597682,
+    "english": "?"
+  },
+  {
+    "id": "0x03AB5B62",
+    "id_int": 61561698,
+    "english": "mission info"
+  },
+  {
+    "id": "0x03CCD097",
+    "id_int": 63754391,
+    "english": "crouch"
+  },
+  {
+    "id": "0x03E43D17",
+    "id_int": 65289495,
+    "english": "Foley recorded at Pinewood Studios"
+  },
+  {
+    "id": "0x0431BF2C",
+    "id_int": 70369068,
+    "english": "Youssef Hussein"
+  },
+  {
+    "id": "0x0452EA26",
+    "id_int": 72542758,
+    "english": "Blank"
+  },
+  {
+    "id": "0x04550FFD",
+    "id_int": 72683517,
+    "english": "primary objective update"
+  },
+  {
+    "id": "0x0455D3E9",
+    "id_int": 72733673,
+    "english": "Ling Lo"
+  },
+  {
+    "id": "0x0489F90E",
+    "id_int": 76151054,
+    "english": "*"
+  },
+  {
+    "id": "0x054B9339",
+    "id_int": 88838969,
+    "english": "*"
+  },
+  {
+    "id": "0x054FF9D4",
+    "id_int": 89127380,
+    "english": "-"
+  },
+  {
+    "id": "0x058612A6",
+    "id_int": 92672678,
+    "english": "sidestep left/right"
+  },
+  {
+    "id": "0x05F3D51B",
+    "id_int": 99865883,
+    "english": "Martial Le Minoux"
+  },
+  {
+    "id": "0x060BC816",
+    "id_int": 101435414,
+    "english": "-"
+  },
+  {
+    "id": "0x0618C791",
+    "id_int": 102287249,
+    "english": "gasometer %1 of %2 destroyed"
+  },
+  {
+    "id": "0x06355DE3",
+    "id_int": 104160739,
+    "english": "*"
+  },
+  {
+    "id": "0x069DCB97",
+    "id_int": 111004567,
+    "english": "black intel: Shoot hand grenades mid air to kill nearby enemies."
+  },
+  {
+    "id": "0x06BBA1D8",
+    "id_int": 112959960,
+    "english": "p90"
+  },
+  {
+    "id": "0x06DD643B",
+    "id_int": 115172411,
+    "english": "find the shotgun"
+  },
+  {
+    "id": "0x06E0288D",
+    "id_int": 115353741,
+    "english": "PRODUCER"
+  },
+  {
+    "id": "0x073CCA69",
+    "id_int": 121424489,
+    "english": "no medal awarded"
+  },
+  {
+    "id": "0x074A6CBC",
+    "id_int": 122318012,
+    "english": "eliminate all enemies"
+  },
+  {
+    "id": "0x077ADBAA",
+    "id_int": 125492138,
+    "english": "no current primary objective"
+  },
+  {
+    "id": "0x07A9F7A3",
+    "id_int": 128579491,
+    "english": "you discovered detailed blueprints of the new york subway system"
+  },
+  {
+    "id": "0x07DAADA6",
+    "id_int": 131771814,
+    "english": "rpg enemy %1 of %2 has been eliminated"
+  },
+  {
+    "id": "0x07F737D4",
+    "id_int": 133642196,
+    "english": "*"
+  },
+  {
+    "id": "0x08073598",
+    "id_int": 134690200,
+    "english": "%s - %s complete"
+  },
+  {
+    "id": "0x08281E05",
+    "id_int": 136846853,
+    "english": "black medals"
+  },
+  {
+    "id": "0x084643A5",
+    "id_int": 138822565,
+    "english": "black intel: are you good enough to unlock the m16a2?"
+  },
+  {
+    "id": "0x084A379A",
+    "id_int": 139081626,
+    "english": "you found a document stamped wi-99-eye"
+  },
+  {
+    "id": "0x085693F3",
+    "id_int": 139891699,
+    "english": "Matt Tremaglio"
+  },
+  {
+    "id": "0x08C7D750",
+    "id_int": 147314512,
+    "english": "intel"
+  },
+  {
+    "id": "0x08EED5D1",
+    "id_int": 149870033,
+    "english": "*"
+  },
+  {
+    "id": "0x08F6D42E",
+    "id_int": 150393902,
+    "english": "Blank"
+  },
+  {
+    "id": "0x090F77E3",
+    "id_int": 152008675,
+    "english": "find the armoury"
+  },
+  {
+    "id": "0x091C612D",
+    "id_int": 152854829,
+    "english": "choose mission mode difficulty"
+  },
+  {
+    "id": "0x092CBFE6",
+    "id_int": 153927654,
+    "english": "James Willis"
+  },
+  {
+    "id": "0x09443306",
+    "id_int": 155464454,
+    "english": "capture seventh wave suspects"
+  },
+  {
+    "id": "0x0948D323",
+    "id_int": 155767587,
+    "english": "*"
+  },
+  {
+    "id": "0x09568AE2",
+    "id_int": 156666594,
+    "english": "weapon of choice:"
+  },
+  {
+    "id": "0x0980DEFA",
+    "id_int": 159440634,
+    "english": "explore to find health packs"
+  },
+  {
+    "id": "0x0994F9C4",
+    "id_int": 160758212,
+    "english": "David Nye"
+  },
+  {
+    "id": "0x09F09501",
+    "id_int": 166761729,
+    "english": "Jose MarÃ­a Castrillo"
+  },
+  {
+    "id": "0x0A88862F",
+    "id_int": 176719407,
+    "english": "Press ?"
+  },
+  {
+    "id": "0x0A8E5BDB",
+    "id_int": 177101787,
+    "english": "Robert Dodd"
+  },
+  {
+    "id": "0x0AAA975E",
+    "id_int": 178952030,
+    "english": "combat range select"
+  },
+  {
+    "id": "0x0B80CB5D",
+    "id_int": 192990045,
+    "english": "black intel: crouch behind cover to hide from enemies"
+  },
+  {
+    "id": "0x0B8BE8A9",
+    "id_int": 193718441,
+    "english": "you found surveillance photographs of oyster creek nuclear power station"
+  },
+  {
+    "id": "0x0BB31A06",
+    "id_int": 196286982,
+    "english": "intel objective %1/%2"
+  },
+  {
+    "id": "0x0BFD2847",
+    "id_int": 201140295,
+    "english": "*"
+  },
+  {
+    "id": "0x0C459930",
+    "id_int": 205887792,
+    "english": "Matteo Zanotti"
+  },
+  {
+    "id": "0x0C6C43CF",
+    "id_int": 208421839,
+    "english": "quit"
+  },
+  {
+    "id": "0x0C90EC5E",
+    "id_int": 210824286,
+    "english": "*"
+  },
+  {
+    "id": "0x0CE62CB0",
+    "id_int": 216411312,
+    "english": "you found fake id cards from chelyabinsk obast nuclear facility"
+  },
+  {
+    "id": "0x0CED0F44",
+    "id_int": 216862532,
+    "english": "black intel: collect mission information to complete recon objectives"
+  },
+  {
+    "id": "0x0CF9B5FF",
+    "id_int": 217691647,
+    "english": "-"
+  },
+  {
+    "id": "0x0CFC20D8",
+    "id_int": 217850072,
+    "english": "complete"
+  },
+  {
+    "id": "0x0D87F307",
+    "id_int": 227013383,
+    "english": "William Lindesay"
+  },
+  {
+    "id": "0x0DF89910",
+    "id_int": 234395920,
+    "english": "M16 A2 Silver"
+  },
+  {
+    "id": "0x0E25173A",
+    "id_int": 237311802,
+    "english": "*"
+  },
+  {
+    "id": "0x0E417BFF",
+    "id_int": 239172607,
+    "english": "Joe Grant"
+  },
+  {
+    "id": "0x0E5E0F3F",
+    "id_int": 241045311,
+    "english": "skip"
+  },
+  {
+    "id": "0x0E98F9CA",
+    "id_int": 244906442,
+    "english": "WEAPON MACHINERY 3 OF 4 DESTROYED"
+  },
+  {
+    "id": "0x0E9D5118",
+    "id_int": 245190936,
+    "english": "Laura LÃ³pez MarÃ­n"
+  },
+  {
+    "id": "0x0EB0D811",
+    "id_int": 246470673,
+    "english": "?"
+  },
+  {
+    "id": "0x0EED1AE3",
+    "id_int": 250419939,
+    "english": "red hit ring indicates attack direction"
+  },
+  {
+    "id": "0x0EF93DDD",
+    "id_int": 251215325,
+    "english": "John Lewis"
+  },
+  {
+    "id": "0x0F27F383",
+    "id_int": 254276483,
+    "english": "you found the full unedited version of the zapruder film"
+  },
+  {
+    "id": "0x0F3B57EA",
+    "id_int": 255547370,
+    "english": "*"
+  },
+  {
+    "id": "0x0F465F7D",
+    "id_int": 256270205,
+    "english": "primary objective complete"
+  },
+  {
+    "id": "0x0F8311C8",
+    "id_int": 260248008,
+    "english": "JesÃºs RodrÃ­guez"
+  },
+  {
+    "id": "0x0FD5577B",
+    "id_int": 265639803,
+    "english": "Suppressor for RPG"
+  },
+  {
+    "id": "0x10378EA7",
+    "id_int": 272076455,
+    "english": "Marcus Purvis"
+  },
+  {
+    "id": "0x1053E262",
+    "id_int": 273932898,
+    "english": "*"
+  },
+  {
+    "id": "0x105CF19F",
+    "id_int": 274526623,
+    "english": "Objectives Total"
+  },
+  {
+    "id": "0x10600EFB",
+    "id_int": 274730747,
+    "english": "-"
+  },
+  {
+    "id": "0x10841180",
+    "id_int": 277090688,
+    "english": "hunt down seventh wave suspect lennox"
+  },
+  {
+    "id": "0x108FC885",
+    "id_int": 277858437,
+    "english": "*"
+  },
+  {
+    "id": "0x109BEFBB",
+    "id_int": 278654907,
+    "english": "search the farmhouse"
+  },
+  {
+    "id": "0x109E8D74",
+    "id_int": 278826356,
+    "english": "if the image is unstable or flickers your television is not 60hz compatible.  if the picture appears correctly your television supports 60hz."
+  },
+  {
+    "id": "0x10A7CEA3",
+    "id_int": 279432867,
+    "english": "you destroyed a covert videotape marked bohemian grove"
+  },
+  {
+    "id": "0x10D04856",
+    "id_int": 282085462,
+    "english": "task force"
+  },
+  {
+    "id": "0x10EBA440",
+    "id_int": 283878464,
+    "english": "*"
+  },
+  {
+    "id": "0x10FC3CEA",
+    "id_int": 284966122,
+    "english": "complete the level"
+  },
+  {
+    "id": "0x10FFB0C3",
+    "id_int": 285192387,
+    "english": "%s - %s"
+  },
+  {
+    "id": "0x11037866",
+    "id_int": 285440102,
+    "english": "Destruction Objective Achieved\r\n(%3 remaining)"
+  },
+  {
+    "id": "0x114DA2B2",
+    "id_int": 290300594,
+    "english": "Cree Summer"
+  },
+  {
+    "id": "0x115380DE",
+    "id_int": 290685150,
+    "english": "look"
+  },
+  {
+    "id": "0x115D72E4",
+    "id_int": 291336932,
+    "english": "black intel: the walther 2000 has a range of 1000m"
+  },
+  {
+    "id": "0x1172CA9B",
+    "id_int": 292735643,
+    "english": "storm the enemy stronghold"
+  },
+  {
+    "id": "0x11915184",
+    "id_int": 294736260,
+    "english": "you obtained list of seventh wave sleeper cells"
+  },
+  {
+    "id": "0x11A2FCE3",
+    "id_int": 295894243,
+    "english": "complete all primary objectives"
+  },
+  {
+    "id": "0x11C3B459",
+    "id_int": 298038361,
+    "english": "on"
+  },
+  {
+    "id": "0x11F5E490",
+    "id_int": 301327504,
+    "english": "EAUK CREDITS"
+  },
+  {
+    "id": "0x1214957E",
+    "id_int": 303338878,
+    "english": "secondary fire"
+  },
+  {
+    "id": "0x12309FEF",
+    "id_int": 305176559,
+    "english": "select"
+  },
+  {
+    "id": "0x129AEC55",
+    "id_int": 312142933,
+    "english": "custom"
+  },
+  {
+    "id": "0x129BFA1C",
+    "id_int": 312211996,
+    "english": "black intel: the dc3 elite is best used at short range"
+  },
+  {
+    "id": "0x12E61906",
+    "id_int": 317069574,
+    "english": "Nilo Rodis"
+  },
+  {
+    "id": "0x13243F39",
+    "id_int": 321142585,
+    "english": "-"
+  },
+  {
+    "id": "0x13578A67",
+    "id_int": 324504167,
+    "english": "4 days earlier"
+  },
+  {
+    "id": "0x135E8A2B",
+    "id_int": 324962859,
+    "english": "gain entry to spetriniv gulag 6"
+  },
+  {
+    "id": "0x13956A9A",
+    "id_int": 328559258,
+    "english": "*"
+  },
+  {
+    "id": "0x140E6F33",
+    "id_int": 336490291,
+    "english": "impact frag"
+  },
+  {
+    "id": "0x1449FB20",
+    "id_int": 340392736,
+    "english": "-"
+  },
+  {
+    "id": "0x149CC246",
+    "id_int": 345817670,
+    "english": "Robert Glenister"
+  },
+  {
+    "id": "0x14B29A6E",
+    "id_int": 347249262,
+    "english": "black intel: all weapons have a melee attack"
+  },
+  {
+    "id": "0x14F00D88",
+    "id_int": 351276424,
+    "english": "ak-47"
+  },
+  {
+    "id": "0x15239D52",
+    "id_int": 354655570,
+    "english": "primary objective"
+  },
+  {
+    "id": "0x155EA871",
+    "id_int": 358525041,
+    "english": "*"
+  },
+  {
+    "id": "0x1573A154",
+    "id_int": 359899476,
+    "english": "ï  to start"
+  },
+  {
+    "id": "0x158BDD1F",
+    "id_int": 361487647,
+    "english": "TECHNICAL DIRECTOR"
+  },
+  {
+    "id": "0x15E15FE5",
+    "id_int": 367091685,
+    "english": "?"
+  },
+  {
+    "id": "0x15F63E05",
+    "id_int": 368459269,
+    "english": "black intel: use grenades to take down multiple enemies"
+  },
+  {
+    "id": "0x161F0E82",
+    "id_int": 371134082,
+    "english": "cross sniper alley"
+  },
+  {
+    "id": "0x162066AB",
+    "id_int": 371222187,
+    "english": "VOICES"
+  },
+  {
+    "id": "0x16329D25",
+    "id_int": 372415781,
+    "english": "sequential"
+  },
+  {
+    "id": "0x16982089",
+    "id_int": 379068553,
+    "english": "Rory Armes"
+  },
+  {
+    "id": "0x170DCAE2",
+    "id_int": 386779874,
+    "english": "headhunter"
+  },
+  {
+    "id": "0x17259764",
+    "id_int": 388339556,
+    "english": "collateral damage"
+  },
+  {
+    "id": "0x1726970E",
+    "id_int": 388405006,
+    "english": "rv with the second black ops team"
+  },
+  {
+    "id": "0x173E267B",
+    "id_int": 389949051,
+    "english": "Robert Corcoran"
+  },
+  {
+    "id": "0x175812C7",
+    "id_int": 391647943,
+    "english": "ak 47"
+  },
+  {
+    "id": "0x175A4ABE",
+    "id_int": 391793342,
+    "english": "Martyn Sibley"
+  },
+  {
+    "id": "0x17866059",
+    "id_int": 394682457,
+    "english": "Audrey Demanget"
+  },
+  {
+    "id": "0x17BD8C4F",
+    "id_int": 398298191,
+    "english": "black ops"
+  },
+  {
+    "id": "0x17E0C92D",
+    "id_int": 400607533,
+    "english": "eliminate the 3 most wanted"
+  },
+  {
+    "id": "0x17E20C9C",
+    "id_int": 400690332,
+    "english": "Damon Rayner"
+  },
+  {
+    "id": "0x17F62BA2",
+    "id_int": 402008994,
+    "english": "collect mission info for recon objectives"
+  },
+  {
+    "id": "0x18115138",
+    "id_int": 403788088,
+    "english": "destroy weapon machinery equipment"
+  },
+  {
+    "id": "0x1896DDD5",
+    "id_int": 412540373,
+    "english": "*"
+  },
+  {
+    "id": "0x18ADC509",
+    "id_int": 414041353,
+    "english": "ammo for smg"
+  },
+  {
+    "id": "0x18B9A4F1",
+    "id_int": 414819569,
+    "english": "secondary fire"
+  },
+  {
+    "id": "0x18EB3ECF",
+    "id_int": 418070223,
+    "english": "black intel: Shoot through damaged walls and floors to open alternate routes"
+  },
+  {
+    "id": "0x19228BE6",
+    "id_int": 421694438,
+    "english": "black medal awarded"
+  },
+  {
+    "id": "0x193DADED",
+    "id_int": 423472621,
+    "english": "M249 ammo full"
+  },
+  {
+    "id": "0x195362FF",
+    "id_int": 424895231,
+    "english": "challenge mode overview"
+  },
+  {
+    "id": "0x19B088E7",
+    "id_int": 430999783,
+    "english": "please configure a control for the following actions:"
+  },
+  {
+    "id": "0x19B4BC38",
+    "id_int": 431275064,
+    "english": "CHECKING XBOX HARD DISK. PLEASE DON'T TURN OFF YOUR XBOX CONSOLE."
+  },
+  {
+    "id": "0x19D642D0",
+    "id_int": 433472208,
+    "english": "-"
+  },
+  {
+    "id": "0x19E4E910",
+    "id_int": 434432272,
+    "english": "03:01hrs"
+  },
+  {
+    "id": "0x19E5AE49",
+    "id_int": 434482761,
+    "english": "*"
+  },
+  {
+    "id": "0x1A2326B1",
+    "id_int": 438511281,
+    "english": "Anders Granlund"
+  },
+  {
+    "id": "0x1A23D2E0",
+    "id_int": 438555360,
+    "english": "criterion b"
+  },
+  {
+    "id": "0x1A3D1188",
+    "id_int": 440209800,
+    "english": "eliminate all enemies"
+  },
+  {
+    "id": "0x1A3EE1D2",
+    "id_int": 440328658,
+    "english": "autosave"
+  },
+  {
+    "id": "0x1A474A74",
+    "id_int": 440879732,
+    "english": "Steve Darnell"
+  },
+  {
+    "id": "0x1A69125C",
+    "id_int": 443093596,
+    "english": "black intel: fallen enemies drop their weapons"
+  },
+  {
+    "id": "0x1A9B6093",
+    "id_int": 446390419,
+    "english": "David Alonso"
+  },
+  {
+    "id": "0x1AC588A9",
+    "id_int": 449153193,
+    "english": "intel"
+  },
+  {
+    "id": "0x1ADE8A97",
+    "id_int": 450792087,
+    "english": "you found plans to poison the woking beer festival"
+  },
+  {
+    "id": "0x1AFF0C56",
+    "id_int": 452922454,
+    "english": "ADDITIONAL SOUND DESIGN"
+  },
+  {
+    "id": "0x1B2DB637",
+    "id_int": 455980599,
+    "english": "black intel: you can carry 3 health packs at once"
+  },
+  {
+    "id": "0x1B3D6661",
+    "id_int": 457008737,
+    "english": "NORTH AMERICAN MARKETING TEAM"
+  },
+  {
+    "id": "0x1B642CA3",
+    "id_int": 459549859,
+    "english": "yes"
+  },
+  {
+    "id": "0x1B852043",
+    "id_int": 461709379,
+    "english": "RUSSIAN VOICE TALENTS"
+  },
+  {
+    "id": "0x1BAC296F",
+    "id_int": 464267631,
+    "english": "recon objective"
+  },
+  {
+    "id": "0x1BE815B0",
+    "id_int": 468194736,
+    "english": "you destroyed\r\na list of cia front companies based in europe"
+  },
+  {
+    "id": "0x1C17EB80",
+    "id_int": 471329664,
+    "english": "you found a hidden sniper rifle"
+  },
+  {
+    "id": "0x1C49B377",
+    "id_int": 474592119,
+    "english": "l"
+  },
+  {
+    "id": "0x1C50A278",
+    "id_int": 475046520,
+    "english": "Roy Meredith"
+  },
+  {
+    "id": "0x1C86549F",
+    "id_int": 478565535,
+    "english": "All checkpoint progress will be lost!  are you sure you want to restart the mission?"
+  },
+  {
+    "id": "0x1C8B6988",
+    "id_int": 478898568,
+    "english": "PRESS â :"
+  },
+  {
+    "id": "0x1CE8E45A",
+    "id_int": 485024858,
+    "english": "Victor Korjenko"
+  },
+  {
+    "id": "0x1D04D645",
+    "id_int": 486856261,
+    "english": "black intel: use health packs when your health bar is red"
+  },
+  {
+    "id": "0x1D2A8E6D",
+    "id_int": 489328237,
+    "english": "Muhammed Eljaouhari"
+  },
+  {
+    "id": "0x1D4EE2A8",
+    "id_int": 491709096,
+    "english": "Phillip Hounslow"
+  },
+  {
+    "id": "0x1D50D591",
+    "id_int": 491836817,
+    "english": "reach the farm rendezvous"
+  },
+  {
+    "id": "0x1D92C84F",
+    "id_int": 496158799,
+    "english": "*"
+  },
+  {
+    "id": "0x1DF6A48A",
+    "id_int": 502703242,
+    "english": "Intrawords"
+  },
+  {
+    "id": "0x1E355DE2",
+    "id_int": 506813922,
+    "english": "current record: %d targets"
+  },
+  {
+    "id": "0x1EEC0695",
+    "id_int": 518784661,
+    "english": "James Melling"
+  },
+  {
+    "id": "0x1F2E6CA2",
+    "id_int": 523136162,
+    "english": "*"
+  },
+  {
+    "id": "0x1F3D624F",
+    "id_int": 524116559,
+    "english": "high velocity"
+  },
+  {
+    "id": "0x1F86FAD6",
+    "id_int": 528939734,
+    "english": "black intel: the spas 12 is a very short range weapon"
+  },
+  {
+    "id": "0x1F9C2249",
+    "id_int": 530326089,
+    "english": "default"
+  },
+  {
+    "id": "0x1FD460E8",
+    "id_int": 534012136,
+    "english": "grenade"
+  },
+  {
+    "id": "0x1FFB19CC",
+    "id_int": 536549836,
+    "english": "*"
+  },
+  {
+    "id": "0x2000145E",
+    "id_int": 536876126,
+    "english": "LEAD CONCEPT ARTIST"
+  },
+  {
+    "id": "0x2037C3A9",
+    "id_int": 540525481,
+    "english": "Andy Gray"
+  },
+  {
+    "id": "0x2064789B",
+    "id_int": 543455387,
+    "english": "Sanjay Sharma"
+  },
+  {
+    "id": "0x206745F1",
+    "id_int": 543639025,
+    "english": "ARE YOU SURE YOU WANT TO OVERWRITE PROFILE \"%s\"?"
+  },
+  {
+    "id": "0x208DE245",
+    "id_int": 546169413,
+    "english": "challenge mode select"
+  },
+  {
+    "id": "0x20B674CA",
+    "id_int": 548828362,
+    "english": "find the weapons cache"
+  },
+  {
+    "id": "0x20C81987",
+    "id_int": 549984647,
+    "english": "first aid kit full"
+  },
+  {
+    "id": "0x20D33AD0",
+    "id_int": 550714064,
+    "english": "headhunter"
+  },
+  {
+    "id": "0x20DC3EB9",
+    "id_int": 551304889,
+    "english": "*"
+  },
+  {
+    "id": "0x20DDDC99",
+    "id_int": 551410841,
+    "english": "Black Ops Difficulty"
+  },
+  {
+    "id": "0x211E548E",
+    "id_int": 555635854,
+    "english": "Russian voiceover produced by KranX Productions"
+  },
+  {
+    "id": "0x21441BFD",
+    "id_int": 558111741,
+    "english": "-unknown-"
+  },
+  {
+    "id": "0x21A612AC",
+    "id_int": 564531884,
+    "english": "*"
+  },
+  {
+    "id": "0x21D9C58D",
+    "id_int": 567920013,
+    "english": "?"
+  },
+  {
+    "id": "0x2232EB80",
+    "id_int": 573762432,
+    "english": "you discovered the true identity of master rodis"
+  },
+  {
+    "id": "0x228238CD",
+    "id_int": 578959565,
+    "english": "Thomas Adams"
+  },
+  {
+    "id": "0x22B5EF3A",
+    "id_int": 582348602,
+    "english": "John McCann"
+  },
+  {
+    "id": "0x22C80C20",
+    "id_int": 583535648,
+    "english": "black intel: search areas for health packs, ammunition and grenades"
+  },
+  {
+    "id": "0x22D8DC76",
+    "id_int": 584637558,
+    "english": "Paul Devonshire"
+  },
+  {
+    "id": "0x22E65408",
+    "id_int": 585520136,
+    "english": "Sam Turner"
+  },
+  {
+    "id": "0x230474A7",
+    "id_int": 587494567,
+    "english": "you destroyed schematics of experimental aircraft codenamed aurora"
+  },
+  {
+    "id": "0x231AB641",
+    "id_int": 588953153,
+    "english": "Dan Walker"
+  },
+  {
+    "id": "0x23243E3F",
+    "id_int": 589577791,
+    "english": "Amy Clark"
+  },
+  {
+    "id": "0x2395B512",
+    "id_int": 597013778,
+    "english": "use health pack"
+  },
+  {
+    "id": "0x2396E811",
+    "id_int": 597092369,
+    "english": "game default"
+  },
+  {
+    "id": "0x23970B12",
+    "id_int": 597101330,
+    "english": "-"
+  },
+  {
+    "id": "0x239D6A3F",
+    "id_int": 597518911,
+    "english": "-"
+  },
+  {
+    "id": "0x23E74DAA",
+    "id_int": 602361258,
+    "english": "you destroyed data on los angeles project t.h.o.r"
+  },
+  {
+    "id": "0x24131E9D",
+    "id_int": 605232797,
+    "english": "*"
+  },
+  {
+    "id": "0x243DE0C6",
+    "id_int": 608035014,
+    "english": "combat range"
+  },
+  {
+    "id": "0x2449FA26",
+    "id_int": 608827942,
+    "english": "Jonathan Brothwell"
+  },
+  {
+    "id": "0x248C686F",
+    "id_int": 613181551,
+    "english": "fight your way across the bridge"
+  },
+  {
+    "id": "0x24FACF0B",
+    "id_int": 620416779,
+    "english": "-"
+  },
+  {
+    "id": "0x250464F5",
+    "id_int": 621044981,
+    "english": "<DAMAGED>"
+  },
+  {
+    "id": "0x255F2F99",
+    "id_int": 626995097,
+    "english": "you found reconnaissance data for mig-310 airbase at bilyarsk."
+  },
+  {
+    "id": "0x2588D1DD",
+    "id_int": 629723613,
+    "english": "change weapon down"
+  },
+  {
+    "id": "0x258B9011",
+    "id_int": 629903377,
+    "english": "Mike Cooper"
+  },
+  {
+    "id": "0x25A5C839",
+    "id_int": 631621689,
+    "english": "black intel: suppressed weapons are quieter but less powerful"
+  },
+  {
+    "id": "0x25BCB486",
+    "id_int": 633123974,
+    "english": "clear the crossroads"
+  },
+  {
+    "id": "0x25D82B23",
+    "id_int": 634923811,
+    "english": "*"
+  },
+  {
+    "id": "0x25DD02E1",
+    "id_int": 635241185,
+    "english": "hard difficulty"
+  },
+  {
+    "id": "0x25EFFCD4",
+    "id_int": 636484820,
+    "english": "David Flynn"
+  },
+  {
+    "id": "0x261EA3DB",
+    "id_int": 639542235,
+    "english": "Sean Murray"
+  },
+  {
+    "id": "0x2629DFE4",
+    "id_int": 640278500,
+    "english": "vratska dockyard"
+  },
+  {
+    "id": "0x26739097",
+    "id_int": 645107863,
+    "english": "*"
+  },
+  {
+    "id": "0x26BEBE31",
+    "id_int": 650034737,
+    "english": "Are you sure you want to change difficulty?  Progress is tracked separately for each difficulty level."
+  },
+  {
+    "id": "0x26CBD6B5",
+    "id_int": 650892981,
+    "english": "Reent Reins"
+  },
+  {
+    "id": "0x26F55ECB",
+    "id_int": 653614795,
+    "english": "Stuart Black"
+  },
+  {
+    "id": "0x26F773A6",
+    "id_int": 653751206,
+    "english": "?"
+  },
+  {
+    "id": "0x2709BC82",
+    "id_int": 654949506,
+    "english": "Alastair Smith"
+  },
+  {
+    "id": "0x273734FC",
+    "id_int": 657929468,
+    "english": "Vladimir Grezneff"
+  },
+  {
+    "id": "0x275A07B0",
+    "id_int": 660211632,
+    "english": "*"
+  },
+  {
+    "id": "0x27649D3E",
+    "id_int": 660905278,
+    "english": "M16 Suppressor"
+  },
+  {
+    "id": "0x276DD047",
+    "id_int": 661508167,
+    "english": "ART DIRECTOR"
+  },
+  {
+    "id": "0x27A02DD9",
+    "id_int": 664808921,
+    "english": "destruction"
+  },
+  {
+    "id": "0x27A5DD9E",
+    "id_int": 665181598,
+    "english": "destroy the entrance gates"
+  },
+  {
+    "id": "0x27B1FAA0",
+    "id_int": 665975456,
+    "english": "Jeff Benoit"
+  },
+  {
+    "id": "0x27BEFEC9",
+    "id_int": 666828489,
+    "english": "-"
+  },
+  {
+    "id": "0x27C4968D",
+    "id_int": 667195021,
+    "english": "Suppressor for M249"
+  },
+  {
+    "id": "0x27F09FC9",
+    "id_int": 670080969,
+    "english": "Â¹"
+  },
+  {
+    "id": "0x282ED6F9",
+    "id_int": 674158329,
+    "english": "*"
+  },
+  {
+    "id": "0x284BAFB4",
+    "id_int": 676048820,
+    "english": "you destroyed the employee list of american literary historical society"
+  },
+  {
+    "id": "0x28A818A5",
+    "id_int": 682104997,
+    "english": "Alexey Menshikov"
+  },
+  {
+    "id": "0x28B8C8F3",
+    "id_int": 683198707,
+    "english": "black intel: use grenades to take out enemies with shields"
+  },
+  {
+    "id": "0x28C52BE9",
+    "id_int": 684010473,
+    "english": "*"
+  },
+  {
+    "id": "0x2958F2C9",
+    "id_int": 693695177,
+    "english": "mac10 elite"
+  },
+  {
+    "id": "0x296A7292",
+    "id_int": 694842002,
+    "english": "*"
+  },
+  {
+    "id": "0x29818F82",
+    "id_int": 696356738,
+    "english": "Lukasz Ziolkowski"
+  },
+  {
+    "id": "0x29BEE3B8",
+    "id_int": 700375992,
+    "english": "soldier"
+  },
+  {
+    "id": "0x29CE91E8",
+    "id_int": 701403624,
+    "english": "sniper rifle"
+  },
+  {
+    "id": "0x29ECBCCE",
+    "id_int": 703380686,
+    "english": "*"
+  },
+  {
+    "id": "0x2A00BCFC",
+    "id_int": 704691452,
+    "english": "change firing mode"
+  },
+  {
+    "id": "0x2A14BC48",
+    "id_int": 706001992,
+    "english": "Ben Miller"
+  },
+  {
+    "id": "0x2A214557",
+    "id_int": 706823511,
+    "english": "kill enemies with headshots"
+  },
+  {
+    "id": "0x2A2B2614",
+    "id_int": 707470868,
+    "english": "-"
+  },
+  {
+    "id": "0x2A4A8C90",
+    "id_int": 709528720,
+    "english": "new primary objective"
+  },
+  {
+    "id": "0x2A6D584B",
+    "id_int": 711809099,
+    "english": "a"
+  },
+  {
+    "id": "0x2A70D08D",
+    "id_int": 712036493,
+    "english": "LEAD WEAPONS ARTIST"
+  },
+  {
+    "id": "0x2A936AE5",
+    "id_int": 714304229,
+    "english": "LOADING. PLEASE DON'T TURN OFF YOUR XBOX CONSOLE."
+  },
+  {
+    "id": "0x2AACFA6A",
+    "id_int": 715979370,
+    "english": "Gary Napper"
+  },
+  {
+    "id": "0x2AC896AF",
+    "id_int": 717788847,
+    "english": "*"
+  },
+  {
+    "id": "0x2B6E905D",
+    "id_int": 728666205,
+    "english": "IT MANAGER"
+  },
+  {
+    "id": "0x2B7E8875",
+    "id_int": 729712757,
+    "english": "black intel: headshots drop your enemy with one shot"
+  },
+  {
+    "id": "0x2B8A7087",
+    "id_int": 730493063,
+    "english": "you destroyed details of cia chemical weapon development"
+  },
+  {
+    "id": "0x2BA6688B",
+    "id_int": 732326027,
+    "english": "mission objectives"
+  },
+  {
+    "id": "0x2BB2EB3C",
+    "id_int": 733145916,
+    "english": "eliminate ambushing enemies"
+  },
+  {
+    "id": "0x2BB4CF41",
+    "id_int": 733269825,
+    "english": "%s picked up"
+  },
+  {
+    "id": "0x2BBB5DC1",
+    "id_int": 733699521,
+    "english": "shotgun ammo full"
+  },
+  {
+    "id": "0x2BD6D67F",
+    "id_int": 735499903,
+    "english": "HR DIRECTOR"
+  },
+  {
+    "id": "0x2C035444",
+    "id_int": 738415684,
+    "english": "English voice casting by Terri Douglas"
+  },
+  {
+    "id": "0x2C134C6C",
+    "id_int": 739462252,
+    "english": "black intel: complete recon objectives by finding hidden blue document rolls"
+  },
+  {
+    "id": "0x2C6E6708",
+    "id_int": 745432840,
+    "english": "DEVELOPMENT MANAGERS"
+  },
+  {
+    "id": "0x2C7687B4",
+    "id_int": 745965492,
+    "english": "dc3 elite"
+  },
+  {
+    "id": "0x2C76F41D",
+    "id_int": 745993245,
+    "english": "assault rifle ammo"
+  },
+  {
+    "id": "0x2C8D24AA",
+    "id_int": 747447466,
+    "english": "CONTINUE WITHOUT SAVING"
+  },
+  {
+    "id": "0x2CBB1266",
+    "id_int": 750457446,
+    "english": "Chris Ambler"
+  },
+  {
+    "id": "0x2CE7B49E",
+    "id_int": 753382558,
+    "english": "you destroyed a thuraya satellite phone bought in afghanistan"
+  },
+  {
+    "id": "0x2D1D1494",
+    "id_int": 756880532,
+    "english": "ANIMATORS"
+  },
+  {
+    "id": "0x2D46E20D",
+    "id_int": 759620109,
+    "english": "headhunter"
+  },
+  {
+    "id": "0x2D797851",
+    "id_int": 762935377,
+    "english": "Alex Reid"
+  },
+  {
+    "id": "0x2DA552B6",
+    "id_int": 765809334,
+    "english": "Alexander Bowman"
+  },
+  {
+    "id": "0x2DC13E73",
+    "id_int": 767639155,
+    "english": "Geoff Heatley"
+  },
+  {
+    "id": "0x2E08B2E2",
+    "id_int": 772322018,
+    "english": "-"
+  },
+  {
+    "id": "0x2E52B62E",
+    "id_int": 777172526,
+    "english": "ARE YOU SURE YOU WANT TO CONTINUE WITHOUT THE AUTOSAVE FEATURE? CAUTION! IF YOU CHOOSE TO DO SO, YOUR PROFILE AND OPTIONS WILL NOT BE SAVED AUTOMATICALLY."
+  },
+  {
+    "id": "0x2E7D7183",
+    "id_int": 779972995,
+    "english": "mp5"
+  },
+  {
+    "id": "0x2E8178D7",
+    "id_int": 780237015,
+    "english": "RUSSIAN SPECNAZ MILITARY ADVISOR"
+  },
+  {
+    "id": "0x2EA9780E",
+    "id_int": 782858254,
+    "english": "Silver Weapons - %s & %s"
+  },
+  {
+    "id": "0x2EAA2955",
+    "id_int": 782903637,
+    "english": "run forward/back"
+  },
+  {
+    "id": "0x2ED2D115",
+    "id_int": 785568021,
+    "english": "MAC 10 Suppressor"
+  },
+  {
+    "id": "0x2ED327A1",
+    "id_int": 785590177,
+    "english": "black ops"
+  },
+  {
+    "id": "0x2EF10E65",
+    "id_int": 787549797,
+    "english": "credits"
+  },
+  {
+    "id": "0x2EF36F95",
+    "id_int": 787705749,
+    "english": "defeat valencio's guards"
+  },
+  {
+    "id": "0x2F4312E0",
+    "id_int": 792924896,
+    "english": "Music produced by Michael Giacchino"
+  },
+  {
+    "id": "0x2F74D0AE",
+    "id_int": 796184750,
+    "english": "recon"
+  },
+  {
+    "id": "0x2FA8EFF0",
+    "id_int": 799600624,
+    "english": "James Warren"
+  },
+  {
+    "id": "0x2FCCE936",
+    "id_int": 801958198,
+    "english": "press start"
+  },
+  {
+    "id": "0x2FD50CEA",
+    "id_int": 802491626,
+    "english": "black intel: the remington is a short range weapon"
+  },
+  {
+    "id": "0x2FF98980",
+    "id_int": 804882816,
+    "english": "primary objective failed"
+  },
+  {
+    "id": "0x305DEA39",
+    "id_int": 811461177,
+    "english": "18:27hrs"
+  },
+  {
+    "id": "0x306564ED",
+    "id_int": 811951341,
+    "english": "destroy the machine gun nest"
+  },
+  {
+    "id": "0x307143D3",
+    "id_int": 812729299,
+    "english": "*"
+  },
+  {
+    "id": "0x3099989D",
+    "id_int": 815372445,
+    "english": "kill book: %d%%"
+  },
+  {
+    "id": "0x309ABEC3",
+    "id_int": 815447747,
+    "english": "*"
+  },
+  {
+    "id": "0x30CD9FA0",
+    "id_int": 818782112,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x30F78D8F",
+    "id_int": 821529999,
+    "english": "ASSISTANT ENGINEER"
+  },
+  {
+    "id": "0x313036CA",
+    "id_int": 825243338,
+    "english": "s mp5 suppressor pickup"
+  },
+  {
+    "id": "0x3135E7B8",
+    "id_int": 825616312,
+    "english": "*"
+  },
+  {
+    "id": "0x31439EB6",
+    "id_int": 826515126,
+    "english": "www.black.ea.com"
+  },
+  {
+    "id": "0x318CEA77",
+    "id_int": 831318647,
+    "english": "burst fire"
+  },
+  {
+    "id": "0x31A3F9B2",
+    "id_int": 832829874,
+    "english": "black intel: the M203 is a medium to long range grenade launcher"
+  },
+  {
+    "id": "0x31A85211",
+    "id_int": 833114641,
+    "english": "destroy the exit gates"
+  },
+  {
+    "id": "0x31B329E4",
+    "id_int": 833825252,
+    "english": "Tandoori catering by Planet Spice"
+  },
+  {
+    "id": "0x31D2C515",
+    "id_int": 835896597,
+    "english": "find and eliminate all enemies"
+  },
+  {
+    "id": "0x31D53824",
+    "id_int": 836057124,
+    "english": "-"
+  },
+  {
+    "id": "0x31DE1AA8",
+    "id_int": 836639400,
+    "english": "Tom Williamson"
+  },
+  {
+    "id": "0x31FF1522",
+    "id_int": 838800674,
+    "english": "ï to reload your weapon"
+  },
+  {
+    "id": "0x32511699",
+    "id_int": 844175001,
+    "english": "you destroyed flight plans stamped aero contractors limited"
+  },
+  {
+    "id": "0x3275A11C",
+    "id_int": 846569756,
+    "english": "SENIOR RECRUITMENT MANAGER"
+  },
+  {
+    "id": "0x3290663A",
+    "id_int": 848324154,
+    "english": "several actions do not have a control assigned."
+  },
+  {
+    "id": "0x329109E6",
+    "id_int": 848366054,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0x32CA2134",
+    "id_int": 852107572,
+    "english": "bronze medals"
+  },
+  {
+    "id": "0x32CDE73E",
+    "id_int": 852354878,
+    "english": "Craig McLeod"
+  },
+  {
+    "id": "0x32D594BD",
+    "id_int": 852858045,
+    "english": "backspace"
+  },
+  {
+    "id": "0x32F9C62F",
+    "id_int": 855229999,
+    "english": "Blank"
+  },
+  {
+    "id": "0x330F8D09",
+    "id_int": 856657161,
+    "english": "Jonathan Bartlett"
+  },
+  {
+    "id": "0x336789BE",
+    "id_int": 862423486,
+    "english": "you found aerial photographs of downtown las vegas"
+  },
+  {
+    "id": "0x336BE1CC",
+    "id_int": 862708172,
+    "english": "CG SUPERVISOR"
+  },
+  {
+    "id": "0x338412A1",
+    "id_int": 864293537,
+    "english": "destroy the 3 weapon presses"
+  },
+  {
+    "id": "0x33A3EC15",
+    "id_int": 866380821,
+    "english": "take weapons from fallen enemies"
+  },
+  {
+    "id": "0x33B7CB2B",
+    "id_int": 867683115,
+    "english": "*"
+  },
+  {
+    "id": "0x33D3A7EE",
+    "id_int": 869509102,
+    "english": "Enrico Balducci"
+  },
+  {
+    "id": "0x340625D5",
+    "id_int": 872818133,
+    "english": "Andy Beck"
+  },
+  {
+    "id": "0x343F4578",
+    "id_int": 876561784,
+    "english": "weapons found"
+  },
+  {
+    "id": "0x34624910",
+    "id_int": 878856464,
+    "english": "Krishna Sankreacha"
+  },
+  {
+    "id": "0x3496A234",
+    "id_int": 882287156,
+    "english": "60hz test"
+  },
+  {
+    "id": "0x34BE63F7",
+    "id_int": 884892663,
+    "english": "*"
+  },
+  {
+    "id": "0x34CE280C",
+    "id_int": 885925900,
+    "english": "you can carry 2 different weapons.\r\n\r\n  ï or  ï to switch weapons"
+  },
+  {
+    "id": "0x34DA0F32",
+    "id_int": 886705970,
+    "english": "*"
+  },
+  {
+    "id": "0x34E3BB8E",
+    "id_int": 887339918,
+    "english": "Hand grenades full"
+  },
+  {
+    "id": "0x35186505",
+    "id_int": 890791173,
+    "english": "*"
+  },
+  {
+    "id": "0x35755649",
+    "id_int": 896882249,
+    "english": "Dean Evans"
+  },
+  {
+    "id": "0x359D1428",
+    "id_int": 899486760,
+    "english": "RPG ENEMY 4 OF 5 HAS BEEN ELIMINATED"
+  },
+  {
+    "id": "0x35A02327",
+    "id_int": 899687207,
+    "english": "Jay Huckstep"
+  },
+  {
+    "id": "0x35AEE8A9",
+    "id_int": 900655273,
+    "english": "you found a hidden M16"
+  },
+  {
+    "id": "0x35FCCDFF",
+    "id_int": 905760255,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0x362E5AAF",
+    "id_int": 909007535,
+    "english": "enter the real world of black operations"
+  },
+  {
+    "id": "0x365823A1",
+    "id_int": 911745953,
+    "english": "Nilo Rodis"
+  },
+  {
+    "id": "0x365DF2D3",
+    "id_int": 912126675,
+    "english": "S Pistol Suppressor Pickup"
+  },
+  {
+    "id": "0x3692D13B",
+    "id_int": 915591483,
+    "english": "ï to throw grenade"
+  },
+  {
+    "id": "0x36AE1BE1",
+    "id_int": 917380065,
+    "english": "YES"
+  },
+  {
+    "id": "0x36B3DEB1",
+    "id_int": 917757617,
+    "english": "Sylvain Cornillion"
+  },
+  {
+    "id": "0x36B8FC3D",
+    "id_int": 918092861,
+    "english": "gun run"
+  },
+  {
+    "id": "0x36C59608",
+    "id_int": 918918664,
+    "english": "eliminate incoming patrols"
+  },
+  {
+    "id": "0x36CE3DAB",
+    "id_int": 919485867,
+    "english": "black intel: use the black reticule to find and complete destruction objectives"
+  },
+  {
+    "id": "0x371C9983",
+    "id_int": 924621187,
+    "english": "PRESS Â³ :"
+  },
+  {
+    "id": "0x379A4996",
+    "id_int": 932858262,
+    "english": "Oleg Bazayev"
+  },
+  {
+    "id": "0x379B2295",
+    "id_int": 932913813,
+    "english": "IF YOUR PROGRESS HAS NOT BEEN SAVED THEN IT WILL BE LOST. CONTINUE ANYWAY?"
+  },
+  {
+    "id": "0x379E4C2C",
+    "id_int": 933121068,
+    "english": "please configure only a single control for the following actions:"
+  },
+  {
+    "id": "0x37A02856",
+    "id_int": 933242966,
+    "english": "?"
+  },
+  {
+    "id": "0x380565CF",
+    "id_int": 939877839,
+    "english": "*"
+  },
+  {
+    "id": "0x382852AD",
+    "id_int": 942166701,
+    "english": "you discovered a \r\ncovert video of l.a. airport security"
+  },
+  {
+    "id": "0x3836926D",
+    "id_int": 943100525,
+    "english": "head count"
+  },
+  {
+    "id": "0x387960EF",
+    "id_int": 947478767,
+    "english": "Blank"
+  },
+  {
+    "id": "0x38867AE1",
+    "id_int": 948337377,
+    "english": "s p90 suppressor pickup"
+  },
+  {
+    "id": "0x389CA324",
+    "id_int": 949789476,
+    "english": "objectives complete: %d/%d"
+  },
+  {
+    "id": "0x38BD23ED",
+    "id_int": 951919597,
+    "english": "Claudio Moneta"
+  },
+  {
+    "id": "0x38CBC9B2",
+    "id_int": 952879538,
+    "english": "reach the gulag"
+  },
+  {
+    "id": "0x38F2851F",
+    "id_int": 955417887,
+    "english": "current record: %d headshots"
+  },
+  {
+    "id": "0x391B251F",
+    "id_int": 958080287,
+    "english": "Michael Carr"
+  },
+  {
+    "id": "0x392CF2E8",
+    "id_int": 959247080,
+    "english": "GRAPHICS PROGRAMMERS"
+  },
+  {
+    "id": "0x39615D5A",
+    "id_int": 962682202,
+    "english": "shrapnel"
+  },
+  {
+    "id": "0x397F49DA",
+    "id_int": 964643290,
+    "english": "Edward Newlands"
+  },
+  {
+    "id": "0x39C70FF8",
+    "id_int": 969347064,
+    "english": "Pete Lake"
+  },
+  {
+    "id": "0x39D328C6",
+    "id_int": 970139846,
+    "english": "mccarver will give you sniper support"
+  },
+  {
+    "id": "0x3A018700",
+    "id_int": 973178624,
+    "english": "LEAD TECHNICAL SOUND DESIGNER"
+  },
+  {
+    "id": "0x3A15A03E",
+    "id_int": 974495806,
+    "english": "health packs can be carried until needed"
+  },
+  {
+    "id": "0x3A3F0F7E",
+    "id_int": 977211262,
+    "english": "Dami Akintola"
+  },
+  {
+    "id": "0x3A4D3960",
+    "id_int": 978139488,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x3A7C7126",
+    "id_int": 981233958,
+    "english": "Â© 2006 Electronic Arts Inc. All rights reserved."
+  },
+  {
+    "id": "0x3A81356E",
+    "id_int": 981546350,
+    "english": "recon"
+  },
+  {
+    "id": "0x3AA0B866",
+    "id_int": 983611494,
+    "english": "rocket propelled"
+  },
+  {
+    "id": "0x3ACF3499",
+    "id_int": 986657945,
+    "english": "objectives"
+  },
+  {
+    "id": "0x3AE78902",
+    "id_int": 988252418,
+    "english": "repel enemy reinforcements"
+  },
+  {
+    "id": "0x3B12312A",
+    "id_int": 991047978,
+    "english": "07:36hrs"
+  },
+  {
+    "id": "0x3B2745CD",
+    "id_int": 992429517,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0x3B4C10E3",
+    "id_int": 994840803,
+    "english": "RPG ammo full"
+  },
+  {
+    "id": "0x3B99098C",
+    "id_int": 999885196,
+    "english": "*"
+  },
+  {
+    "id": "0x3BAEDE7B",
+    "id_int": 1001315963,
+    "english": "Adrian Selby"
+  },
+  {
+    "id": "0x3BC3ED37",
+    "id_int": 1002695991,
+    "english": "*"
+  },
+  {
+    "id": "0x3BFD6549",
+    "id_int": 1006462281,
+    "english": "Sam Roberts"
+  },
+  {
+    "id": "0x3C90A150",
+    "id_int": 1016111440,
+    "english": "Daniel Burnett"
+  },
+  {
+    "id": "0x3CC31A62",
+    "id_int": 1019419234,
+    "english": "Charlotte Stevens"
+  },
+  {
+    "id": "0x3CF4CD95",
+    "id_int": 1022676373,
+    "english": "Neil Kaminski"
+  },
+  {
+    "id": "0x3D082FDC",
+    "id_int": 1023946716,
+    "english": "Kimihiro Taniyama"
+  },
+  {
+    "id": "0x3D52CB67",
+    "id_int": 1028836199,
+    "english": "*"
+  },
+  {
+    "id": "0x3D5F3924",
+    "id_int": 1029650724,
+    "english": "black supports 480p (progressive scan) video on compatible televisions.  which mode would you like to use?"
+  },
+  {
+    "id": "0x3D64F2FA",
+    "id_int": 1030025978,
+    "english": "vibration"
+  },
+  {
+    "id": "0x3E128DC3",
+    "id_int": 1041403331,
+    "english": "Richard Powell"
+  },
+  {
+    "id": "0x3E2C05BD",
+    "id_int": 1043072445,
+    "english": "*"
+  },
+  {
+    "id": "0x3E4136F1",
+    "id_int": 1044461297,
+    "english": "*"
+  },
+  {
+    "id": "0x3E76E106",
+    "id_int": 1047978246,
+    "english": "*"
+  },
+  {
+    "id": "0x3EAACBE1",
+    "id_int": 1051380705,
+    "english": "PREVISUALISATION DEVELOPMENT MANAGER"
+  },
+  {
+    "id": "0x3EBEECDF",
+    "id_int": 1052699871,
+    "english": "clear obstacles with shotgun"
+  },
+  {
+    "id": "0x3EC4FBDD",
+    "id_int": 1053096925,
+    "english": "DO YOU WANT TO SAVE PROFILE \"%s\"?"
+  },
+  {
+    "id": "0x3ECB44A4",
+    "id_int": 1053508772,
+    "english": "ammo for M249"
+  },
+  {
+    "id": "0x3EE133BA",
+    "id_int": 1054946234,
+    "english": "you found a hidden uzi"
+  },
+  {
+    "id": "0x3F05929A",
+    "id_int": 1057329818,
+    "english": "LEAD AUDIO PROGRAMMER"
+  },
+  {
+    "id": "0x3F08B194",
+    "id_int": 1057534356,
+    "english": "blackmail"
+  },
+  {
+    "id": "0x3F68A1D6",
+    "id_int": 1063821782,
+    "english": "The Burnout Team"
+  },
+  {
+    "id": "0x3FD0E7F4",
+    "id_int": 1070655476,
+    "english": "Eiji Hanawa"
+  },
+  {
+    "id": "0x3FE33D2E",
+    "id_int": 1071856942,
+    "english": "you found satellite shots of unknown us city"
+  },
+  {
+    "id": "0x3FEE6F8A",
+    "id_int": 1072590730,
+    "english": "CINEMATICS"
+  },
+  {
+    "id": "0x401BA915",
+    "id_int": 1075554581,
+    "english": "PRESS Â° :"
+  },
+  {
+    "id": "0x407295FF",
+    "id_int": 1081251327,
+    "english": "destruction %1 of %2"
+  },
+  {
+    "id": "0x409D7900",
+    "id_int": 1084061952,
+    "english": "*"
+  },
+  {
+    "id": "0x41196460",
+    "id_int": 1092183136,
+    "english": "CLEARED OUTBUILDING 4 OF 5"
+  },
+  {
+    "id": "0x415AC245",
+    "id_int": 1096467013,
+    "english": "s glock suppressor pickup"
+  },
+  {
+    "id": "0x415F1337",
+    "id_int": 1096749879,
+    "english": "Craig Sullivan"
+  },
+  {
+    "id": "0x418998AF",
+    "id_int": 1099536559,
+    "english": "pause menu options"
+  },
+  {
+    "id": "0x4195E1AD",
+    "id_int": 1100341677,
+    "english": "ï to aim"
+  },
+  {
+    "id": "0x41B4EE27",
+    "id_int": 1102376487,
+    "english": "AI PROGRAMMERS"
+  },
+  {
+    "id": "0x41BFCCAB",
+    "id_int": 1103088811,
+    "english": "-"
+  },
+  {
+    "id": "0x41C2A69E",
+    "id_int": 1103275678,
+    "english": "search the farm building"
+  },
+  {
+    "id": "0x41C90D3D",
+    "id_int": 1103695165,
+    "english": "black intel: blast through the wall in the underground gulag to find the bunker"
+  },
+  {
+    "id": "0x41D1112F",
+    "id_int": 1104220463,
+    "english": "armament"
+  },
+  {
+    "id": "0x41DA18CC",
+    "id_int": 1104812236,
+    "english": "%d:%02d"
+  },
+  {
+    "id": "0x41EACD1F",
+    "id_int": 1105906975,
+    "english": "sfx volume"
+  },
+  {
+    "id": "0x4202F890",
+    "id_int": 1107490960,
+    "english": "FIND THE BLUE DOCUMENT ROLL TO HELP ON YOUR NEXT MISSION."
+  },
+  {
+    "id": "0x421F5593",
+    "id_int": 1109349779,
+    "english": "SENIOR HR MANAGER"
+  },
+  {
+    "id": "0x423BE216",
+    "id_int": 1111220758,
+    "english": "you destroyed a laptop marked project suter"
+  },
+  {
+    "id": "0x427266DF",
+    "id_int": 1114793695,
+    "english": "Paul Glancey"
+  },
+  {
+    "id": "0x4279EEA9",
+    "id_int": 1115287209,
+    "english": "perform 10 indirect kills"
+  },
+  {
+    "id": "0x42A713B1",
+    "id_int": 1118245809,
+    "english": "QA LEADS"
+  },
+  {
+    "id": "0x42DCA015",
+    "id_int": 1121755157,
+    "english": "longest black run: %d"
+  },
+  {
+    "id": "0x42F940DB",
+    "id_int": 1123631323,
+    "english": "the display will now switch to progressive scan mode.  this may not produce proper display results on your television.  in such an event, please wait 15 seconds for the automatic switch back to the original display mode."
+  },
+  {
+    "id": "0x42FBFD69",
+    "id_int": 1123810665,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0x43011543",
+    "id_int": 1124144451,
+    "english": "Filip Aleksandrow"
+  },
+  {
+    "id": "0x43089C0C",
+    "id_int": 1124637708,
+    "english": "operator profile"
+  },
+  {
+    "id": "0x4334B12E",
+    "id_int": 1127526702,
+    "english": "find entry to underground network"
+  },
+  {
+    "id": "0x43657986",
+    "id_int": 1130723718,
+    "english": "Anne Miles"
+  },
+  {
+    "id": "0x43B95361",
+    "id_int": 1136218977,
+    "english": "*"
+  },
+  {
+    "id": "0x43C9189A",
+    "id_int": 1137252506,
+    "english": "attach suppressors to silence weapons"
+  },
+  {
+    "id": "0x43DD3FA4",
+    "id_int": 1138573220,
+    "english": "*"
+  },
+  {
+    "id": "0x43EEE62E",
+    "id_int": 1139729966,
+    "english": "find tom & matt"
+  },
+  {
+    "id": "0x4408BD9F",
+    "id_int": 1141423519,
+    "english": "STUDIO OPERATIONS TEAM"
+  },
+  {
+    "id": "0x444D1E5F",
+    "id_int": 1145904735,
+    "english": "loading"
+  },
+  {
+    "id": "0x4460B928",
+    "id_int": 1147189544,
+    "english": "you found a dossier relating to setec astronomy"
+  },
+  {
+    "id": "0x446254B8",
+    "id_int": 1147294904,
+    "english": "Blank"
+  },
+  {
+    "id": "0x446CD15A",
+    "id_int": 1147982170,
+    "english": "*"
+  },
+  {
+    "id": "0x44A4DC83",
+    "id_int": 1151655043,
+    "english": "fallen enemies drop their weapons"
+  },
+  {
+    "id": "0x44B0FBBD",
+    "id_int": 1152449469,
+    "english": "LEAD SOUND DESIGNER"
+  },
+  {
+    "id": "0x44C20325",
+    "id_int": 1153565477,
+    "english": "press Â² to start selected challenge"
+  },
+  {
+    "id": "0x44CF24AF",
+    "id_int": 1154426031,
+    "english": "50hz video is supported by all televisions.  60hz requires a television that is compatible with 60hz video.  which mode would you like to use?"
+  },
+  {
+    "id": "0x44D49778",
+    "id_int": 1154783096,
+    "english": "Fabio Maccari"
+  },
+  {
+    "id": "0x4556260F",
+    "id_int": 1163273743,
+    "english": "you destroyed a hacked seal magnaphone mx20/20"
+  },
+  {
+    "id": "0x4572918A",
+    "id_int": 1165136266,
+    "english": "Matthew Jeffery"
+  },
+  {
+    "id": "0x4592B096",
+    "id_int": 1167241366,
+    "english": "Primary and Secondary objectives. Normal amount of healthpacks. Unlocks Silver weapons."
+  },
+  {
+    "id": "0x45963970",
+    "id_int": 1167473008,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0x45C04449",
+    "id_int": 1170228297,
+    "english": "off"
+  },
+  {
+    "id": "0x45CAD7A8",
+    "id_int": 1170921384,
+    "english": "FRANCHISE TEST LEADS"
+  },
+  {
+    "id": "0x45F07499",
+    "id_int": 1173386393,
+    "english": "Silver Weapons - %s"
+  },
+  {
+    "id": "0x45F67EB1",
+    "id_int": 1173782193,
+    "english": "gold medal awarded"
+  },
+  {
+    "id": "0x46022D38",
+    "id_int": 1174547768,
+    "english": "COLLECT TERRORIST INFORMATION AND PLANS FOUND IN FOLDERS AND SECURITY CASES."
+  },
+  {
+    "id": "0x4632D72E",
+    "id_int": 1177737006,
+    "english": "SCREENPLAY"
+  },
+  {
+    "id": "0x4637065C",
+    "id_int": 1178011228,
+    "english": "s ak47 suppressor pickup"
+  },
+  {
+    "id": "0x4644AE20",
+    "id_int": 1178906144,
+    "english": "coming march 2006"
+  },
+  {
+    "id": "0x46A4C924",
+    "id_int": 1185204516,
+    "english": "black intel: use the uzi at short range"
+  },
+  {
+    "id": "0x46AF6287",
+    "id_int": 1185899143,
+    "english": "cross the border"
+  },
+  {
+    "id": "0x46B41972",
+    "id_int": 1186208114,
+    "english": "www.thegunstorelasvegas.com"
+  },
+  {
+    "id": "0x46D208B2",
+    "id_int": 1188169906,
+    "english": "-"
+  },
+  {
+    "id": "0x46D92A3E",
+    "id_int": 1188637246,
+    "english": "Richard Thomassen"
+  },
+  {
+    "id": "0x46F19B18",
+    "id_int": 1190239000,
+    "english": "%1/%2 secondary objectives completed"
+  },
+  {
+    "id": "0x46F825B4",
+    "id_int": 1190667700,
+    "english": "ï to use suppressor"
+  },
+  {
+    "id": "0x46FAE5CC",
+    "id_int": 1190847948,
+    "english": "thereâs a problem with the disc youâre using. it may be dirty or damaged."
+  },
+  {
+    "id": "0x472EB1C1",
+    "id_int": 1194242497,
+    "english": "confirm"
+  },
+  {
+    "id": "0x4762547B",
+    "id_int": 1197626491,
+    "english": "eliminate all enemies"
+  },
+  {
+    "id": "0x47767345",
+    "id_int": 1198945093,
+    "english": "Steve Emney"
+  },
+  {
+    "id": "0x4793978F",
+    "id_int": 1200854927,
+    "english": "ricochet kill"
+  },
+  {
+    "id": "0x479D8E55",
+    "id_int": 1201507925,
+    "english": "LEAD PRESENTATION PROGRAMMER"
+  },
+  {
+    "id": "0x47AC1E67",
+    "id_int": 1202462311,
+    "english": "difficulty"
+  },
+  {
+    "id": "0x47F0BD19",
+    "id_int": 1206959385,
+    "english": "Pavel Stebakov"
+  },
+  {
+    "id": "0x47F28633",
+    "id_int": 1207076403,
+    "english": "gun run"
+  },
+  {
+    "id": "0x4802A20C",
+    "id_int": 1208132108,
+    "english": "*"
+  },
+  {
+    "id": "0x481EC795",
+    "id_int": 1209976725,
+    "english": "%s  rating: %s"
+  },
+  {
+    "id": "0x486F9140",
+    "id_int": 1215271232,
+    "english": "Steve Schnur & the EA LA Music Team"
+  },
+  {
+    "id": "0x4880854E",
+    "id_int": 1216382286,
+    "english": "Are you sure you want to continue without saving?"
+  },
+  {
+    "id": "0x48C66AB0",
+    "id_int": 1220962992,
+    "english": "Blank"
+  },
+  {
+    "id": "0x48D7D762",
+    "id_int": 1222104930,
+    "english": "Goichi Komiya"
+  },
+  {
+    "id": "0x48E95F1C",
+    "id_int": 1223253788,
+    "english": "Directed by Joseph Hodges"
+  },
+  {
+    "id": "0x4900BFF9",
+    "id_int": 1224785913,
+    "english": "black kills: %d"
+  },
+  {
+    "id": "0x49017D07",
+    "id_int": 1224834311,
+    "english": "number of headshots:"
+  },
+  {
+    "id": "0x4915BD55",
+    "id_int": 1226161493,
+    "english": "Kyle Rowley"
+  },
+  {
+    "id": "0x491DABA2",
+    "id_int": 1226681250,
+    "english": "FREE MORE BLOCKS"
+  },
+  {
+    "id": "0x492B352B",
+    "id_int": 1227568427,
+    "english": "*"
+  },
+  {
+    "id": "0x49460667",
+    "id_int": 1229325927,
+    "english": "LEAD GRAPHICS PROGRAMMER"
+  },
+  {
+    "id": "0x4971D190",
+    "id_int": 1232195984,
+    "english": "*"
+  },
+  {
+    "id": "0x49743905",
+    "id_int": 1232353541,
+    "english": "you destroyed evidence of cia involvement in french riots"
+  },
+  {
+    "id": "0x49ADFB77",
+    "id_int": 1236138871,
+    "english": "*"
+  },
+  {
+    "id": "0x49B9DC49",
+    "id_int": 1236917321,
+    "english": "open route with shotgun"
+  },
+  {
+    "id": "0x49EB20CC",
+    "id_int": 1240146124,
+    "english": "custom control setup"
+  },
+  {
+    "id": "0x4A0F1F4A",
+    "id_int": 1242505034,
+    "english": "*"
+  },
+  {
+    "id": "0x4A1842C7",
+    "id_int": 1243103943,
+    "english": "LOAD PROFILE"
+  },
+  {
+    "id": "0x4A55FBF1",
+    "id_int": 1247149041,
+    "english": "QA TESTERS"
+  },
+  {
+    "id": "0x4A58EC49",
+    "id_int": 1247341641,
+    "english": "black ops kills: %d"
+  },
+  {
+    "id": "0x4A8272D7",
+    "id_int": 1250063063,
+    "english": "quit"
+  },
+  {
+    "id": "0x4A963915",
+    "id_int": 1251358997,
+    "english": "vratska dockyard weapons shipping facilities"
+  },
+  {
+    "id": "0x4ACAFA79",
+    "id_int": 1254816377,
+    "english": "complete the section"
+  },
+  {
+    "id": "0x4AEE27A1",
+    "id_int": 1257121697,
+    "english": "undo changes"
+  },
+  {
+    "id": "0x4B58CDB6",
+    "id_int": 1264111030,
+    "english": "%1/%2"
+  },
+  {
+    "id": "0x4B86EB18",
+    "id_int": 1267133208,
+    "english": "elite"
+  },
+  {
+    "id": "0x4B9791C6",
+    "id_int": 1268224454,
+    "english": "Stephen Chard"
+  },
+  {
+    "id": "0x4BA62F44",
+    "id_int": 1269182276,
+    "english": "dolbyÂ® pro logicÂ® ii"
+  },
+  {
+    "id": "0x4BC42AF4",
+    "id_int": 1271147252,
+    "english": "*"
+  },
+  {
+    "id": "0x4BF3FD03",
+    "id_int": 1274281219,
+    "english": "David Rack"
+  },
+  {
+    "id": "0x4C20755B",
+    "id_int": 1277195611,
+    "english": "Combat Range - Blank"
+  },
+  {
+    "id": "0x4C36E58E",
+    "id_int": 1278666126,
+    "english": "surround"
+  },
+  {
+    "id": "0x4C6FF118",
+    "id_int": 1282404632,
+    "english": "Use the BLACK reticule to find destruction objects"
+  },
+  {
+    "id": "0x4C98D902",
+    "id_int": 1285085442,
+    "english": "Total"
+  },
+  {
+    "id": "0x4C9E391A",
+    "id_int": 1285437722,
+    "english": "LEAD WORLD ARTISTS"
+  },
+  {
+    "id": "0x4CA9EEED",
+    "id_int": 1286205165,
+    "english": "*"
+  },
+  {
+    "id": "0x4CC4DDA1",
+    "id_int": 1287970209,
+    "english": "THE BLACK TEAM WOULD LIKE TO THANK"
+  },
+  {
+    "id": "0x4CFA55DF",
+    "id_int": 1291474399,
+    "english": "Alan Vincent"
+  },
+  {
+    "id": "0x4D06B796",
+    "id_int": 1292285846,
+    "english": "Ben Minto"
+  },
+  {
+    "id": "0x4D1290A8",
+    "id_int": 1293062312,
+    "english": "first aid kits give instant health boost"
+  },
+  {
+    "id": "0x4D383FE8",
+    "id_int": 1295532008,
+    "english": "Ian Anson"
+  },
+  {
+    "id": "0x4D87BB29",
+    "id_int": 1300740905,
+    "english": "USE BLACK RETICULE TO FIND AND DESTROY OBJECTS."
+  },
+  {
+    "id": "0x4DE0B994",
+    "id_int": 1306573204,
+    "english": "take sniper positions"
+  },
+  {
+    "id": "0x4E1C1589",
+    "id_int": 1310463369,
+    "english": "James Harlow"
+  },
+  {
+    "id": "0x4E2BC27E",
+    "id_int": 1311490686,
+    "english": "Cedrick Collomb"
+  },
+  {
+    "id": "0x4E2E454A",
+    "id_int": 1311655242,
+    "english": "DESTROY LAPTOPS, SAFES AND BRIEFCASES CONTAINING CLASSIFIED INFORMATION."
+  },
+  {
+    "id": "0x4E78794C",
+    "id_int": 1316518220,
+    "english": "Alexander Norman"
+  },
+  {
+    "id": "0x4E79070E",
+    "id_int": 1316554510,
+    "english": "50hz"
+  },
+  {
+    "id": "0x4EACD06D",
+    "id_int": 1319948397,
+    "english": "choose your weapon:"
+  },
+  {
+    "id": "0x4EC03F6E",
+    "id_int": 1321221998,
+    "english": "PREVISUALISATION LEAD"
+  },
+  {
+    "id": "0x4EC9C378",
+    "id_int": 1321845624,
+    "english": "dry dock control %1 of %2 destroyed"
+  },
+  {
+    "id": "0x4ED41850",
+    "id_int": 1322522704,
+    "english": "destroy the gasometers"
+  },
+  {
+    "id": "0x4F025559",
+    "id_int": 1325552985,
+    "english": "*"
+  },
+  {
+    "id": "0x4F2C8C0B",
+    "id_int": 1328319499,
+    "english": "recruit"
+  },
+  {
+    "id": "0x4F2F623B",
+    "id_int": 1328505403,
+    "english": "you found\r\nthe phone list for jj directorate"
+  },
+  {
+    "id": "0x4F92AC8B",
+    "id_int": 1335012491,
+    "english": "Suppressor for Assault Rifle"
+  },
+  {
+    "id": "0x4F983C80",
+    "id_int": 1335377024,
+    "english": "triple kill"
+  },
+  {
+    "id": "0x4FBA137B",
+    "id_int": 1337594747,
+    "english": "*"
+  },
+  {
+    "id": "0x4FCD3171",
+    "id_int": 1338847601,
+    "english": "SAVE PROFILE"
+  },
+  {
+    "id": "0x5001A418",
+    "id_int": 1342284824,
+    "english": "Current Total"
+  },
+  {
+    "id": "0x500E8C14",
+    "id_int": 1343130644,
+    "english": "Thomas Thompson"
+  },
+  {
+    "id": "0x5030046A",
+    "id_int": 1345324138,
+    "english": "*"
+  },
+  {
+    "id": "0x505D3726",
+    "id_int": 1348286246,
+    "english": "GAMEPLAY PROGRAMMERS"
+  },
+  {
+    "id": "0x5063ADA8",
+    "id_int": 1348709800,
+    "english": "P90 Suppressor"
+  },
+  {
+    "id": "0x506AE0D1",
+    "id_int": 1349181649,
+    "english": "John Miles"
+  },
+  {
+    "id": "0x50756353",
+    "id_int": 1349870419,
+    "english": "are you sure you want to quit?"
+  },
+  {
+    "id": "0x50A2ED08",
+    "id_int": 1352854792,
+    "english": "green crosshair indicates friendly target"
+  },
+  {
+    "id": "0x50B6CA36",
+    "id_int": 1354156598,
+    "english": "PREVISUALISATION ARTISTS"
+  },
+  {
+    "id": "0x50B9CE5F",
+    "id_int": 1354354271,
+    "english": "-"
+  },
+  {
+    "id": "0x511282F5",
+    "id_int": 1360167669,
+    "english": "BLACK USES AN AUTOSAVE FEATURE THAT WILL AUTOMATICALLY SAVE YOUR PROGRESS THROUGH THE GAME, AND ANY OPTIONS CHANGES YOU MAKE. AUTOSAVE WILL OVERWRITE THE CURRENT PROFILE WITHOUT CONFIRMATION. DO YOU WANT TO ENABLE THE AUTOSAVE FEATURE?"
+  },
+  {
+    "id": "0x5119934D",
+    "id_int": 1360630605,
+    "english": "LEAD GAMEPLAY PROGRAMMER"
+  },
+  {
+    "id": "0x512EEF72",
+    "id_int": 1362030450,
+    "english": "graznei bridge"
+  },
+  {
+    "id": "0x51363FD2",
+    "id_int": 1362509778,
+    "english": "press Â² to save"
+  },
+  {
+    "id": "0x513F6BA6",
+    "id_int": 1363110822,
+    "english": "you found the tivliz asylum security camera shot"
+  },
+  {
+    "id": "0x5174A001",
+    "id_int": 1366597633,
+    "english": "Programming Team support by the Woking Beer Festival"
+  },
+  {
+    "id": "0x51C5D137",
+    "id_int": 1371918647,
+    "english": "PROFILE APPEARS TO BE DAMAGED AND CANNOT BE USED."
+  },
+  {
+    "id": "0x51CCE623",
+    "id_int": 1372382755,
+    "english": "Wolf Frass"
+  },
+  {
+    "id": "0x51F26E5D",
+    "id_int": 1374842461,
+    "english": "Guy Miller"
+  },
+  {
+    "id": "0x525587A4",
+    "id_int": 1381336996,
+    "english": "easy difficulty"
+  },
+  {
+    "id": "0x528CA087",
+    "id_int": 1384947847,
+    "english": "Patrick Klaus"
+  },
+  {
+    "id": "0x52A2F8AF",
+    "id_int": 1386412207,
+    "english": "black intel: use shotguns to blast down doors"
+  },
+  {
+    "id": "0x52BB8410",
+    "id_int": 1388020752,
+    "english": "eliminate rpg enemy"
+  },
+  {
+    "id": "0x52DF1BB5",
+    "id_int": 1390353333,
+    "english": "DEVELOPMENT DIRECTOR"
+  },
+  {
+    "id": "0x52E8CC42",
+    "id_int": 1390988354,
+    "english": "Jack Griffin"
+  },
+  {
+    "id": "0x53142E0B",
+    "id_int": 1393831435,
+    "english": "ITALIAN LOCALISATION"
+  },
+  {
+    "id": "0x534ECAB0",
+    "id_int": 1397672624,
+    "english": "Donna Brooke-Mee"
+  },
+  {
+    "id": "0x53773143",
+    "id_int": 1400320323,
+    "english": "PRESS Â² :"
+  },
+  {
+    "id": "0x5381C385",
+    "id_int": 1401013125,
+    "english": "targets"
+  },
+  {
+    "id": "0x53DF3BE2",
+    "id_int": 1407138786,
+    "english": "objectives status"
+  },
+  {
+    "id": "0x53DFD8F1",
+    "id_int": 1407178993,
+    "english": "PRESS â :"
+  },
+  {
+    "id": "0x53FDFF9D",
+    "id_int": 1409154973,
+    "english": "-"
+  },
+  {
+    "id": "0x54034431",
+    "id_int": 1409500209,
+    "english": "you destroyed satellite photographs of papoose lake"
+  },
+  {
+    "id": "0x541D86D7",
+    "id_int": 1411221207,
+    "english": "*"
+  },
+  {
+    "id": "0x54230EA9",
+    "id_int": 1411583657,
+    "english": "Rory Clench"
+  },
+  {
+    "id": "0x5441488E",
+    "id_int": 1413564558,
+    "english": "destroy all functional vehicles"
+  },
+  {
+    "id": "0x545DE522",
+    "id_int": 1415439650,
+    "english": "loading"
+  },
+  {
+    "id": "0x54903B84",
+    "id_int": 1418738564,
+    "english": "gun run"
+  },
+  {
+    "id": "0x549A5AA9",
+    "id_int": 1419401897,
+    "english": "-"
+  },
+  {
+    "id": "0x5535DB16",
+    "id_int": 1429592854,
+    "english": "you found blueprints and schematics marked knight industries"
+  },
+  {
+    "id": "0x557B0BCF",
+    "id_int": 1434127311,
+    "english": "rpg enemy %1 of %5 has been eliminated"
+  },
+  {
+    "id": "0x5585085B",
+    "id_int": 1434781787,
+    "english": "Femi Adegboye"
+  },
+  {
+    "id": "0x55B2DFAC",
+    "id_int": 1437786028,
+    "english": "Michael Othen"
+  },
+  {
+    "id": "0x55BDB661",
+    "id_int": 1438496353,
+    "english": "gain access to the asylum"
+  },
+  {
+    "id": "0x55CF3CB6",
+    "id_int": 1439644854,
+    "english": "black intel: switch to single-shot fire mode for better accuracy"
+  },
+  {
+    "id": "0x55DFECE0",
+    "id_int": 1440738528,
+    "english": "Shaun Smith"
+  },
+  {
+    "id": "0x55E1649E",
+    "id_int": 1440834718,
+    "english": "*"
+  },
+  {
+    "id": "0x56196418",
+    "id_int": 1444504600,
+    "english": "VOICEOVERS"
+  },
+  {
+    "id": "0x562BBC4F",
+    "id_int": 1445706831,
+    "english": "melee"
+  },
+  {
+    "id": "0x56432B6B",
+    "id_int": 1447242603,
+    "english": "naszran foundry"
+  },
+  {
+    "id": "0x5654A42F",
+    "id_int": 1448387631,
+    "english": "magnum ammo full"
+  },
+  {
+    "id": "0x56A1223A",
+    "id_int": 1453400634,
+    "english": "*"
+  },
+  {
+    "id": "0x570724C8",
+    "id_int": 1460085960,
+    "english": "Lee Robinson"
+  },
+  {
+    "id": "0x5730F33F",
+    "id_int": 1462825791,
+    "english": "Manuel Sanchez"
+  },
+  {
+    "id": "0x5763480D",
+    "id_int": 1466124301,
+    "english": "Jonathan Shearn"
+  },
+  {
+    "id": "0x57D40A46",
+    "id_int": 1473514054,
+    "english": "killing time"
+  },
+  {
+    "id": "0x57DB0E2F",
+    "id_int": 1473973807,
+    "english": "Chris Walley"
+  },
+  {
+    "id": "0x57E14421",
+    "id_int": 1474380833,
+    "english": "rv with mccarver at the merjakni farm"
+  },
+  {
+    "id": "0x580BC362",
+    "id_int": 1477165922,
+    "english": "smelter %1 of %2 destroyed"
+  },
+  {
+    "id": "0x58442276",
+    "id_int": 1480860278,
+    "english": "*"
+  },
+  {
+    "id": "0x58AFDF66",
+    "id_int": 1487920998,
+    "english": "James Smith"
+  },
+  {
+    "id": "0x58B6F270",
+    "id_int": 1488384624,
+    "english": "mission time"
+  },
+  {
+    "id": "0x58D23C7C",
+    "id_int": 1490173052,
+    "english": "black intel: blast objects out of the way to find secrets"
+  },
+  {
+    "id": "0x590F8274",
+    "id_int": 1494188660,
+    "english": "-"
+  },
+  {
+    "id": "0x5925E28D",
+    "id_int": 1495655053,
+    "english": "%i / ??"
+  },
+  {
+    "id": "0x592D55B1",
+    "id_int": 1496143281,
+    "english": "pause"
+  },
+  {
+    "id": "0x59864841",
+    "id_int": 1501972545,
+    "english": "Colonel Fridrich Heider"
+  },
+  {
+    "id": "0x59D41737",
+    "id_int": 1507071799,
+    "english": "special ops"
+  },
+  {
+    "id": "0x59D5E183",
+    "id_int": 1507189123,
+    "english": "MP5 Suppressor"
+  },
+  {
+    "id": "0x59F45F03",
+    "id_int": 1509187331,
+    "english": "destroy the machine gun nest"
+  },
+  {
+    "id": "0x5A07ACC4",
+    "id_int": 1510452420,
+    "english": "d"
+  },
+  {
+    "id": "0x5A1A2402",
+    "id_int": 1511662594,
+    "english": "*"
+  },
+  {
+    "id": "0x5A3210B5",
+    "id_int": 1513230517,
+    "english": "armament"
+  },
+  {
+    "id": "0x5A41D29B",
+    "id_int": 1514263195,
+    "english": "killing time"
+  },
+  {
+    "id": "0x5A6D3FF1",
+    "id_int": 1517109233,
+    "english": "%s for the %s"
+  },
+  {
+    "id": "0x5A70B0B5",
+    "id_int": 1517334709,
+    "english": "you found pictures of spetriniv gulag"
+  },
+  {
+    "id": "0x5A7E48C7",
+    "id_int": 1518225607,
+    "english": "Jonathan Ansell"
+  },
+  {
+    "id": "0x5AA26220",
+    "id_int": 1520591392,
+    "english": "Nadine Monschau"
+  },
+  {
+    "id": "0x5AC60EE5",
+    "id_int": 1522929381,
+    "english": "Tim Hollyman"
+  },
+  {
+    "id": "0x5B0464D2",
+    "id_int": 1527014610,
+    "english": "*"
+  },
+  {
+    "id": "0x5B147CFA",
+    "id_int": 1528069370,
+    "english": "black intel: complete blackmail objectives by destroying secret laptops, briefcases and safes"
+  },
+  {
+    "id": "0x5B69579E",
+    "id_int": 1533630366,
+    "english": "Angela Hunt"
+  },
+  {
+    "id": "0x5BBC22F0",
+    "id_int": 1539056368,
+    "english": "QA DIRECTOR"
+  },
+  {
+    "id": "0x5BD81FB3",
+    "id_int": 1540890547,
+    "english": "cross vratska dry dock area"
+  },
+  {
+    "id": "0x5BF31ABA",
+    "id_int": 1542658746,
+    "english": "total bullets fired:"
+  },
+  {
+    "id": "0x5C69A0CB",
+    "id_int": 1550426315,
+    "english": "Frank Tindle"
+  },
+  {
+    "id": "0x5C79B8E3",
+    "id_int": 1551481059,
+    "english": "black intel: use the spas12 to open locked doors"
+  },
+  {
+    "id": "0x5C85C4FB",
+    "id_int": 1552270587,
+    "english": "destroy all targets"
+  },
+  {
+    "id": "0x5C8D4011",
+    "id_int": 1552760849,
+    "english": "you destroyed photos of murder of willie oâkeafe"
+  },
+  {
+    "id": "0x5CAE9F32",
+    "id_int": 1554947890,
+    "english": "enter ressanov tunnel network"
+  },
+  {
+    "id": "0x5CB1609C",
+    "id_int": 1555128476,
+    "english": "save"
+  },
+  {
+    "id": "0x5CB5DBAA",
+    "id_int": 1555422122,
+    "english": "assist second black ops team"
+  },
+  {
+    "id": "0x5CD1E6E9",
+    "id_int": 1557260009,
+    "english": "*"
+  },
+  {
+    "id": "0x5D138CDE",
+    "id_int": 1561562334,
+    "english": "David Ambler"
+  },
+  {
+    "id": "0x5D2C1682",
+    "id_int": 1563170434,
+    "english": "-"
+  },
+  {
+    "id": "0x5D584429",
+    "id_int": 1566065705,
+    "english": "find lennox"
+  },
+  {
+    "id": "0x5D77E01B",
+    "id_int": 1568137243,
+    "english": "*"
+  },
+  {
+    "id": "0x5DABCAFC",
+    "id_int": 1571539708,
+    "english": "Gert Stevens"
+  },
+  {
+    "id": "0x5DCB50B5",
+    "id_int": 1573605557,
+    "english": "press the button you wish to assign to this action now."
+  },
+  {
+    "id": "0x5DCFA639",
+    "id_int": 1573889593,
+    "english": "GERMAN LOCALISATION"
+  },
+  {
+    "id": "0x5E6D4204",
+    "id_int": 1584218628,
+    "english": "*"
+  },
+  {
+    "id": "0x5E86BF14",
+    "id_int": 1585889044,
+    "english": "*"
+  },
+  {
+    "id": "0x5EB8259A",
+    "id_int": 1589126554,
+    "english": "Pistol Suppressor"
+  },
+  {
+    "id": "0x5EB9D32E",
+    "id_int": 1589236526,
+    "english": "recruit"
+  },
+  {
+    "id": "0x5EEB8C58",
+    "id_int": 1592495192,
+    "english": "TRANSLATION AND EDITING"
+  },
+  {
+    "id": "0x5F0E939D",
+    "id_int": 1594790813,
+    "english": "perform 10 minefield kills"
+  },
+  {
+    "id": "0x5F29E66F",
+    "id_int": 1596581487,
+    "english": "MUSIC"
+  },
+  {
+    "id": "0x5F4C9F22",
+    "id_int": 1598856994,
+    "english": "you destroyed documents marked big safari / langley"
+  },
+  {
+    "id": "0x5FA655CF",
+    "id_int": 1604736463,
+    "english": "done"
+  },
+  {
+    "id": "0x5FAF2833",
+    "id_int": 1605314611,
+    "english": "RUSSIAN VOICEOVER PRODUCER"
+  },
+  {
+    "id": "0x5FBFF865",
+    "id_int": 1606416485,
+    "english": "black intel: destroy the cranes at the dockyard"
+  },
+  {
+    "id": "0x5FC21B7F",
+    "id_int": 1606556543,
+    "english": "David Steptoe"
+  },
+  {
+    "id": "0x5FE8D1D3",
+    "id_int": 1609093587,
+    "english": "enemy count"
+  },
+  {
+    "id": "0x5FEE2757",
+    "id_int": 1609443159,
+    "english": "1 new challenge unlocked!"
+  },
+  {
+    "id": "0x60057FEE",
+    "id_int": 1610973166,
+    "english": "Mission Mode Complete"
+  },
+  {
+    "id": "0x600AFA74",
+    "id_int": 1611332212,
+    "english": "killing time"
+  },
+  {
+    "id": "0x603916ED",
+    "id_int": 1614354157,
+    "english": "LEAD CHARACTER ARTIST"
+  },
+  {
+    "id": "0x605D7A28",
+    "id_int": 1616738856,
+    "english": "Richard Hylands"
+  },
+  {
+    "id": "0x605F2251",
+    "id_int": 1616847441,
+    "english": "ak 47"
+  },
+  {
+    "id": "0x608150CF",
+    "id_int": 1619087567,
+    "english": "Sylvain Deniau"
+  },
+  {
+    "id": "0x6096C865",
+    "id_int": 1620494437,
+    "english": "destroy the machinery"
+  },
+  {
+    "id": "0x60BABCD9",
+    "id_int": 1622850777,
+    "english": "operator"
+  },
+  {
+    "id": "0x60CD3A2C",
+    "id_int": 1624062508,
+    "english": "you destroyed blueprints for narcissus"
+  },
+  {
+    "id": "0x60E53C0A",
+    "id_int": 1625635850,
+    "english": "Matthew Snyman"
+  },
+  {
+    "id": "0x60F11B34",
+    "id_int": 1626413876,
+    "english": "collect info for intel objectives"
+  },
+  {
+    "id": "0x61183E14",
+    "id_int": 1628978708,
+    "english": "eliminate the reinforcements"
+  },
+  {
+    "id": "0x6127563D",
+    "id_int": 1629967933,
+    "english": "Jackie Gonneau"
+  },
+  {
+    "id": "0x619F101F",
+    "id_int": 1637814303,
+    "english": "GENERAL MANAGER"
+  },
+  {
+    "id": "0x61A940D6",
+    "id_int": 1638482134,
+    "english": "ok"
+  },
+  {
+    "id": "0x61B5EA23",
+    "id_int": 1639311907,
+    "english": "fully automatic"
+  },
+  {
+    "id": "0x61CB2E99",
+    "id_int": 1640705689,
+    "english": "blackmail"
+  },
+  {
+    "id": "0x625998E7",
+    "id_int": 1650039015,
+    "english": "FRENCH VOICE TALENTS"
+  },
+  {
+    "id": "0x627F1D26",
+    "id_int": 1652497702,
+    "english": "current objective:"
+  },
+  {
+    "id": "0x628CED89",
+    "id_int": 1653403017,
+    "english": "*"
+  },
+  {
+    "id": "0x62E66F73",
+    "id_int": 1659268979,
+    "english": "?"
+  },
+  {
+    "id": "0x62F10E93",
+    "id_int": 1659965075,
+    "english": "black intel: search areas for health packs, ammunition and grenades"
+  },
+  {
+    "id": "0x632F3A3C",
+    "id_int": 1664039484,
+    "english": "gain access to tivliz asylum interior"
+  },
+  {
+    "id": "0x634ECBB6",
+    "id_int": 1666108342,
+    "english": "gun run"
+  },
+  {
+    "id": "0x6359377D",
+    "id_int": 1666791293,
+    "english": "black"
+  },
+  {
+    "id": "0x639BF2D0",
+    "id_int": 1671164624,
+    "english": "Alice Gollon"
+  },
+  {
+    "id": "0x63B5AAF8",
+    "id_int": 1672850168,
+    "english": "black intel: explore to find health packs"
+  },
+  {
+    "id": "0x64199B75",
+    "id_int": 1679399797,
+    "english": "back"
+  },
+  {
+    "id": "0x64230FAF",
+    "id_int": 1680019375,
+    "english": "-"
+  },
+  {
+    "id": "0x6459BABD",
+    "id_int": 1683602109,
+    "english": "destroy main gulag doors"
+  },
+  {
+    "id": "0x64925A0C",
+    "id_int": 1687312908,
+    "english": "TOOLS & BUILD PROGRAMMER"
+  },
+  {
+    "id": "0x659CCA8A",
+    "id_int": 1704774282,
+    "english": "black intel: take down enemies up close with melee attack"
+  },
+  {
+    "id": "0x65E12990",
+    "id_int": 1709255056,
+    "english": "Gemma Moore"
+  },
+  {
+    "id": "0x66174900",
+    "id_int": 1712802048,
+    "english": "cross the graveyard"
+  },
+  {
+    "id": "0x661A3A37",
+    "id_int": 1712994871,
+    "english": "press start"
+  },
+  {
+    "id": "0x664066C8",
+    "id_int": 1715496648,
+    "english": "left thumbstick"
+  },
+  {
+    "id": "0x66427585",
+    "id_int": 1715631493,
+    "english": "All checkpoint progress will be lost!  are you sure you want to quit the mission?"
+  },
+  {
+    "id": "0x664A9224",
+    "id_int": 1716163108,
+    "english": "Rene Mujica"
+  },
+  {
+    "id": "0x665A4272",
+    "id_int": 1717191282,
+    "english": "black intel: the walther 2000 is a one hit kill weapon"
+  },
+  {
+    "id": "0x66966112",
+    "id_int": 1721131282,
+    "english": "you recovered dvd marked trans alaska pipeline system"
+  },
+  {
+    "id": "0x66F2D406",
+    "id_int": 1727190022,
+    "english": "*"
+  },
+  {
+    "id": "0x6730BE31",
+    "id_int": 1731247665,
+    "english": "TECHNICAL COMPLIANCE MANAGER"
+  },
+  {
+    "id": "0x6754D2F4",
+    "id_int": 1733612276,
+    "english": "Edward Lavin"
+  },
+  {
+    "id": "0x6764B67E",
+    "id_int": 1734653566,
+    "english": "character viewer"
+  },
+  {
+    "id": "0x67673E6D",
+    "id_int": 1734819437,
+    "english": "-"
+  },
+  {
+    "id": "0x676CF57E",
+    "id_int": 1735193982,
+    "english": "veteran"
+  },
+  {
+    "id": "0x6788F813",
+    "id_int": 1737029651,
+    "english": "ADDITIONAL ARTWORK"
+  },
+  {
+    "id": "0x679CDF2D",
+    "id_int": 1738333997,
+    "english": "find the shotgun"
+  },
+  {
+    "id": "0x67A0FE35",
+    "id_int": 1738604085,
+    "english": "you destroyed files marked intelligence support activity (1981)"
+  },
+  {
+    "id": "0x67D778C0",
+    "id_int": 1742174400,
+    "english": "soldier"
+  },
+  {
+    "id": "0x67EC94D6",
+    "id_int": 1743557846,
+    "english": "*"
+  },
+  {
+    "id": "0x68295C34",
+    "id_int": 1747541044,
+    "english": "David Byrne"
+  },
+  {
+    "id": "0x6860E12F",
+    "id_int": 1751179567,
+    "english": "rendezvous with members of black cell"
+  },
+  {
+    "id": "0x687BA5B7",
+    "id_int": 1752933815,
+    "english": "RV with Solomon at the Foundry Entrance"
+  },
+  {
+    "id": "0x6881CA40",
+    "id_int": 1753336384,
+    "english": "black intel: use the shotgun to take down enemies wearing body armour"
+  },
+  {
+    "id": "0x68D3507E",
+    "id_int": 1758679166,
+    "english": "weapon state"
+  },
+  {
+    "id": "0x68EF6036",
+    "id_int": 1760518198,
+    "english": "sniper rifle ammo full"
+  },
+  {
+    "id": "0x68FC295A",
+    "id_int": 1761356122,
+    "english": "DESIGNERS"
+  },
+  {
+    "id": "0x69EB3603",
+    "id_int": 1777022467,
+    "english": "Bill Carter"
+  },
+  {
+    "id": "0x6A03E6D3",
+    "id_int": 1778640595,
+    "english": "black intel: red crosshair indicates enemy is in range"
+  },
+  {
+    "id": "0x6A2DBEFB",
+    "id_int": 1781382907,
+    "english": "Robin Evans"
+  },
+  {
+    "id": "0x6A49D23E",
+    "id_int": 1783222846,
+    "english": "*"
+  },
+  {
+    "id": "0x6A57E507",
+    "id_int": 1784145159,
+    "english": "destroy mortar positions"
+  },
+  {
+    "id": "0x6A95F8D9",
+    "id_int": 1788213465,
+    "english": "Chris Hegstrom"
+  },
+  {
+    "id": "0x6AF1941C",
+    "id_int": 1794216988,
+    "english": "Pablo LÃ³pez"
+  },
+  {
+    "id": "0x6B078CBD",
+    "id_int": 1795656893,
+    "english": "NEW PROFILE"
+  },
+  {
+    "id": "0x6B5668B9",
+    "id_int": 1800825017,
+    "english": "results"
+  },
+  {
+    "id": "0x6B5792EE",
+    "id_int": 1800901358,
+    "english": "Jonathan Bunney"
+  },
+  {
+    "id": "0x6B6616A4",
+    "id_int": 1801852580,
+    "english": "veteran"
+  },
+  {
+    "id": "0x6B82E13F",
+    "id_int": 1803739455,
+    "english": "you destroyed \r\nevidence of domestic wet work in washington dc"
+  },
+  {
+    "id": "0x6BABC380",
+    "id_int": 1806418816,
+    "english": "mins"
+  },
+  {
+    "id": "0x6BC0ED80",
+    "id_int": 1807805824,
+    "english": "perform 5 ricochet kills"
+  },
+  {
+    "id": "0x6BEFD4CC",
+    "id_int": 1810879692,
+    "english": "Nick Lazarev"
+  },
+  {
+    "id": "0x6BFDB832",
+    "id_int": 1811789874,
+    "english": "music volume"
+  },
+  {
+    "id": "0x6BFE70B6",
+    "id_int": 1811837110,
+    "english": "weapon challenges complete: %d/%d"
+  },
+  {
+    "id": "0x6C2A86A1",
+    "id_int": 1814726305,
+    "english": "black intel: health packs can be carried and used when needed"
+  },
+  {
+    "id": "0x6C3A56F7",
+    "id_int": 1815762679,
+    "english": "*"
+  },
+  {
+    "id": "0x6C40BF71",
+    "id_int": 1816182641,
+    "english": "Suppressor for Magnum"
+  },
+  {
+    "id": "0x6C8210D5",
+    "id_int": 1820463317,
+    "english": "Pavel Balashov"
+  },
+  {
+    "id": "0x6CEF2526",
+    "id_int": 1827611942,
+    "english": "you destroyed\r\nevidence of wire transfers \r\nto members of the WMD Council of Security"
+  },
+  {
+    "id": "0x6D14A8EF",
+    "id_int": 1830070511,
+    "english": "objective complete"
+  },
+  {
+    "id": "0x6D208085",
+    "id_int": 1830846597,
+    "english": "Find information on your next mission"
+  },
+  {
+    "id": "0x6D241627",
+    "id_int": 1831081511,
+    "english": "Chris Major"
+  },
+  {
+    "id": "0x6D24E276",
+    "id_int": 1831133814,
+    "english": "criterion c"
+  },
+  {
+    "id": "0x6D407AE2",
+    "id_int": 1832942306,
+    "english": "Rachel David"
+  },
+  {
+    "id": "0x6D6E22CA",
+    "id_int": 1835934410,
+    "english": "black intel: take weapons from fallen enemies"
+  },
+  {
+    "id": "0x6D9C5005",
+    "id_int": 1838960645,
+    "english": "Rodrigo Abad"
+  },
+  {
+    "id": "0x6DD9BA01",
+    "id_int": 1842985473,
+    "english": "you found a contact list for seventh wave cell in hamburg"
+  },
+  {
+    "id": "0x6DF83CC0",
+    "id_int": 1844985024,
+    "english": "*"
+  },
+  {
+    "id": "0x6E3C7189",
+    "id_int": 1849454985,
+    "english": "get inside the museum"
+  },
+  {
+    "id": "0x6EA7FCF3",
+    "id_int": 1856503027,
+    "english": "challenges complete: %d/%d"
+  },
+  {
+    "id": "0x6EBC0B7D",
+    "id_int": 1857817469,
+    "english": "M249"
+  },
+  {
+    "id": "0x6ED17246",
+    "id_int": 1859220038,
+    "english": "-"
+  },
+  {
+    "id": "0x6EE29EDF",
+    "id_int": 1860345567,
+    "english": "Neil Parkinson"
+  },
+  {
+    "id": "0x6F1661AE",
+    "id_int": 1863737774,
+    "english": "navigate through the minefield"
+  },
+  {
+    "id": "0x6F1856CA",
+    "id_int": 1863866058,
+    "english": "%s: %s"
+  },
+  {
+    "id": "0x6F330D78",
+    "id_int": 1865616760,
+    "english": "m16 a2"
+  },
+  {
+    "id": "0x6F4730DA",
+    "id_int": 1866936538,
+    "english": "create profile"
+  },
+  {
+    "id": "0x6F91ED43",
+    "id_int": 1871834435,
+    "english": "SENIOR DESIGNER"
+  },
+  {
+    "id": "0x6FBE9467",
+    "id_int": 1874760807,
+    "english": "reload"
+  },
+  {
+    "id": "0x6FEC0E59",
+    "id_int": 1877741145,
+    "english": "black intel: blast through the wall in naszran town"
+  },
+  {
+    "id": "0x704D5C2A",
+    "id_int": 1884118058,
+    "english": "kill all snipers"
+  },
+  {
+    "id": "0x707ACA56",
+    "id_int": 1887095382,
+    "english": "continue"
+  },
+  {
+    "id": "0x70994984",
+    "id_int": 1889094020,
+    "english": "profile"
+  },
+  {
+    "id": "0x70BDBC36",
+    "id_int": 1891482678,
+    "english": "blackmail objective %1/%2"
+  },
+  {
+    "id": "0x70F00742",
+    "id_int": 1894778690,
+    "english": "Andrew Miller"
+  },
+  {
+    "id": "0x710CF880",
+    "id_int": 1896675456,
+    "english": "-"
+  },
+  {
+    "id": "0x71326D75",
+    "id_int": 1899130229,
+    "english": "*"
+  },
+  {
+    "id": "0x719AFB01",
+    "id_int": 1905982209,
+    "english": "black intel: use the uzi to clear rooms of multiple enemies"
+  },
+  {
+    "id": "0x71E7181B",
+    "id_int": 1910970395,
+    "english": "Jeremy Chubb"
+  },
+  {
+    "id": "0x7248C942",
+    "id_int": 1917372738,
+    "english": "-"
+  },
+  {
+    "id": "0x724CA3AF",
+    "id_int": 1917625263,
+    "english": "Bryce Baer"
+  },
+  {
+    "id": "0x72611C9A",
+    "id_int": 1918966938,
+    "english": "gain access to tivliz asylum interior"
+  },
+  {
+    "id": "0x72E086A4",
+    "id_int": 1927317156,
+    "english": "high calibre"
+  },
+  {
+    "id": "0x72F4E58D",
+    "id_int": 1928652173,
+    "english": "*"
+  },
+  {
+    "id": "0x73368FBA",
+    "id_int": 1932955578,
+    "english": "Tom Hyde"
+  },
+  {
+    "id": "0x7352E37F",
+    "id_int": 1934812031,
+    "english": "*"
+  },
+  {
+    "id": "0x735EDDEE",
+    "id_int": 1935597038,
+    "english": "cleared outbuilding %1 of %2"
+  },
+  {
+    "id": "0x738EC998",
+    "id_int": 1938737560,
+    "english": "Chris Watson"
+  },
+  {
+    "id": "0x73C9B39C",
+    "id_int": 1942598556,
+    "english": "you found naszran foundry surveillance photographs"
+  },
+  {
+    "id": "0x74051B5D",
+    "id_int": 1946491741,
+    "english": "loading pause menus"
+  },
+  {
+    "id": "0x743F2766",
+    "id_int": 1950295910,
+    "english": "*"
+  },
+  {
+    "id": "0x745B4BA3",
+    "id_int": 1952140195,
+    "english": "Paul Harvey"
+  },
+  {
+    "id": "0x749B9524",
+    "id_int": 1956353316,
+    "english": "?"
+  },
+  {
+    "id": "0x74E30D81",
+    "id_int": 1961037185,
+    "english": "Kevin Tayler"
+  },
+  {
+    "id": "0x74EDE079",
+    "id_int": 1961746553,
+    "english": "Blank"
+  },
+  {
+    "id": "0x74F38A51",
+    "id_int": 1962117713,
+    "english": "CONTINUE"
+  },
+  {
+    "id": "0x750CD883",
+    "id_int": 1963776131,
+    "english": "destroy machine gun nest"
+  },
+  {
+    "id": "0x750CFEAB",
+    "id_int": 1963785899,
+    "english": "head shot"
+  },
+  {
+    "id": "0x75179C1B",
+    "id_int": 1964481563,
+    "english": "gain entry to spetriniv gulag 6"
+  },
+  {
+    "id": "0x751EB907",
+    "id_int": 1964947719,
+    "english": "white"
+  },
+  {
+    "id": "0x752167B6",
+    "id_int": 1965123510,
+    "english": "Dave Sullivan"
+  },
+  {
+    "id": "0x75233FCF",
+    "id_int": 1965244367,
+    "english": "glock"
+  },
+  {
+    "id": "0x75250D5B",
+    "id_int": 1965362523,
+    "english": "headhunter"
+  },
+  {
+    "id": "0x7531B7E0",
+    "id_int": 1966192608,
+    "english": "black intel: use the suppressor to silence a weapon"
+  },
+  {
+    "id": "0x754F6D58",
+    "id_int": 1968139608,
+    "english": "ammo for magnum"
+  },
+  {
+    "id": "0x758E2074",
+    "id_int": 1972248692,
+    "english": "space"
+  },
+  {
+    "id": "0x75992194",
+    "id_int": 1972969876,
+    "english": "GÃ©rard Dessalles"
+  },
+  {
+    "id": "0x75FCB12D",
+    "id_int": 1979494701,
+    "english": "total game time:"
+  },
+  {
+    "id": "0x76613C99",
+    "id_int": 1986083993,
+    "english": "-"
+  },
+  {
+    "id": "0x76887843",
+    "id_int": 1988655171,
+    "english": "control type"
+  },
+  {
+    "id": "0x768ADC02",
+    "id_int": 1988811778,
+    "english": "Fiona Sperry"
+  },
+  {
+    "id": "0x76B790B4",
+    "id_int": 1991741620,
+    "english": "eliminate all enemies in the area"
+  },
+  {
+    "id": "0x76F59C0B",
+    "id_int": 1995807755,
+    "english": "you destroyed home addresses of the ex-presidents"
+  },
+  {
+    "id": "0x76F73F18",
+    "id_int": 1995915032,
+    "english": "black intel: the g36c is a medium range rifle"
+  },
+  {
+    "id": "0x77A3DF21",
+    "id_int": 2007228193,
+    "english": "passing shot"
+  },
+  {
+    "id": "0x77B6A56B",
+    "id_int": 2008458603,
+    "english": "current rank: %s"
+  },
+  {
+    "id": "0x77E435B6",
+    "id_int": 2011444662,
+    "english": "welcome to black"
+  },
+  {
+    "id": "0x77F9AF9E",
+    "id_int": 2012852126,
+    "english": "*"
+  },
+  {
+    "id": "0x7820C315",
+    "id_int": 2015413013,
+    "english": "you found a detailed map of the pentagon"
+  },
+  {
+    "id": "0x783C677C",
+    "id_int": 2017224572,
+    "english": "CINEMATIC VISUAL EFFECTS"
+  },
+  {
+    "id": "0x786B668E",
+    "id_int": 2020304526,
+    "english": "invert look"
+  },
+  {
+    "id": "0x7884215E",
+    "id_int": 2021925214,
+    "english": "Luis Porcar"
+  },
+  {
+    "id": "0x7886688F",
+    "id_int": 2022074511,
+    "english": "you found a sniper movement report on naszran town"
+  },
+  {
+    "id": "0x788F4451",
+    "id_int": 2022655057,
+    "english": "ranking ladder"
+  },
+  {
+    "id": "0x78A177A5",
+    "id_int": 2023847845,
+    "english": "black intel"
+  },
+  {
+    "id": "0x792227AC",
+    "id_int": 2032281516,
+    "english": "Rasmus Jorgensen"
+  },
+  {
+    "id": "0x792EC789",
+    "id_int": 2033108873,
+    "english": "rendezvous with black cell"
+  },
+  {
+    "id": "0x79323942",
+    "id_int": 2033334594,
+    "english": "all objectives complete"
+  },
+  {
+    "id": "0x79464B69",
+    "id_int": 2034649961,
+    "english": "TEST CONSULTANCY MANAGER"
+  },
+  {
+    "id": "0x796A6EF5",
+    "id_int": 2037018357,
+    "english": "mission select"
+  },
+  {
+    "id": "0x799A618E",
+    "id_int": 2040160654,
+    "english": "Sergio Lopez Obeso"
+  },
+  {
+    "id": "0x799FC95C",
+    "id_int": 2040514908,
+    "english": "WEAPON MACHINERY 2 OF 4 DESTROYED"
+  },
+  {
+    "id": "0x79EA2A75",
+    "id_int": 2045389429,
+    "english": "blurred crosshair indicates out of range"
+  },
+  {
+    "id": "0x79EAC158",
+    "id_int": 2045428056,
+    "english": "%d%%"
+  },
+  {
+    "id": "0x79FE0D4B",
+    "id_int": 2046692683,
+    "english": "Phillip Lloyd"
+  },
+  {
+    "id": "0x7A450D6A",
+    "id_int": 2051345770,
+    "english": "Perfect Target"
+  },
+  {
+    "id": "0x7A655732",
+    "id_int": 2053461810,
+    "english": "Objective"
+  },
+  {
+    "id": "0x7A80C391",
+    "id_int": 2055259025,
+    "english": "Elliott Lock"
+  },
+  {
+    "id": "0x7A99AAC9",
+    "id_int": 2056891081,
+    "english": "gold medals"
+  },
+  {
+    "id": "0x7B42A9A6",
+    "id_int": 2067966374,
+    "english": "Marco Pagani"
+  },
+  {
+    "id": "0x7B52DB18",
+    "id_int": 2069027608,
+    "english": "first aid kit"
+  },
+  {
+    "id": "0x7B97DCC8",
+    "id_int": 2073550024,
+    "english": "Steve Lucas"
+  },
+  {
+    "id": "0x7BD8BA2F",
+    "id_int": 2077801007,
+    "english": "current rank:"
+  },
+  {
+    "id": "0x7BEA3FD2",
+    "id_int": 2078949330,
+    "english": "black intel: complete armament objectives by finding hidden weapons"
+  },
+  {
+    "id": "0x7BFE8569",
+    "id_int": 2080277865,
+    "english": "-"
+  },
+  {
+    "id": "0x7C87FBCB",
+    "id_int": 2089286603,
+    "english": "black intel: destroy the environment to take down enemies"
+  },
+  {
+    "id": "0x7C8CD83F",
+    "id_int": 2089605183,
+    "english": "you found dossiers marked operation take away"
+  },
+  {
+    "id": "0x7CE6C6A7",
+    "id_int": 2095498919,
+    "english": "run"
+  },
+  {
+    "id": "0x7CFA18D1",
+    "id_int": 2096765137,
+    "english": "Olly Read"
+  },
+  {
+    "id": "0x7D0DDAB7",
+    "id_int": 2098059959,
+    "english": "Profile"
+  },
+  {
+    "id": "0x7D1C5FD4",
+    "id_int": 2099011540,
+    "english": "none"
+  },
+  {
+    "id": "0x7D896B4D",
+    "id_int": 2106157901,
+    "english": "*"
+  },
+  {
+    "id": "0x7DD5507A",
+    "id_int": 2111131770,
+    "english": "Infinite Ammo Weapons"
+  },
+  {
+    "id": "0x7DF84BA7",
+    "id_int": 2113424295,
+    "english": "eliminate all snipers"
+  },
+  {
+    "id": "0x7DFC9FE3",
+    "id_int": 2113708003,
+    "english": "music volume"
+  },
+  {
+    "id": "0x7E2B8F70",
+    "id_int": 2116783984,
+    "english": "Joe Wilkins"
+  },
+  {
+    "id": "0x7E3047EC",
+    "id_int": 2117093356,
+    "english": "uzi"
+  },
+  {
+    "id": "0x7E4FE3B5",
+    "id_int": 2119164853,
+    "english": "Jonathan Graham"
+  },
+  {
+    "id": "0x7E584708",
+    "id_int": 2119714568,
+    "english": "disable weapon manufacturing capacity"
+  },
+  {
+    "id": "0x7E6D46B9",
+    "id_int": 2121090745,
+    "english": "Blank"
+  },
+  {
+    "id": "0x7E87EE6C",
+    "id_int": 2122837612,
+    "english": "smashing windows distracts enemies"
+  },
+  {
+    "id": "0x7E93C952",
+    "id_int": 2123614546,
+    "english": "Emma Nye"
+  },
+  {
+    "id": "0x7EDDC9EE",
+    "id_int": 2128464366,
+    "english": "please reconnect the controller to controller port %d"
+  },
+  {
+    "id": "0x7EF7A597",
+    "id_int": 2130158999,
+    "english": "Juan ComesaÃ±a"
+  },
+  {
+    "id": "0x7F417333",
+    "id_int": 2134995763,
+    "english": "black intel: smash windows near enemies to distract them"
+  },
+  {
+    "id": "0x7F4D070C",
+    "id_int": 2135754508,
+    "english": "you found blueprints of a bunker complex located at mount weather, bluemont virginia"
+  },
+  {
+    "id": "0x7F51A365",
+    "id_int": 2136056677,
+    "english": "Nathan Walker"
+  },
+  {
+    "id": "0x7F5886E4",
+    "id_int": 2136508132,
+    "english": "press Â² to start"
+  },
+  {
+    "id": "0x7FDFB58E",
+    "id_int": 2145367438,
+    "english": "no"
+  },
+  {
+    "id": "0x7FE9E547",
+    "id_int": 2146035015,
+    "english": "*"
+  }
+]

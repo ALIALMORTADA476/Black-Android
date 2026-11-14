@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "common/mod_schema.h"
 #include "common/mouse_keyboard.h"
 #include "common/options.h"
 #include "core/log.h"
@@ -49,8 +50,11 @@ void MouseLook(X86Context& ctx, uint8_t*) {
     G<float>(ctx.esi + kControllerPitch) += dy * scale;
 }
 
-// false with the keyboard or mouse used last: no pull of the view to a target, no shots bent to one
-bool AimAssist(X86Context&, uint8_t*) { return !input::KeyboardActive(); }
+// false with the keyboard or mouse used last, or when Disable Aim Assist is toggled on
+bool AimAssist(X86Context&, uint8_t*) {
+    if (modsettings::Registry().GetEnhanced().disable_aim_assist) return false;
+    return !input::KeyboardActive();
+}
 
 // ebx the player's controller past the game's toggle aim, scopes and all
 void HoldAim(X86Context& ctx, uint8_t*) {

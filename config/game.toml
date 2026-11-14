@@ -570,3 +570,179 @@ after = true
 at = 0x1F813B
 call = "GameLanguage"
 after = true
+
+# src/game/physics_lab.cpp
+[[hook]]
+at = 0x1E4034
+call = "PhysicsBlastImpulseA"
+
+[[hook]]
+at = 0x1E568E
+call = "PhysicsBlastImpulseB"
+
+[[hook]]
+at = 0x1E8EFC
+call = "PhysicsBlastImpulseC"
+
+[[hook]]
+at = 0x1E5952
+call = "PhysicsImpactImpulseA"
+
+[[hook]]
+at = 0x1E908D
+call = "PhysicsImpactImpulseB"
+
+[[hook]]
+at = 0x1E55BC
+call = "PhysicsBlastDamageA"
+
+[[hook]]
+at = 0x1E8DFF
+call = "PhysicsBlastDamageB"
+
+[[hook]]
+at = 0x1E5DA6
+call = "PhysicsBlastLinearA"
+
+[[hook]]
+at = 0x1E5DB0
+call = "PhysicsBlastAngularA"
+
+[[hook]]
+at = 0x1E58DB
+call = "PhysicsImpactDamage"
+
+[[hook]]
+at = 0x1E7403
+call = "PhysicsImpactAngularA"
+
+[[hook]]
+at = 0x1E7413
+call = "PhysicsImpactLinearA"
+
+[[hook]]
+at = 0x1E1211
+call = "PhysicsImpactAngularB"
+
+[[hook]]
+at = 0x1E1221
+call = "PhysicsImpactLinearB"
+
+[[hook]]
+at = 0x1EAADF
+call = "PhysicsImpactAngularC"
+
+[[hook]]
+at = 0x1EAAEF
+call = "PhysicsImpactLinearC"
+
+[[hook]]
+at = 0x1EAC22
+call = "PhysicsImpactAngularD"
+
+[[hook]]
+at = 0x1EAC32
+call = "PhysicsImpactLinearD"
+
+[[hook]]
+at = 0x1F11D5
+call = "PhysicsGravityPost"
+
+[[hook]]
+at = 0x1693EA
+call = "PhysicsShardGravity"
+
+[[hook]]
+at = 0x1693F6
+call = "PhysicsShardDebris"
+
+[[hook]]
+at = 0x1EA22A
+call = "PhysicsDebrisLaunch"
+
+[[hook]]
+at = 0x16DFFF
+call = "PhysicsParticleDebris"
+
+[[hook]]
+at = 0x77DA1
+call = "PhysicsRagdollDamping"
+
+[[hook]]
+at = 0x77DFF
+call = "PhysicsRagdollSpeedA"
+after = true
+
+[[hook]]
+at = 0x77E74
+call = "PhysicsRagdollSpeedB"
+after = true
+
+[[hook]]
+at = 0x1FFFB1
+call = "PhysicsCharacterLaunchA"
+
+[[hook]]
+at = 0x2082F9
+call = "PhysicsCharacterLaunchB"
+
+[[hook]]
+at = 0x209119
+call = "PhysicsCharacterLaunchC"
+
+[[hook]]
+at = 0x20914B
+call = "PhysicsCharacterLaunchD"
+
+[[hook]]
+at = 0x1EF702
+call = "PhysicsRecoilKickPrimary"
+
+[[hook]]
+at = 0x1EFE50
+call = "PhysicsRecoilKick"
+
+# Universal Ragdoll Bone Lift & Impulse (sub_000DC960)
+[[hook]]
+at = 0x0DC983
+call = "PhysicsRagdollBoneLift"
+
+[[hook]]
+at = 0x0DC9A6
+call = "PhysicsRagdollBoneImpulse"
+
+# Universal Radial Blast Impulse & Ragdoll Lift (sub_000DCC40)
+[[hook]]
+at = 0x0DCC6A
+call = "PhysicsUniversalBlastImpulse"
+
+[[hook]]
+at = 0x0DCCCA
+call = "PhysicsBlastRagdollLift"
+
+# Universal Point / Bullet Impact Impulse (sub_000DCF80)
+[[hook]]
+at = 0x0DCFA7
+call = "PhysicsUniversalPointImpulse"
+
+# Explosion Blast Radius Falloff (sub_001E8D80, sub_001E8F20, sub_001E5410)
+[[hook]]
+at = 0x1E8E26
+call = "PhysicsBlastRadiusFalloffA"
+
+[[hook]]
+at = 0x1E9060
+call = "PhysicsBlastRadiusFalloffB"
+
+[[hook]]
+at = 0x1E5664
+call = "PhysicsBlastRadiusFalloffC"
+
+# Explosion Shockwave Camera Shake (sub_001E90B0)
+[[hook]]
+at = 0x1E9216
+call = "PhysicsCameraShakeA"
+
+[[hook]]
+at = 0x1E92F1
+call = "PhysicsCameraShakeB"

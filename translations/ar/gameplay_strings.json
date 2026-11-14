@@ -1,0 +1,722 @@
+[
+  {
+    "id": "0X00422B61",
+    "id_int": 4336481,
+    "english": "destruction %1 of %2",
+    "arabic": "تم تدمير الهدف %1 من أصل %2",
+    "context": "HUD: Destruction progress",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X0062482C",
+    "id_int": 6441004,
+    "english": "change weapon up",
+    "arabic": "تبديل إلى السلاح التالي",
+    "context": "HUD: Next weapon",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X01BBE675",
+    "id_int": 29091445,
+    "english": "press Â² for info",
+    "arabic": "اضغط للحصول على معلومات تكتيكية",
+    "context": "HUD: Press for info",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X01CA3726",
+    "id_int": 30029606,
+    "english": "hunt down seventh wave suspect lennox",
+    "arabic": "ملاحقة المشتبه به في الموجة السابعة: لينوكس",
+    "context": "Mission 8: Spetriniv Gulag — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X01F00F8E",
+    "id_int": 32509838,
+    "english": "black intel: the p90 is a medium range weapon",
+    "arabic": "معلومات بلاك: سلاح P90 فعال ومثالي في المدى المتوسط",
+    "context": "Tactical Intel: P90",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X01F2AC9D",
+    "id_int": 32681117,
+    "english": "you destroyed details of european cia camp \"bondsteel\"",
+    "arabic": "لقد دمّرت تفاصيل معسكر الاستخبارات الأوروبي",
+    "context": "Recon Objective: Bondsteel",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X020BE815",
+    "id_int": 34334741,
+    "english": "eliminate valencio's bodyguards",
+    "arabic": "القضاء على حراس فالنسيو الشخصيين",
+    "context": "Mission 5: Tivliz Asylum — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X022F7FC6",
+    "id_int": 36667334,
+    "english": "total enemy count:",
+    "arabic": "إجمالي عدد الأعداء المتمركزين:",
+    "context": "HUD: Total enemy count",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X02368776",
+    "id_int": 37128054,
+    "english": "black intel: explore your surroundings to find suppressors",
+    "arabic": "معلومات بلاك: ابحث حولك للعثور على كاتم الصوت",
+    "context": "Tactical Intel: Silencer",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0240ACF0",
+    "id_int": 37793008,
+    "english": "eliminate the rpg enemy",
+    "arabic": "تصفية رماة قذائف الآر بي جي",
+    "context": "Mission 7: Graznei Bridge — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0372231D",
+    "id_int": 57811741,
+    "english": "black intel: fallen enemies drop first aid kits",
+    "arabic": "معلومات بلاك: الأعداء الذين يسقطون يتركون حقائب إسعاف أولية",
+    "context": "Tactical Intel: Health drops",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X03AB5B62",
+    "id_int": 61561698,
+    "english": "mission info",
+    "arabic": "معلومات المهمة والعمليات",
+    "context": "HUD: Mission info",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X03CCD097",
+    "id_int": 63754391,
+    "english": "crouch",
+    "arabic": "انحنِ خلف الساتر",
+    "context": "Action Prompt: Crouch",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X04550FFD",
+    "id_int": 72683517,
+    "english": "primary objective update",
+    "arabic": "تحديث المهمة الرئيسية",
+    "context": "HUD: Primary objective update",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0618C791",
+    "id_int": 102287249,
+    "english": "gasometer %1 of %2 destroyed",
+    "arabic": "تم تدمير خزان الغاز %1 من أصل %2",
+    "context": "Mission 2: Trenches — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X069DCB97",
+    "id_int": 111004567,
+    "english": "black intel: Shoot hand grenades mid air to kill nearby enemies.",
+    "arabic": "معلومات بلاك: أطلق النار على القنبلة في الجو لقتل الأعداء القريبين منها",
+    "context": "Tactical Intel: Mid-air grenade",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X06DD643B",
+    "id_int": 115172411,
+    "english": "find the shotgun",
+    "arabic": "اعثر على سلاح الشوزن",
+    "context": "Prompt: Find shotgun",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X074A6CBC",
+    "id_int": 122318012,
+    "english": "eliminate all enemies",
+    "arabic": "تصفية جميع الأعداء في المنطقة",
+    "context": "Mission 1: Veblensk Streets — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X077ADBAA",
+    "id_int": 125492138,
+    "english": "no current primary objective",
+    "arabic": "لا توجد مهمات رئيسية نشطة حالياً",
+    "context": "HUD: No active primary objective",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X07A9F7A3",
+    "id_int": 128579491,
+    "english": "you discovered detailed blueprints of the new york subway system",
+    "arabic": "عثرت على مخطط تفصيلي لشبكة قطارات الأنفاق",
+    "context": "Recon Objective: Subway blueprints",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X07DAADA6",
+    "id_int": 131771814,
+    "english": "rpg enemy %1 of %2 has been eliminated",
+    "arabic": "تم القضاء على رماة الآر بي جي %1 من %2",
+    "context": "Mission 7: Graznei Bridge — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X08073598",
+    "id_int": 134690200,
+    "english": "%s - %s complete",
+    "arabic": "اكتملت المهمة: %s - %s بنجاح",
+    "context": "Mission complete banner",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X084643A5",
+    "id_int": 138822565,
+    "english": "black intel: are you good enough to unlock the m16a2?",
+    "arabic": "معلومات بلاك: هل تمتلك المهارة الكافية لفتح بندقية M16A2؟",
+    "context": "Tactical Intel: M16A2",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X084A379A",
+    "id_int": 139081626,
+    "english": "you found a document stamped wi-99-eye",
+    "arabic": "عثرت على وثيقة رسمية مختومة بختم سري للغاية",
+    "context": "Recon Objective: Secret document",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X090F77E3",
+    "id_int": 152008675,
+    "english": "find the armoury",
+    "arabic": "ابحث عن مخزن الأسلحة السري",
+    "context": "Mission 1: Veblensk — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X09443306",
+    "id_int": 155464454,
+    "english": "capture seventh wave suspects",
+    "arabic": "إلقاء القبض على المشتبه به من الموجة السابعة",
+    "context": "Mission 5: Tivliz Asylum — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0980DEFA",
+    "id_int": 159440634,
+    "english": "explore to find health packs",
+    "arabic": "استكشف المكان للعثور على حقيبة إسعاف",
+    "context": "Prompt: Find health pack",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X0B80CB5D",
+    "id_int": 192990045,
+    "english": "black intel: crouch behind cover to hide from enemies",
+    "arabic": "معلومات بلاك: انحنِ خلف الساتر للاختباء من رصاص الأعداء",
+    "context": "Tactical Intel: Crouch cover",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0BB31A06",
+    "id_int": 196286982,
+    "english": "intel objective %1/%2",
+    "arabic": "معلومات الاستخبارات للمهمة %1/%2",
+    "context": "Intel objective status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X0CE62CB0",
+    "id_int": 216411312,
+    "english": "you found fake id cards from chelyabinsk obast nuclear facility",
+    "arabic": "عثرت على بطاقة هوية مزورة لمنشأة نووية",
+    "context": "Recon Objective: Fake ID",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0CED0F44",
+    "id_int": 216862532,
+    "english": "black intel: collect mission information to complete recon objectives",
+    "arabic": "معلومات بلاك: اجمع وثائق المهمة لإكمال أهداف الاستطلاع",
+    "context": "Tactical Intel: Recon collection",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0E98F9CA",
+    "id_int": 244906442,
+    "english": "WEAPON MACHINERY 3 OF 4 DESTROYED",
+    "arabic": "تم تدمير سلاح الرشاش الثقيل 3 من 4",
+    "context": "Mission 2: Trenches — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X0EED1AE3",
+    "id_int": 250419939,
+    "english": "red hit ring indicates attack direction",
+    "arabic": "الحلقة الحمراء تحدد اتجاه الهجوم المعادي بدقة",
+    "context": "Tactical Intel: Direction ring",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X0F465F7D",
+    "id_int": 256270205,
+    "english": "primary objective complete",
+    "arabic": "اكتمل الهدف الرئيسي للمهمة!",
+    "context": "HUD: Primary objective complete",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X0FD34110",
+    "id_int": 265502992,
+    "english": "",
+    "arabic": "تطهير شارع فيبلنسك من المتاريس الإرهابية",
+    "context": "Mission 1: Veblensk — Primary",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X10A8BF83",
+    "id_int": 279494531,
+    "english": "",
+    "arabic": "اقتحام قبو المبنى وتطهيره",
+    "context": "Mission 1: Veblensk — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X112EB5FA",
+    "id_int": 288273914,
+    "english": "",
+    "arabic": "الالتقاء بفرقة الدعم التكتيكي",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X125BF0D9",
+    "id_int": 308015321,
+    "english": "",
+    "arabic": "تم الوصول إلى نقطة الحفظ (تشيك بوينت)",
+    "context": "HUD: Checkpoint reached",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X138A7F41",
+    "id_int": 327843649,
+    "english": "",
+    "arabic": "فشلت المهمة! لقد سقطت في المعركة",
+    "context": "HUD: Mission failed",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X14C0385E",
+    "id_int": 348141662,
+    "english": "",
+    "arabic": "اكتملت جميع أهداف المهمة بنجاح تكتيكي تام",
+    "context": "HUD: Mission accomplished",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X15D90B38",
+    "id_int": 366545720,
+    "english": "",
+    "arabic": "تسلل إلى مصنع الأسلحة عبر شبكة الأنابيب",
+    "context": "Mission 4: Nazran Foundry — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X16F48A2C",
+    "id_int": 385124908,
+    "english": "",
+    "arabic": "كيلر: لا مجال للتراجع الآن، تقدموا فوراً!",
+    "context": "Dialogue / Radio: Keller",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X17E2B04D",
+    "id_int": 400732237,
+    "english": "",
+    "arabic": "ماكالوم: نيران القناصة كثيفة، احتموا خلف القبور!",
+    "context": "Dialogue / Radio: MacCallum",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X18B90F21",
+    "id_int": 414781217,
+    "english": "",
+    "arabic": "سيلار: الهدف تحصن داخل المعتقل، اقتحموا البوابة!",
+    "context": "Dialogue / Radio: Cellar",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X19A07E3F",
+    "id_int": 429948479,
+    "english": "",
+    "arabic": "العمليات: تأكيد تصفية الهدف، تابعوا إلى نقطة الإخلاء",
+    "context": "Dialogue / Radio: HQ",
+    "category": "subtitle",
+    "status": "verified"
+  },
+  {
+    "id": "0X80238916",
+    "id_int": 2149812502,
+    "english": "Primary objectives only. Lots of Healthpacks. No rewards.",
+    "arabic": "الأهداف الرئيسية فقط. وفرة في حقائب العلاج. لا توجد مكافآت.",
+    "context": "Difficulty: Easy description",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X8024F22A",
+    "id_int": 2149904938,
+    "english": "use gravestones for cover",
+    "arabic": "احتمِ بشواهد القبور من نيران القناصة",
+    "context": "Mission 3: Nazran Cemetery — Tactical hint",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X81E26F75",
+    "id_int": 2179100533,
+    "english": "black intel: hand grenades can be shot in mid air",
+    "arabic": "معلومات بلاك: يمكن تفجير القنابل اليدوية بالرصاص في الجو",
+    "context": "Tactical Intel: Grenades",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X832FDFD9",
+    "id_int": 2200952793,
+    "english": "SMELTER 2 OF 3 DESTROYED",
+    "arabic": "تم تدمير المصهر 2 من 3",
+    "context": "Mission 4: Nazran Foundry — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X836043E6",
+    "id_int": 2204124134,
+    "english": "black intel: red health bar indicates health is running low",
+    "arabic": "معلومات بلاك: شريط الصحة الأحمر ينذر باقتراب نفاد طاقتك",
+    "context": "Tactical Intel: Health bar",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X840D87FF",
+    "id_int": 2215479295,
+    "english": "black intel: red hit ring indicates direction of attack",
+    "arabic": "معلومات بلاك: المؤشر الأحمر يحدد اتجاه إطلاق النار المعادي",
+    "context": "Tactical Intel: Hit ring",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X855C6280",
+    "id_int": 2237424256,
+    "english": "destruction objective update",
+    "arabic": "تحديث أهداف التدمير",
+    "context": "HUD: Destruction objective update",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X858C8013",
+    "id_int": 2240577555,
+    "english": "you destroyed\r\nsmuggled cctv footage from camp x-ray",
+    "arabic": "لقد دمّرت تسجيلات كاميرات المراقبة المهربة من معسكر إكس-راي",
+    "context": "Recon Objective: Camp X-Ray",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X85FBCC48",
+    "id_int": 2247871560,
+    "english": "hold breath",
+    "arabic": "احبس الأنفاس لتثبيت القنص",
+    "context": "Sniper: Hold breath",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X8675C49B",
+    "id_int": 2255864987,
+    "english": "destroy metal smelter control panels",
+    "arabic": "دمّر لوحات التحكم في مصهر المعادن",
+    "context": "Mission 4: Nazran Foundry — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X868FAB6C",
+    "id_int": 2257562476,
+    "english": "black intel: objects marked with a yellow triangle explode when shot",
+    "arabic": "معلومات بلاك: الأجسام التي تحمل مثلثاً أصفر تنفجر عند إطلاق النار عليها",
+    "context": "Tactical Intel: Exploding objects",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X887B9B21",
+    "id_int": 2289802017,
+    "english": "eliminate all snipers",
+    "arabic": "القضاء على جميع القناصة",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8992BE01",
+    "id_int": 2308095489,
+    "english": "find weapons for armament objectives",
+    "arabic": "اعثر على الأسلحة لإكمال أهداف التسلح",
+    "context": "Armament Objective hint",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8B92ABA6",
+    "id_int": 2341645222,
+    "english": "black intel: you can carry 2 weapons at once",
+    "arabic": "معلومات بلاك: يمكنك حمل سلاحين في نفس الوقت",
+    "context": "Tactical Intel: Carrying weapons",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X8BD3CB27",
+    "id_int": 2345913127,
+    "english": "complete %d objectives",
+    "arabic": "أكمل %d من الأهداف",
+    "context": "Mission summary: Objectives complete",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X8CFF6FBF",
+    "id_int": 2365550527,
+    "english": "black intel: smash windows with a melee attack",
+    "arabic": "معلومات بلاك: حطم النوافذ الزجاجية بالضرب باليد أو السلاح",
+    "context": "Tactical Intel: Melee windows",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X8D715B6D",
+    "id_int": 2373016429,
+    "english": "destroy the gasometers",
+    "arabic": "دمّر خزانات الغاز الضخمة",
+    "context": "Mission 2: Trenches — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8EC35B00",
+    "id_int": 2395167488,
+    "english": "you destroyed documents explaining cell phone \"meaconing\"",
+    "arabic": "لقد دمّرت وثائق سرية تشرح تتبع وتشويش الهواتف",
+    "context": "Recon Objective: Meaconing",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8EFF7A18",
+    "id_int": 2399107608,
+    "english": "destroy info for blackmail objectives",
+    "arabic": "دمّر الوثائق الحساسة لإكمال أهداف الابتزاز",
+    "context": "Blackmail Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X8FF5C427",
+    "id_int": 2415248423,
+    "english": "you discovered blueprints marked phased plasma rifles (40w range)",
+    "arabic": "لقد عثرت على مخططات بنادق البلازما المتطورة",
+    "context": "Recon Objective: Blueprints",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X905E4EE0",
+    "id_int": 2422099680,
+    "english": "press start",
+    "arabic": "اضغط START للمتابعة",
+    "context": "Prompt: Press start",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0X92899AE7",
+    "id_int": 2458491623,
+    "english": "black intel: crouch behind cover to avoid enemy fire",
+    "arabic": "معلومات بلاك: انحنِ خلف الساتر لتفادي نيران العدو",
+    "context": "Tactical Intel: Crouch cover",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X95E45EFE",
+    "id_int": 2514771710,
+    "english": "black intel: find weapons to complete armament objectives",
+    "arabic": "معلومات بلاك: ابحث عن أسلحة الأعداء لإكمال أهداف التسلح",
+    "context": "Tactical Intel: Armament",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X9652662B",
+    "id_int": 2521982507,
+    "english": "new destruction objective",
+    "arabic": "هدف تدمير جديد متاح",
+    "context": "HUD: New destruction objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0X974F1125",
+    "id_int": 2538541349,
+    "english": "Complete %d of %d secondary objectives",
+    "arabic": "أكملت %d من أصل %d من الأهداف الثانوية",
+    "context": "HUD: Secondary objectives progress",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0X98F95E34",
+    "id_int": 2566479412,
+    "english": "black intel: the magnum takes down enemies with one shot",
+    "arabic": "معلومات بلاك: مسدس الماغنوم يقضي على الأعداء برصاصة واحدة",
+    "context": "Tactical Intel: Magnum",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X9F949A2D",
+    "id_int": 2677316141,
+    "english": "black intel: silver weapons have unlimited ammunition",
+    "arabic": "معلومات بلاك: الأسلحة الفضية تمتلك ذخيرة لا نهائية",
+    "context": "Tactical Intel: Silver weapons",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0X9F96393E",
+    "id_int": 2677422398,
+    "english": "you destroyed audiotapes marked copper green",
+    "arabic": "لقد دمّرت الأشرطة الصوتية السرية",
+    "context": "Recon Objective: Audiotapes",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA0DA797C",
+    "id_int": 2698672508,
+    "english": "destroy the control panels",
+    "arabic": "دمّر جميع لوحات التحكم",
+    "context": "Mission 4: Destroy control panels",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA11CE423",
+    "id_int": 2703025187,
+    "english": "black intel: recon objectives provide information for future missions",
+    "arabic": "معلومات بلاك: أهداف الاستطلاع تمنحك معلومات للمهمات القادمة",
+    "context": "Tactical Intel: Recon",
+    "category": "intel",
+    "status": "verified"
+  },
+  {
+    "id": "0XA14008B3",
+    "id_int": 2705328307,
+    "english": "use shotgun to blast doors",
+    "arabic": "استخدم الشوزن لتحطيم وتفجير الأبواب",
+    "context": "Prompt: Shotgun doors",
+    "category": "prompt",
+    "status": "verified"
+  },
+  {
+    "id": "0XA1C29808",
+    "id_int": 2713884680,
+    "english": "eliminate gulag entry defences",
+    "arabic": "دمّر الدفاعات الخارجية لمدخل الغولاغ",
+    "context": "Mission 8: Spetriniv Gulag — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA2BBD5E7",
+    "id_int": 2730218983,
+    "english": "weapon machinery %1 of %2 destroyed",
+    "arabic": "تم تدمير آلات تصنيع السلاح %1 من %2",
+    "context": "Mission 4: Nazran Foundry — Status",
+    "category": "hud",
+    "status": "verified"
+  },
+  {
+    "id": "0XA4831CA1",
+    "id_int": 2760055969,
+    "english": "cross sniper alley",
+    "arabic": "اعبر زقاق القناصة بحذر",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  },
+  {
+    "id": "0XA4C85844",
+    "id_int": 2764593220,
+    "english": "eliminate the sniper",
+    "arabic": "تصفية القناص المتمركز في البرج",
+    "context": "Mission 3: Nazran Cemetery — Objective",
+    "category": "objective",
+    "status": "verified"
+  }
+]

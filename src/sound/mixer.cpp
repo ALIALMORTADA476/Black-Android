@@ -1,6 +1,9 @@
 // decoding, levels and the mix
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 
+#include "common/mod_schema.h"
 #include "sound/sound.h"
 
 namespace sound {
@@ -431,6 +434,20 @@ void Render(float* out, uint32_t frames) {
         MixVoice(v, out, send.data(), frames);
     }
     g_reverb.Run(send.data(), out, frames);
+
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    const bool boost = enh.combat_dynamic_boost;
+    const float gain = std::clamp(float(enh.master_gain_percent), 10.0f, 150.0f) * 0.01f;
+    if (boost || std::fabs(gain - 1.0f) > 1e-3f) {
+        const size_t n = size_t(frames) * kOuts;
+        for (size_t i = 0; i < n; i++) {
+            float s = out[i];
+            if (boost) {
+                s = std::tanh(s * 1.45f) * 1.08f;
+            }
+            out[i] = std::clamp(s * gain, -1.0f, 1.0f);
+        }
+    }
 }
 
 int64_t NowMs() {

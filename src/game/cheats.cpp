@@ -4,6 +4,7 @@
 
 #include "common/options.h"
 #include "game/layout.h"
+#include "game/physics_lab.h"
 #include "xdk/hle.h"
 
 using namespace kernel;
@@ -81,9 +82,35 @@ X86_FUNC(sub_001E5FA0) {
 // characters' class, the player's has its own
 X86_EXTERN_FUNC(__imp__sub_001E74B0);
 X86_FUNC(sub_001E74B0) {
-    Doomed doomed = Doom(ctx.ecx, R32(ctx.esp + 0x18));
+    uint32_t victim = ctx.ecx;
+    uint32_t attacker = R32(ctx.esp + 0x18);
+    uint32_t me = Player();
+    const float imp = game::physics_lab::Params().impact_force.load(std::memory_order_relaxed);
+    float health_scale = 1.0f;
+    if (me && attacker == me && victim && victim != me) {
+        if (std::fabs(imp - 1.0f) > 1e-3f) {
+            float& force_arg = G<float>(ctx.esp + 0x0C);
+            if (std::isfinite(force_arg)) {
+                force_arg *= imp * 3.5f;
+            }
+            if (!game::Opt().one_hit_kill && imp > 1.01f && !R32(victim + kCharDying)) {
+                float& hp = G<float>(victim + kCharHealth);
+                if (std::isfinite(hp) && hp > kSliver * 2.0f) {
+                    health_scale = imp;
+                    hp = std::max(kSliver * 2.0f, hp / health_scale);
+                }
+            }
+        }
+    }
+    Doomed doomed = Doom(victim, attacker);
     __imp__sub_001E74B0(ctx, base);
     Spare(doomed);
+    if (health_scale > 1.0f && victim && !R32(victim + kCharDying)) {
+        float& hp = G<float>(victim + kCharHealth);
+        if (std::isfinite(hp) && hp > 0.0f) {
+            hp *= health_scale;
+        }
+    }
 }
 
 // A character's animation event (64-bit hash, then a pointer to the character): the throw takes a grenade

@@ -5,10 +5,12 @@
 #include <thread>
 
 #include "app/app.h"
+#include "common/mod_schema.h"
 #include "common/mouse_keyboard.h"
 #include "common/options.h"
 #include "core/input.h"
 #include "game/layout.h"
+#include "game/physics_lab.h"
 #include "xdk/d3d8.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
@@ -464,8 +466,10 @@ void PhysicsTime(X86Context&, uint8_t*) {
     uint32_t physics = R32(kPhysics);
     uint32_t solver = physics ? R32(physics) : 0;
     uint32_t world = solver ? R32(solver + kSolverWorld) : 0;
-    float dt = FrameTime();
-    float share = FrameShare();
+    float t_scale = game::physics_lab::Params().physics_time_scale.load(std::memory_order_relaxed);
+    if (!std::isfinite(t_scale) || t_scale < 0.1f) t_scale = 1.0f;
+    float dt = FrameTime() * t_scale;
+    float share = FrameShare() * t_scale;
     if (!world || !(dt > 0)) return;
     float& step = G<float>(world + kPhysicsStep);
     if (step > 0 && step != dt) ScaleBodies(world, dt / step);
@@ -488,30 +492,49 @@ void PhysicsTime(X86Context&, uint8_t*) {
 }
 bool BodyRestTick(X86Context&, uint8_t*) { return g_rest_tick; }
 
-// a body's damping is a factor a step, its top speed a move a step
-void BodyDamping(X86Context& ctx, uint8_t*) {
-    for (int i = 0; i < 2; i++)
-        if (float& keep = ctx.xmm[i].f[0]; keep > 0) keep = std::pow(keep, FrameShare());
+static float EffectivePhysicsTimeScale() {
+    float t_scale = game::physics_lab::Params().physics_time_scale.load(std::memory_order_relaxed);
+    return (std::isfinite(t_scale) && t_scale >= 0.1f) ? t_scale : 1.0f;
 }
-void BodyTopSpeed(X86Context& ctx, uint8_t*) { ctx.xmm[1].f[0] *= FrameShare(); }
+
+// a body's damping is a factor a step, its top speed a move a step
+static float RagdollShare() {
+    const float base_share = modsettings::Registry().GetEnhanced().ragdoll_60fps_physics ? FrameShare() : 1.0f;
+    return base_share * EffectivePhysicsTimeScale();
+}
+
+void BodyDamping(X86Context& ctx, uint8_t*) {
+    const float share = RagdollShare();
+    if (std::fabs(share - 1.0f) <= 1e-4f) return;
+    for (int i = 0; i < 2; i++)
+        if (float& keep = ctx.xmm[i].f[0]; keep > 0) keep = std::pow(keep, share);
+}
+void BodyTopSpeed(X86Context& ctx, uint8_t*) { ctx.xmm[1].f[0] *= RagdollShare(); }
 
 // a joint lets its bodies turn apart by at most a set angle a step
-void JointTurnCap(X86Context& ctx, uint8_t*) { ctx.xmm[0].f[0] *= FrameShare(); }
-void JointTurnCapNext(X86Context& ctx, uint8_t*) { ctx.xmm[6].f[0] *= FrameShare(); }
+void JointTurnCap(X86Context& ctx, uint8_t*) { ctx.xmm[0].f[0] *= RagdollShare(); }
+void JointTurnCapNext(X86Context& ctx, uint8_t*) { ctx.xmm[6].f[0] *= RagdollShare(); }
 
 // contacts are searched this far ahead at least: twice the fall of a step at the game's frame rate
 void ContactReach(X86Context& ctx, uint8_t*) { ctx.xmm[1].f[0] = 1 / G<float>(kGameFrameTime); }
 
 // a ragdoll brakes for a wall within 8 frames of its speed: frames of the game's frame rate
 void RagdollLookAhead(X86Context& ctx, uint8_t*) {
-    if (float share = FrameShare(); share > 0) ctx.xmm[0].f[0] /= share;
+    if (float share = FrameShare() * EffectivePhysicsTimeScale(); share > 0) ctx.xmm[0].f[0] /= share;
+    const float r = std::max({1.0f,
+                              game::physics_lab::Params().ragdoll_launch.load(std::memory_order_relaxed),
+                              game::physics_lab::Params().character_reaction.load(std::memory_order_relaxed),
+                              game::physics_lab::Params().explosion_force.load(std::memory_order_relaxed)});
+    if (r > 1.001f && std::isfinite(ctx.xmm[0].f[0])) {
+        ctx.xmm[0].f[0] /= r;
+    }
 }
 
 // A joint's error, its anchors apart or a turn past its limit or lock, is put right within one step and that push
 // stays on as speed: put right within a frame of the game's frame rate instead.
 // xmm1 the gap of the anchors after the step, xmm2 the part of it the bodies' own motion makes
 void JointAnchorGap(X86Context& ctx, uint8_t*) {
-    float share = FrameShare();
+    float share = RagdollShare();
     for (int i = 0; i < 4; i++) {
         float motion = ctx.xmm[2].f[i];
         ctx.xmm[1].f[i] = motion + (ctx.xmm[1].f[i] - motion) * share;
@@ -523,7 +546,7 @@ void JointAnchorGap(X86Context& ctx, uint8_t*) {
 constexpr uint32_t kJointTurnLow = 0x60;
 constexpr uint32_t kJointTurnHigh = 0x80;
 void JointTurnBack(X86Context& ctx, uint8_t*) {
-    float share = FrameShare();
+    float share = RagdollShare();
     for (uint32_t axis = 0; axis < 12; axis += 4) {
         float& low = G<float>(ctx.esp + kJointTurnLow + axis);
         float& high = G<float>(ctx.esp + kJointTurnHigh + axis);
@@ -540,7 +563,7 @@ static bool g_shard_tick;
 X86_EXTERN_FUNC(__imp__sub_001690D0);
 X86_FUNC(sub_001690D0) {
     static float ticks;
-    ticks += FrameShare();
+    ticks += FrameShare() * EffectivePhysicsTimeScale();
     g_shard_tick = ticks >= 1;
     if (g_shard_tick) ticks -= 1;
     __imp__sub_001690D0(ctx, base);
@@ -548,16 +571,16 @@ X86_FUNC(sub_001690D0) {
 bool ShardTick(X86Context&, uint8_t*) { return g_shard_tick; }
 
 // xmm1 the gain of a shard's turn a frame
-void ShardSpinGain(X86Context& ctx, uint8_t*) { ctx.xmm[1].f[0] *= FrameShare(); }
+void ShardSpinGain(X86Context& ctx, uint8_t*) { ctx.xmm[1].f[0] *= FrameShare() * EffectivePhysicsTimeScale(); }
 
 // xmm1 the new turn a frame: the angle takes a share of it
 void ShardTurn(X86Context& ctx, uint8_t*) {
-    ctx.xmm[0].f[0] = G<float>(ctx.ebx + kShardAngle) + ctx.xmm[1].f[0] * FrameShare();
+    ctx.xmm[0].f[0] = G<float>(ctx.ebx + kShardAngle) + ctx.xmm[1].f[0] * FrameShare() * EffectivePhysicsTimeScale();
 }
 
 // xmm0 the gain of a shard's move a frame, then the new move
 void ShardStep(X86Context& ctx, uint8_t*) {
-    float share = FrameShare();
+    float share = FrameShare() * EffectivePhysicsTimeScale();
     for (int i = 0; i < 4; i++) ctx.xmm[0].f[i] *= share;
 }
 
@@ -567,7 +590,10 @@ static float Reach() { return float(std::clamp(game::Opt().draw_distance, 1u, 8u
 void DistanceShorter(X86Context& ctx, uint8_t*) { ctx.xmm[0].f[0] /= Reach(); }
 void DistanceShorterSquared(X86Context& ctx, uint8_t*) { ctx.xmm[0].f[0] /= Reach() * Reach(); }
 void LimitLonger(X86Context& ctx, uint8_t*) { ctx.xmm[0].f[0] *= Reach(); }
-void CharacterDetail(X86Context& ctx, uint8_t*) { ctx.xmm[1].f[0] /= Reach(); }
+void CharacterDetail(X86Context& ctx, uint8_t*) {
+    const float lod = float(std::clamp(modsettings::Registry().GetEnhanced().character_lod_scale, 1u, 4u));
+    ctx.xmm[1].f[0] /= (Reach() * lod);
+}
 void PropLimit(X86Context& ctx, uint8_t*) { ctx.xmm[2].f[0] *= Reach() * Reach(); }
 constexpr uint32_t kParticleFarCut = 0xC4;
 constexpr uint32_t kCameraFarCut = 0x88;
@@ -576,7 +602,9 @@ constexpr uint32_t kCameraFarCut = 0x88;
 // it starts as much farther as the cut got
 void ParticleFade(X86Context& ctx, uint8_t*) {
     float cut = std::min(G<float>(ctx.edi + kParticleFarCut) * ctx.xmm[1].f[0], G<float>(ctx.edx + kCameraFarCut));
+    const float enh_scale = std::clamp(float(modsettings::Registry().GetEnhanced().particle_fade_scale), 50.0f, 1000.0f) * 0.01f;
     if (Reach() > 1 && cut > 0) ctx.xmm[3].f[0] *= ctx.xmm[2].f[0] / cut;
+    if (std::fabs(enh_scale - 1.0f) > 0.01f && cut > 0) ctx.xmm[3].f[0] /= enh_scale;
 }
 
 // ground cover and its patches

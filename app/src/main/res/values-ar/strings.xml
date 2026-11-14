@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">بلاك النسخة المحسنة</string>
+    <string name="import_game">استيراد اللعبة</string>
+    <string name="no_file_picker">لا يحتوي هذا الهاتف على متصفح ملفات لاختيار ملف اللعبة.</string>
+    <string name="choose_iso">يرجى اختيار صورة قرص اللعبة، ملف ينتهي بامتداد .iso.</string>
+    <string name="not_enough_space">المساحة غير كافية</string>
+    <string name="space_warning">تحتاج صورة القرص إلى مساحة فارغة تبلغ %1$.1f جيجابايت، المتوفر حالياً %2$.1f جيجابايت.</string>
+    <string name="starting">جارٍ البدء…</string>
+    <string name="importing">جارٍ استيراد %s</string>
+    <string name="cancel">إلغاء</string>
+    <string name="ok">موافق</string>
+    <string name="game_imported">تم استيراد اللعبة بنجاح</string>
+    <string name="imported_success">تم وضع %s في المسار الصحيح. ستبدأ اللعبة خلال لحظات.</string>
+    <string name="import_failed">فشل الاستيراد</string>
+    <string name="storage_access">إذن الوصول إلى وحدة التخزين</string>
+    <string name="storage_access_msg">تقرأ لعبة بلاك النسخة المحسنة ملفات اللعبة من مجلد Black في وحدة التخزين الرئيسية:\n\n/storage/emulated/0/%1$s\n\n%2$s</string>
+    <string name="allow_all_files">في الشاشة التالية، قم بتفعيل \"السماح بالوصول لإدارة جميع الملفات\" للعبة بلاك، ثم عُد للتطبيق.</string>
+    <string name="allow_storage">يرجى منح اللعبة إذن الوصول إلى وحدة التخزين في الشاشة التالية.</string>
+    <string name="allow_access">منح الإذن</string>
+    <string name="not_now">ليس الآن</string>
+    <string name="game_files">ملفات اللعبة</string>
+    <string name="game_files_msg">انسخ ملفات اللعبة إلى مجلد Black في وحدة التخزين الرئيسية:\n\n/storage/emulated/0/%1$s\n\nأو في مجلد Black في بطاقة الذاكرة الخارجية SD.\n\nيمكنك استخدام ملف صورة القرص (.iso) أو ملف default.xbe ومجلداته. ستبدأ اللعبة بمجرد توفر الملفات.\n\nأو يمكنك استيراد صورة القرص مباشرة من التنزيلات أو التخزين السحابي أو وحدة USB.</string>
+    <string name="restart_required">إعادة التشغيل مطلوبة</string>
+    <string name="restart_notification">يتطلب تغيير هذا الإعداد إعادة تشغيل اللعبة ليصبح نافذاً.</string>
+</resources>
+

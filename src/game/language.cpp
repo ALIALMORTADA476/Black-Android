@@ -75,24 +75,24 @@ bool HasLanguages() {
     return any;
 }
 
-// English and Indonesian always (Indonesian translates the recomp's text, the game's stays English), the others when
-// the disc has their strings
+// English, Indonesian and Arabic always (Indonesian & Arabic translate recomp text and mod UI, game stays English),
+// the others when the disc has their strings
 bool LanguageAvailable(const std::string& code) {
     static const auto on_disc = [] {
         std::array<bool, std::size(::kLanguages)> out{};
         for (size_t i = 0; i < out.size(); i++) out[i] = OnDisc(::kLanguages[i]);
         return out;
     }();
-    if (code == kUs.code || code == "ind") return true;
+    if (code == kUs.code || code == "ind" || code == "ara") return true;
     for (size_t i = 0; i < on_disc.size(); i++)
         if (code == ::kLanguages[i].code) return on_disc[i];
     return false;
 }
 
-// prompts.cpp: the game shows the LANGUAGE setting's language, not English in its place; Indonesian boots the US
-// strings and has them swapped by id, so it counts too
+// prompts.cpp: the game shows the LANGUAGE setting's language, not English in its place; Indonesian and Arabic boot the US
+// strings and have them swapped by id or recomp UI, so they count too
 bool Translated() {
-    if (game::BootLanguage() == "ind") return true;
+    if (game::BootLanguage() == "ind" || game::BootLanguage() == "ara") return true;
     uint32_t index = Index();
     return index != kUs.index && index != kUk.index;
 }

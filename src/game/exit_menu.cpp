@@ -314,7 +314,7 @@ uint32_t MenuText(uint32_t id) {
     static uint32_t text = 0;
     if (id != kId) return 0;
     if (!text) {
-        std::string credits = app::Ui("CREDITS");
+        std::string credits = app::FlashUi("CREDITS");
         text = mem::AllocSystem(uint32_t(credits.size() + 1));
         std::memcpy(HostPtr(text), credits.c_str(), credits.size() + 1);
     }

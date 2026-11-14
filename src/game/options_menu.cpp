@@ -244,7 +244,7 @@ bool Entries(X86Context& ctx, uint32_t root, uint32_t holder) {
         char name[16];
         std::snprintf(name, sizeof(name), "RC_E%d", i);
         if (!(p.entry[i] = Copy(ctx, holder, name, kDepth + i))) return false;
-        if (!Show(ctx, kEntry + i, p.entry[i], nullptr, app::Ui(kCaptions[i]).c_str())) return false;
+        if (!Show(ctx, kEntry + i, p.entry[i], nullptr, app::FlashUi(kCaptions[i]).c_str())) return false;
     }
     p.first = p.entry[0];
     Follow(p);
@@ -386,13 +386,13 @@ bool Extras(X86Context& ctx, uint32_t root, uint32_t holder) {
 // what row i of the page shows as its value
 std::string ValueText(const Page& p, size_t i) {
     const Row* row = p.rows[i];
-    if ((p.capture == 1 || p.capture == 2) && p.bind == i) return app::Ui("PRESS A KEY");
-    if (row == &kPageRow) return app::Ui(kCaptions[p.mode - 1]);
+    if ((p.capture == 1 || p.capture == 2) && p.bind == i) return app::FlashUi("PRESS A KEY");
+    if (row == &kPageRow) return app::FlashUi(kCaptions[p.mode - 1]);
     if (!row || IsHeading(row)) return " ";
     std::string value = app::rows::Value(*row);
     // key names as they are
     if (row->kind == app::rows::Kind::Bind && value != "UNBOUND") return value;
-    return app::Ui(value);
+    return app::FlashUi(value);
 }
 
 uint32_t Glyph(uint32_t font, uint16_t code) {
@@ -632,12 +632,12 @@ void UpdateTexts(X86Context& ctx, Page& p) {
     constexpr float kArrowGap = 4.0f;
     const Host& h = *p.host;
     uint32_t font = CallGuest(ctx, kFindFont, {R32(kGame), kFontName});
-    if (!p.extra) Write(g_fields[kTitle], app::Ui(kCaptions[p.mode - 1]));
+    if (!p.extra) Write(g_fields[kTitle], app::FlashUi(kCaptions[p.mode - 1]));
     for (size_t i = 0; i < p.slots; i++) {
         const Row* row = p.rows[p.top + i];
         std::string value = ValueText(p, p.top + i);
         bool arrows = Steppable(row) && !p.capture;
-        std::string name = app::Ui(row ? row->label : "RESTORE DEFAULTS");
+        std::string name = app::FlashUi(row ? row->label : "RESTORE DEFAULTS");
         Write(g_fields[kName + i], IsHeading(row) ? "- " + name + " -" : name);
         Write(g_fields[kValue + i], value);
         for (int side = 0; side < 2; side++) Write(g_fields[(side ? kRight : kLeft) + i], arrows ? kArrows[side] : " ");

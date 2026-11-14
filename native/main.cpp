@@ -25,9 +25,12 @@
 
 #include "app/app.h"
 #include "build_info.h"
+#include "common/mod_schema.h"
 #include "common/options.h"
+#include "common/presets.h"
 #include "core/input.h"
 #include "core/log.h"
+#include "game/physics_lab.h"
 #include "host.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
@@ -131,21 +134,8 @@ std::filesystem::path File() { return ExeDir() / kGame.settings; }
 
 toml::table Table() {
     const Settings& s = Get();
-    toml::table t{{"display_mode", kModes[uint32_t(s.display_mode)]},
-                  {"width", int64_t(s.width)},
-                  {"height", int64_t(s.height)},
-                  {"render_percent", int64_t(s.render_percent)},
-                  {"fps_cap", int64_t(s.fps_cap)},
-                  {"vsync", s.vsync},
-                  {"anisotropic_filtering", int64_t(s.aniso)},
-                  {"join_ip", s.join_ip},
-                  {"defaults", int64_t(kDefaults)}};
-    for (const Option& o : kGame.options) {
-        if (o.flag) t.insert(o.key, *o.flag);
-        else t.insert(o.key, int64_t(*o.value));
-    }
-    if (kGame.save) kGame.save(&t);
-    return t;
+    const game::Options& o = game::Opt();
+    return modsettings::Registry().SaveToTable(s, o, &modsettings::Presets());
 }
 
 // a phone renders the console's frame at about 720p unless the settings say otherwise
@@ -173,33 +163,17 @@ Settings& Get() {
 
 void Load() {
     Settings& s = Get();
-    toml::table t;
-    try {
-        t = toml::parse_file(File().string());
-    } catch (...) {
-        return;
-    }
-    std::string mode = t["display_mode"].value_or(std::string(kModes[uint32_t(s.display_mode)]));
-    for (uint32_t i = 0; i < 3; i++)
-        if (mode == kModes[i]) s.display_mode = DisplayMode(i);
-    s.width = t["width"].value_or(s.width);
-    s.height = t["height"].value_or(s.height);
-    s.render_percent = t["render_percent"].value_or(s.render_percent);
-    s.fps_cap = t["fps_cap"].value_or(s.fps_cap);
-    s.vsync = t["vsync"].value_or(s.vsync);
-    s.aniso = t["anisotropic_filtering"].value_or(s.aniso);
-    s.join_ip = t["join_ip"].value_or(s.join_ip);
-    if (t["defaults"].value_or(int64_t(0)) < kDefaults) PhoneFrameDefaults(s);
-    for (const Option& o : kGame.options) {
-        if (o.flag) *o.flag = t[o.key].value_or(*o.flag);
-        else *o.value = t[o.key].value_or(*o.value);
-    }
-    if (kGame.load) kGame.load(&t);
+    game::Options& o = game::Opt();
+    modsettings::Registry().LoadFromFile(File(), s, o, &modsettings::Presets());
+    modsettings::Registry().CaptureBootSnapshot(s, o);
+    game::physics_lab::SyncFromEnhanced(modsettings::Registry().GetEnhanced());
 }
 
 void Save() {
-    std::ofstream f(File());
-    f << Table() << "\n";
+    const Settings& s = Get();
+    const game::Options& o = game::Opt();
+    modsettings::Registry().SaveToFile(File(), s, o, &modsettings::Presets());
+    game::physics_lab::SyncFromEnhanced(modsettings::Registry().GetEnhanced());
 }
 
 void LogSettings() {
@@ -303,6 +277,91 @@ void InitUi() {
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad | ImGuiConfigFlags_IsTouchScreen;
     io.BackendPlatformName = "android_sdl3";
+
+    // Arabic-First Typography & Font Atlas configuration:
+    // 1. Base Latin glyphs from Roboto (crisp rendering on 1080p/1440p displays) or ImGui default
+    // 1. Primary Base Font (Latin Bold + General Punctuation including em-dash)
+    constexpr float kBaseFontSize = 34.0f;
+    static const ImWchar kLatinGlyphRanges[] = {
+        0x0020, 0x00FF, // Basic Latin + Latin Supplement
+        0x2000, 0x206F, // General Punctuation (— – … • etc.)
+        0,
+    };
+    static const ImWchar kArabicGlyphRanges[] = {
+        0x0600, 0x06FF, // Arabic base
+        0x2000, 0x206F, // General Punctuation / BiDi marks
+        0xFB50, 0xFDFF, // Arabic Presentation Forms-A
+        0xFE70, 0xFEFF, // Arabic Presentation Forms-B
+        0,
+    };
+
+    size_t latin_size = 0;
+    void* latin_data = SDL_LoadFile("fonts/DroidSans-Bold.ttf", &latin_size);
+    if (latin_data && latin_size > 0) {
+        void* atlas_copy = ImGui::MemAlloc(latin_size);
+        std::memcpy(atlas_copy, latin_data, latin_size);
+        SDL_free(latin_data);
+        io.Fonts->AddFontFromMemoryTTF(atlas_copy, int(latin_size), kBaseFontSize, nullptr, kLatinGlyphRanges);
+        LOGR("ui: loaded bundled Latin bold font fonts/DroidSans-Bold.ttf (%zu bytes, %.1f px)", latin_size, kBaseFontSize);
+    } else {
+        const char* kSystemLatinBold = "/system/fonts/DroidSans-Bold.ttf";
+        const char* kSystemLatin = "/system/fonts/Roboto-Regular.ttf";
+        if (access(kSystemLatinBold, F_OK) == 0) {
+            io.Fonts->AddFontFromFileTTF(kSystemLatinBold, kBaseFontSize, nullptr, kLatinGlyphRanges);
+            LOGR("ui: loaded system Latin bold font %s (size %.1f px)", kSystemLatinBold, kBaseFontSize);
+        } else if (access(kSystemLatin, F_OK) == 0) {
+            io.Fonts->AddFontFromFileTTF(kSystemLatin, kBaseFontSize, nullptr, kLatinGlyphRanges);
+            LOGR("ui: loaded base Latin font %s (size %.1f px)", kSystemLatin, kBaseFontSize);
+        } else {
+            io.Fonts->AddFontDefault();
+            LOGR("ui: fallback to ImGui default Latin font");
+        }
+    }
+
+    // 2. Arabic Font merged into FontAtlas (covers Presentation Forms-B & A for connected cursive glyphs)
+    ImFontConfig cfg;
+    cfg.MergeMode = true;
+    cfg.FontDataOwnedByAtlas = true;
+    cfg.OversampleH = 2;
+    cfg.OversampleV = 2;
+    cfg.PixelSnapH = true;
+
+    size_t arabic_size = 0;
+    // Prefer bold font for maximum thickness and readability on mobile displays
+    void* arabic_data = SDL_LoadFile("fonts/NotoNaskhArabic-Bold.ttf", &arabic_size);
+    if (!arabic_data || arabic_size == 0) {
+        arabic_data = SDL_LoadFile("fonts/NotoNaskhArabic.ttf", &arabic_size);
+    }
+    if (arabic_data && arabic_size > 0) {
+        void* atlas_copy = ImGui::MemAlloc(arabic_size);
+        std::memcpy(atlas_copy, arabic_data, arabic_size);
+        SDL_free(arabic_data);
+        io.Fonts->AddFontFromMemoryTTF(atlas_copy, int(arabic_size), kBaseFontSize, &cfg, kArabicGlyphRanges);
+        LOGR("ui: merged bundled NotoNaskhArabic font (%zu bytes, %.1f px) into font atlas", arabic_size, kBaseFontSize);
+    } else {
+        const char* kSystemArabicFonts[] = {
+            "/system/fonts/NotoNaskhArabicUI-Bold.ttf",
+            "/system/fonts/NotoNaskhArabic-Bold.ttf",
+            "/system/fonts/NotoNaskhArabicUI-Regular.ttf",
+            "/system/fonts/NotoNaskhArabic-Regular.ttf",
+            "/system/fonts/NotoSansArabic-Regular.ttf"
+        };
+        bool arabic_loaded = false;
+        for (const char* fpath : kSystemArabicFonts) {
+            if (access(fpath, F_OK) == 0) {
+                io.Fonts->AddFontFromFileTTF(fpath, kBaseFontSize, &cfg, kArabicGlyphRanges);
+                LOGR("ui: merged system Arabic font %s into font atlas", fpath);
+                arabic_loaded = true;
+                break;
+            }
+        }
+        if (!arabic_loaded) {
+            LOGE("ui: failed to load any Arabic font for FontAtlas");
+        }
+    }
+    bool built = io.Fonts->Build();
+    LOGR("ui: FontAtlas build=%d tex=%dx%d glyphs=%d", built ? 1 : 0, io.Fonts->TexWidth, io.Fonts->TexHeight,
+         io.Fonts->Fonts.empty() ? 0 : io.Fonts->Fonts[0]->Glyphs.Size);
 }
 
 void Dispatch(const SDL_Event& e) {

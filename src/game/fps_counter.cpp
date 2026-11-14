@@ -8,6 +8,7 @@
 
 #include "app/app.h"
 #include "common/aspect.h"
+#include "common/mod_schema.h"
 #include "common/options.h"
 #include "game/flash.h"
 #include "game/layout.h"
@@ -136,10 +137,13 @@ void DrawOverlay(X86Context& ctx, uint8_t*) {
     uint32_t viewport = SYM(D3D_Device) + XDK_CDevice_Viewport;
     float w = float(R32(viewport + kViewportWidth));
     float h = float(R32(viewport + kViewportHeight));
-    bool fps = game::Opt().fps_counter;
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    const bool adv = enh.advanced_perf_hud;
+    const bool hide_all = enh.hide_hud_on_screenshots;
+    bool fps = !hide_all && (game::Opt().fps_counter || adv);
     const TitlePage* title = CurrentTitlePage();
     std::optional<float> slide = title ? LegendSlide(*title) : std::nullopt;
-    bool watermark = slide.has_value();
+    bool watermark = !hide_all && slide.has_value();
     bool esp = game::Opt().esp;
     if (!(fps || watermark || esp) || !font || !(h > 0)) return;
     View view{h / 480, w / h / game::Aspect()};
@@ -151,8 +155,14 @@ void DrawOverlay(X86Context& ctx, uint8_t*) {
     if (esp) game::DrawEsp(ctx, view.unit);
     width = game_width * view.narrow;
     if (fps) {
-        char text[32];
-        std::snprintf(text, sizeof text, "FPS: %.1f", double(game::g_fps.load()));
+        char text[64];
+        const float cur_fps = game::g_fps.load();
+        if (adv) {
+            const float ms = (cur_fps > 0.1f) ? (1000.0f / cur_fps) : 0.0f;
+            std::snprintf(text, sizeof text, "FPS: %.1f (%.1fms | %u%%)", double(cur_fps), double(ms), app::Get().render_percent);
+        } else {
+            std::snprintf(text, sizeof text, "FPS: %.1f", double(cur_fps));
+        }
         DrawText(ctx, font, view, text, kMargin, kMargin, true);
     }
     if (watermark) DrawText(ctx, font, view, kWatermark, watermark_x, kWatermarkTop, false);

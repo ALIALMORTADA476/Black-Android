@@ -309,31 +309,23 @@ public class BlackActivity extends SDLActivity {
 
     private void askAllFilesAccess() {
         dialog = new AlertDialog.Builder(this)
-                .setTitle("Storage access")
-                .setMessage("Black Android reads the game from the Black folder on your phone's storage:\n\n"
-                        + "/storage/emulated/0/" + SHARED + "\n\n"
-                        + (ALL_FILES_ACCESS
-                                ? "On the next screen turn on \"Allow access to manage all files\" for Black Android, then come back."
-                                : "Allow Black Android to access your storage on the next screen."))
+                .setTitle(getString(R.string.storage_access))
+                .setMessage(String.format(getString(R.string.storage_access_msg), SHARED,
+                        ALL_FILES_ACCESS ? getString(R.string.allow_all_files) : getString(R.string.allow_storage)))
                 .setCancelable(false)
-                .setPositiveButton("Allow access", (d, w) -> openAccessSettings())
-                .setNegativeButton("Not now", (d, w) -> notNow = true)
-                .setNeutralButton("Import game", (d, w) -> startImport())
+                .setPositiveButton(getString(R.string.allow_access), (d, w) -> openAccessSettings())
+                .setNegativeButton(getString(R.string.not_now), (d, w) -> notNow = true)
+                .setNeutralButton(getString(R.string.import_game), (d, w) -> startImport())
                 .setOnDismissListener(d -> tellOfUpdate())
                 .show();
     }
 
     private void tellWhereTheGameGoes() {
         dialog = new AlertDialog.Builder(this)
-                .setTitle("Game files")
-                .setMessage("Copy the game into the Black folder on your phone's storage:\n\n"
-                        + "/storage/emulated/0/" + SHARED + "\n\n"
-                        + "or into a Black folder at the top of your SD card.\n\n"
-                        + "Its disc image (.iso), or default.xbe with its folders. The game starts as soon as they "
-                        + "are there.\n\n"
-                        + "Or import the disc image from your Downloads, a cloud drive or a USB stick.")
-                .setPositiveButton("OK", null)
-                .setNeutralButton("Import game", (d, w) -> startImport())
+                .setTitle(getString(R.string.game_files))
+                .setMessage(String.format(getString(R.string.game_files_msg), SHARED))
+                .setPositiveButton(getString(R.string.ok), null)
+                .setNeutralButton(getString(R.string.import_game), (d, w) -> startImport())
                 .setOnDismissListener(d -> tellOfUpdate())
                 .show();
     }

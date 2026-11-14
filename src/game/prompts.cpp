@@ -15,6 +15,7 @@
 #include "common/mouse_keyboard.h"
 #include "common/translations.h"
 #include "game/flash.h"
+#include "game/subtitles.h"
 #include "xdk/hle.h"
 
 using namespace kernel;
@@ -149,6 +150,10 @@ X86_FUNC(sub_001F3A80) {
         return;
     }
     if (!ctx.eax) return;
+
+    // Notify host Arabic subtitles / mission objective overlay (safe, does NOT mutate guest memory)
+    game::subtitles::OnStringResolved(id, ReadCString(ctx.eax, 1024).c_str());
+
     bool keyboard = input::KeyboardActive();
     bool touch = !keyboard && input::TouchActive();
     std::lock_guard lock(g_lock);
@@ -166,7 +171,7 @@ X86_FUNC(sub_001F3A80) {
         int b = int(button - kButtons);
         std::string key = keyboard ? input::ButtonKey(b) : input::TouchName(b);
         if (key.empty() || (!it->second && !(it->second = GuestString("", 1)))) return;
-        std::string press = game::Translated() ? app::Ui("PRESS") : "PRESS";
+        std::string press = game::Translated() ? app::FlashUi("PRESS") : "PRESS";
         std::snprintf(static_cast<char*>(HostPtr(it->second)), kHintSize, "%s %s :", press.c_str(), key.c_str());
     } else if (fresh) {
         std::string text = Wording(id, ReadCString(ctx.eax, 1024), keyboard, touch);

@@ -52,7 +52,7 @@ final class GameImporter {
             activity.startActivityForResult(i, REQUEST);
             return true;
         } catch (ActivityNotFoundException e) {
-            message("Import game", "This phone has no file picker to choose the disc image with.", null);
+            message(activity.getString(R.string.import_game), activity.getString(R.string.no_file_picker), null);
             return false;
         }
     }
@@ -62,12 +62,12 @@ final class GameImporter {
         String name = displayName(uri);
         long size = size(uri);
         if (name == null || !name.toLowerCase().endsWith(".iso")) {
-            message("Import game", "Choose the game's disc image, a file ending in .iso.", () -> done.accept(false));
+            message(activity.getString(R.string.import_game), activity.getString(R.string.choose_iso), () -> done.accept(false));
             return;
         }
         dir.mkdirs();
         if (size > 0 && dir.getUsableSpace() < size + (64L << 20)) {
-            message("Not enough space", String.format("The disc image needs %.1f GB free, there are %.1f GB.",
+            message(activity.getString(R.string.not_enough_space), String.format(activity.getString(R.string.space_warning),
                     size / 1e9, dir.getUsableSpace() / 1e9), () -> done.accept(false));
             return;
         }
@@ -76,7 +76,7 @@ final class GameImporter {
         bar.setMax(1000);
         bar.setIndeterminate(size <= 0);
         TextView text = new TextView(activity);
-        text.setText("Starting…");
+        text.setText(activity.getString(R.string.starting));
         LinearLayout box = new LinearLayout(activity);
         box.setOrientation(LinearLayout.VERTICAL);
         int pad = Math.round(20 * activity.getResources().getDisplayMetrics().density);
@@ -85,10 +85,10 @@ final class GameImporter {
         box.addView(text);
         cancelled = false;
         AlertDialog progress = new AlertDialog.Builder(activity)
-                .setTitle("Importing " + name)
+                .setTitle(String.format(activity.getString(R.string.importing), name))
                 .setView(box)
                 .setCancelable(false)
-                .setNegativeButton("Cancel", (d, w) -> cancelled = true)
+                .setNegativeButton(activity.getString(R.string.cancel), (d, w) -> cancelled = true)
                 .show();
         progress.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -133,9 +133,9 @@ final class GameImporter {
                 progress.dismiss();
                 if (ok) {
                     Log.i(TAG, "imported " + iso);
-                    message("Game imported", name + " is in place. The game starts in a moment.", () -> done.accept(true));
+                    message(activity.getString(R.string.game_imported), String.format(activity.getString(R.string.imported_success), name), () -> done.accept(true));
                 } else if (why != null) {
-                    message("Import failed", why, () -> done.accept(false));
+                    message(activity.getString(R.string.import_failed), why, () -> done.accept(false));
                 } else {
                     done.accept(false);  // cancelled
                 }
@@ -191,7 +191,7 @@ final class GameImporter {
         new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setMessage(text)
-                .setPositiveButton("OK", null)
+                .setPositiveButton(activity.getString(R.string.ok), null)
                 .setOnDismissListener(d -> {
                     if (after != null) after.run();
                 })

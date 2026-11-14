@@ -10,6 +10,7 @@
 
 #include "app/app.h"
 #include "common/aspect.h"
+#include "common/mod_schema.h"
 #include "common/options.h"
 #include "game/layout.h"
 #include "xdk/d3d8.h"
@@ -249,7 +250,9 @@ bool HudShown() { return NowMs() - g_hud_ms.load(std::memory_order_relaxed) < 25
 // A list's item before it draws, ebx. Hidden, the HUD draws only the title card's fade: false skips the callback
 bool HudItem(X86Context& ctx, uint8_t*) {
     if (g_hud && R32(ctx.ebx + kItemCallback) != kTitleFade) g_hud_ms.store(NowMs(), std::memory_order_relaxed);
-    if (g_hud && game::g_hide_hud && R32(ctx.ebx + kItemCallback) != kTitleFade) return false;
+    if (g_hud && (game::g_hide_hud || modsettings::Registry().GetEnhanced().hide_hud_on_screenshots) &&
+        R32(ctx.ebx + kItemCallback) != kTitleFade)
+        return false;
     uint32_t frame = R32(ctx.ebx + kItemFrame);
     float anchor = kCentre;
     for (uint32_t c = g_hud ? R32(g_hud + kHudComponents) : 0; c; c = R32(c + kComponentNext)) {

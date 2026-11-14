@@ -6,6 +6,19 @@
 // the F10 settings panel, drawn by DrawUi (GameInfo::ui)
 namespace app {
 
+enum class TacticalCategory : int {
+    Graphics = 0,
+    PhysicsLab,
+    CombatGameplay,
+    AudioLanguage,
+    Interface,
+    CheatsWeapons,
+    Count
+};
+
+TacticalCategory GetActiveCategory();
+void SetActiveCategory(TacticalCategory cat);
+
 bool MenuOpen();
 bool Capturing();  // a key binding waits for a key
 void ToggleMenu();

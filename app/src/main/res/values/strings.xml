@@ -1,4 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Black Android</string>
+    <string name="app_name">Black Enhanced</string>
+    <string name="import_game">Import game</string>
+    <string name="no_file_picker">This phone has no file picker to choose the disc image with.</string>
+    <string name="choose_iso">Choose the game\'s disc image, a file ending in .iso.</string>
+    <string name="not_enough_space">Not enough space</string>
+    <string name="space_warning">The disc image needs %1$.1f GB free, there are %2$.1f GB.</string>
+    <string name="starting">Starting…</string>
+    <string name="importing">Importing %s</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="game_imported">Game imported</string>
+    <string name="imported_success">%s is in place. The game starts in a moment.</string>
+    <string name="import_failed">Import failed</string>
+    <string name="storage_access">Storage access</string>
+    <string name="storage_access_msg">Black Android reads the game from the Black folder on your phone\'s storage:\n\n/storage/emulated/0/%1$s\n\n%2$s</string>
+    <string name="allow_all_files">On the next screen turn on \"Allow access to manage all files\" for Black Android, then come back.</string>
+    <string name="allow_storage">Allow Black Android to access your storage on the next screen.</string>
+    <string name="allow_access">Allow access</string>
+    <string name="not_now">Not now</string>
+    <string name="game_files">Game files</string>
+    <string name="game_files_msg">Copy the game into the Black folder on your phone\'s storage:\n\n/storage/emulated/0/%1$s\n\nor into a Black folder at the top of your SD card.\n\nIts disc image (.iso), or default.xbe with its folders. The game starts as soon as they are there.\n\nOr import the disc image from your Downloads, a cloud drive or a USB stick.</string>
+    <string name="restart_required">Restart Required</string>
+    <string name="restart_notification">Settings change requires app restart to take effect.</string>
 </resources>
