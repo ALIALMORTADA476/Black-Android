@@ -262,7 +262,7 @@ void Pace() {
     auto period = std::chrono::nanoseconds(1000000000ull / cap);
     next += period;
     if (next < now - period) next = now;
-    while (clock::now() + std::chrono::milliseconds(2) < next) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (clock::now() + std::chrono::microseconds(1200) < next) std::this_thread::sleep_for(std::chrono::microseconds(500));
     while (clock::now() < next) std::this_thread::yield();
 }
 

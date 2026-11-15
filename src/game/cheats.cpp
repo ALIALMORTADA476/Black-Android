@@ -1,9 +1,15 @@
 // The cheats page's god mode, one-hit kill and infinite grenades. The rest live where the game
 // already has a hook: infinite ammo, rapid fire and no recoil with the weapon's, game speed with the frame time
 #include <algorithm>
+#include <cmath>
 
+#include "common/mod_schema.h"
 #include "common/options.h"
+#include "game/ballistics_fx.h"
+#include "game/combat_feedback.h"
+#include "game/delirium_physics.h"
 #include "game/layout.h"
+#include "game/overdrive.h"
 #include "game/physics_lab.h"
 #include "xdk/hle.h"
 
@@ -74,6 +80,7 @@ X86_FUNC(sub_001E5FA0) {
             G<uint8_t>(me + kCharInvulnerable) = 0;
             g_invulnerable = false;
         }
+        game::overdrive::OnPlayerFramePreUpdate(ctx, base, me);
     }
     __imp__sub_001E5FA0(ctx, base);
 }
@@ -84,8 +91,13 @@ X86_EXTERN_FUNC(__imp__sub_001E74B0);
 X86_FUNC(sub_001E74B0) {
     uint32_t victim = ctx.ecx;
     uint32_t attacker = R32(ctx.esp + 0x18);
+    uint32_t hit_dir_ea = R32(ctx.esp + 0x08);
+    float raw_force = G<float>(ctx.esp + 0x0C);
+    uint8_t zone_byte = static_cast<uint8_t>(R32(ctx.esp + 0x10) & 0xFFu);
     uint32_t me = Player();
+    const bool is_headshot = (zone_byte == 0x08u);
     const float imp = game::physics_lab::Params().impact_force.load(std::memory_order_relaxed);
+    const float hs_mul = std::clamp(modsettings::Registry().GetEnhanced().headshot_multiplier, 1.0f, 4.0f);
     float health_scale = 1.0f;
     if (me && attacker == me && victim && victim != me) {
         if (std::fabs(imp - 1.0f) > 1e-3f) {
@@ -94,23 +106,71 @@ X86_FUNC(sub_001E74B0) {
                 force_arg *= imp * 3.5f;
             }
             if (!game::Opt().one_hit_kill && imp > 1.01f && !R32(victim + kCharDying)) {
-                float& hp = G<float>(victim + kCharHealth);
-                if (std::isfinite(hp) && hp > kSliver * 2.0f) {
-                    health_scale = imp;
-                    hp = std::max(kSliver * 2.0f, hp / health_scale);
-                }
+                health_scale *= imp;
+            }
+        }
+        if (is_headshot && hs_mul > 1.01f && !game::Opt().one_hit_kill && !R32(victim + kCharDying)) {
+            health_scale *= hs_mul;
+        }
+        if (!game::overdrive::InSplashOrBurn()) {
+            float od_force = G<float>(ctx.esp + 0x0C);
+            if (!std::isfinite(od_force)) od_force = raw_force;
+            game::overdrive::ModifyPlayerBulletHit(victim, is_headshot, od_force, health_scale);
+            if (std::isfinite(od_force)) {
+                G<float>(ctx.esp + 0x0C) = od_force;
+            }
+        }
+        if (health_scale > 1.01f) {
+            float& hp = G<float>(victim + kCharHealth);
+            if (std::isfinite(hp) && hp > kSliver * 2.0f) {
+                hp = std::max(kSliver * 2.0f, hp / health_scale);
+            } else {
+                health_scale = 1.0f;
             }
         }
     }
+    const bool was_alive_before_hit =
+        (victim && victim != me && mem::IsCommitted(victim + kCharDying) &&
+         R32(victim + kCharDying) == 0u);
     Doomed doomed = Doom(victim, attacker);
     __imp__sub_001E74B0(ctx, base);
     Spare(doomed);
+    if (me && attacker == me && victim && victim != me &&
+        mem::IsCommitted(victim + kCharDying)) {
+        const bool is_lethal_hit = was_alive_before_hit && (R32(victim + kCharDying) != 0u);
+        game::combat_feedback::RecordPlayerHit(is_headshot, is_lethal_hit);
+    }
     if (health_scale > 1.0f && victim && !R32(victim + kCharDying)) {
         float& hp = G<float>(victim + kCharHealth);
         if (std::isfinite(hp) && hp > 0.0f) {
             hp *= health_scale;
         }
     }
+    if (victim && victim != me && !game::ballistics::InThermalImpact() && !game::overdrive::InSplashOrBurn() &&
+        mem::IsCommitted(victim) && mem::IsCommitted(victim + 0x388u)) {
+        const float feet_y = G<float>(victim + 0xA4u);
+        float y_off = 1.15f;
+        if (zone_byte == 0x08u) y_off = 1.52f;
+        else if (zone_byte == 0x07u || zone_byte == 0x09u) y_off = 1.22f;
+        else if (zone_byte == 0x0Au) y_off = 0.55f;
+        float blood_pos[3] = {G<float>(victim + 0xA0u), feet_y + y_off, G<float>(victim + 0xA8u)};
+        float hit_dir[3] = {0.0f, 0.0f, 1.0f};
+        if (hit_dir_ea >= mem::kUserLow && mem::IsCommitted(hit_dir_ea) && mem::IsCommitted(hit_dir_ea + 11u)) {
+            hit_dir[0] = G<float>(hit_dir_ea);
+            hit_dir[1] = G<float>(hit_dir_ea + 4u);
+            hit_dir[2] = G<float>(hit_dir_ea + 8u);
+        }
+        const bool is_lethal = (R32(victim + kCharDying) != 0u);
+        game::ballistics::OnEnemyBloodHit(victim, blood_pos, feet_y + 0.025f, y_off,
+                                          hit_dir, raw_force, is_headshot, is_lethal);
+        if (me && attacker == me) {
+            const bool newly_lethal = was_alive_before_hit && is_lethal;
+            game::overdrive::OnPlayerBulletPostHit(ctx, base, victim, me, blood_pos, hit_dir,
+                                                   is_headshot, newly_lethal);
+        }
+    }
+    game::delirium_phys::OnBulletHit(ctx, base, victim, attacker, hit_dir_ea,
+                                     raw_force, zone_byte);
 }
 
 // A character's animation event (64-bit hash, then a pointer to the character): the throw takes a grenade

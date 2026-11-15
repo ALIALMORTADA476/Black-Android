@@ -14,6 +14,7 @@
 #include "core/log.h"
 #include "game/flash.h"
 #include "game/layout.h"
+#include "game/mission_select_rules.h"
 #include "xdk/hle.h"
 
 using namespace kernel;
@@ -221,6 +222,14 @@ Aim Point(X86Context& ctx, const Node* buttons, size_t count, uint32_t map, cons
     float y = p.y;
     bool click = p.click;
     bool clips = false;
+    const uint32_t active_map = map ? Member(ctx, map, "mActive") : 0u;
+    if (click && active_map) {
+        if (const uint32_t value = ValueAt(ctx, map, x, y)) {
+            const auto decision = game::mission::ResolveMapTouchClick(true, value, active_map, false);
+            if (decision.aim_value) return {buttons[0].object, map, decision.aim_value};
+            if (decision.input != kNoInput) return {buttons[0].object, 0, 0, decision.input};
+        }
+    }
     for (size_t i = 0; i < count; i++) {
         uint32_t button = buttons[i].object;
         // a heading can't be focused: the steps toward it would go back and forth over it
@@ -242,9 +251,10 @@ Aim Point(X86Context& ctx, const Node* buttons, size_t count, uint32_t map, cons
         // a row of options has no action of its own, confirm would back out of the page
         if (Over(ctx, clip, x, y)) return {button, 0, 0, click && !options ? kInputConfirm : kNoInput};
     }
-    if (uint32_t value = click ? ValueAt(ctx, map, x, y) : 0) return {buttons[0].object, map, value};
-    // a page of one button with nothing to point at takes a click anywhere
-    if (click && !clips) return {buttons[0].object, 0, 0, kInputConfirm};
+    if (click) {
+        const auto decision = game::mission::ResolveMapTouchClick(active_map != 0u, 0u, active_map, clips);
+        if (decision.input != kNoInput) return {buttons[0].object, 0, 0, decision.input};
+    }
     return {};
 }
 
@@ -349,6 +359,7 @@ void Menu(X86Context& ctx, uint32_t ui) {
     bool menu = IsMenuPage(name);
     input::SetMenu(menu);
     int wheel = input::TakeWheel();
+    int hwheel = input::TakeHWheel();
     Pointer p;
     bool pointer = menu && !game::OptionsCapturing() && input::Cursor(p.x, p.y, p.down);
     p.click = p.down && !held;
@@ -376,7 +387,14 @@ void Menu(X86Context& ctx, uint32_t ui) {
     }
     uint32_t input = kNoInput;
     if (p.moved || p.down || g_aim.button) input = CursorInput(ctx, {name, root, list, focus}, p);
-    if (!input && wheel) input = wheel > 0 ? kInputUp : kInputDown;
+    if (!input && (wheel || hwheel)) {
+        const uint32_t map = Member(ctx, root, "MyMap");
+        const uint32_t active_map = map ? Member(ctx, map, "mActive") : 0u;
+        const bool has_map = active_map != 0u;
+        const bool has_vertical_links =
+            has_map && (Member(ctx, active_map, "upPoint") != 0u || Member(ctx, active_map, "downPoint") != 0u);
+        input = game::mission::MapSwipeToInput(has_map, has_vertical_links, hwheel, wheel);
+    }
     if (input) W32(ui + kMenuInput, input);
 }
 

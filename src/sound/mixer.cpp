@@ -4,7 +4,9 @@
 #include <cmath>
 
 #include "common/mod_schema.h"
+#include "game/flamethrower.h"
 #include "sound/sound.h"
+#include "sound/weapon_audio.h"
 
 namespace sound {
 
@@ -405,18 +407,21 @@ void MixVoice(Voice& v, float* out, float* send, uint32_t frames) {
     // the game may have rewritten sample memory since the last block: a block left behind is decoded again
     v.spare_block = -1;
     v.block_decoded_now = false;
+    const bool mute = v.remaster_muted && modsettings::Registry().GetEnhanced().mod_audio_pack_enabled;
     for (uint32_t i = 0; i < frames; i++) {
         float s[kRows];
         bool more = v.stream ? StreamFrame(v, s) : BufferFrame(v, region, s);
         if (!more) break;
-        s[kDry] = s[0];
-        if (ears) {
-            v.itd += itd_step;
-            PushEar(v, s[0]);
-            s[kLeftEar] = EarAt(v, v.itd);
-            s[kRightEar] = EarAt(v, -v.itd);
+        if (!mute) {
+            s[kDry] = s[0];
+            if (ears) {
+                v.itd += itd_step;
+                PushEar(v, s[0]);
+                s[kLeftEar] = EarAt(v, v.itd);
+                s[kRightEar] = EarAt(v, -v.itd);
+            }
+            MixFrame(lanes, s, out + i * kOuts, send[i]);
         }
-        MixFrame(lanes, s, out + i * kOuts, send[i]);
         v.pos += step;
     }
     v.gain = g;
@@ -433,6 +438,14 @@ void Render(float* out, uint32_t frames) {
         if (v.paused || v.sync || (!v.stream && !v.playing)) continue;
         MixVoice(v, out, send.data(), frames);
     }
+    weapon_audio::SetEnvironmentState(g_reverb.on, g_reverb.now.late);
+    weapon_audio::RenderMix(
+        out, send.data(), frames,
+        kOuts, audio::FrontLeft, audio::FrontRight,
+        audio::IsSurround(), audio::Sub, audio::BackLeft, audio::BackRight,
+        g_listener, g_front, g_top);
+    game::flamethrower::RenderAudioMix(out, frames, audio::kRate,
+                                       kOuts, audio::FrontLeft, audio::FrontRight);
     g_reverb.Run(send.data(), out, frames);
 
     const auto& enh = modsettings::Registry().GetEnhanced();
@@ -462,6 +475,7 @@ void Run(X86Context& ctx, const std::vector<Done>& done) {
 void Start() {
     if (g_started) return;
     g_started = true;
+    weapon_audio::EnsureLoaded();
     audio::StartOutput(Render);
     // for a title that never calls DirectSoundDoWork: its callbacks come from here instead
     StartHostThread("dsound", [](X86Context& ctx) {

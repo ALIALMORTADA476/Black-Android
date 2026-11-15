@@ -21,6 +21,7 @@ uint32_t SurfaceEpoch();
 void WaitForeground();
 // the window's size in pixels
 void WindowPixels(int& w, int& h);
+void VibratePhone(uint32_t duration_ms, uint8_t amplitude);
 
 }  // namespace host
 

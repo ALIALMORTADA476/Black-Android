@@ -6,6 +6,7 @@
 // created from the table, put in the slot not in hand, and switched to as the d-pad does; a bank the level lacks is
 // read from another level's folder, and a world model it lacks from another level's Guns.bin.
 #include "game/weapons.h"
+#include "game/flamethrower.h"
 
 #include <algorithm>
 #include <atomic>
@@ -959,12 +960,32 @@ View Current() {
     return g_view;
 }
 
-void Give(int type) { g_give = type; }
+void Give(int type) {
+    game::flamethrower::ForceDeactivate();
+    g_give = type;
+}
 
-void FillAmmo() { g_fill = true; }
+void FillAmmo() {
+    g_fill = true;
+    game::flamethrower::RefillFuel();
+}
 void FillMedkits() { g_medkits = true; }
 
 void SetAutoSuppressor(bool on) { g_auto_suppressor = on; }  // add its declaration to game/weapons.h
+
+std::string WeaponCodeOf(uint32_t weapon, bool* out_suppressed) {
+    if (!weapon) return {};
+    if (out_suppressed) *out_suppressed = (R32(weapon + kWeaponSuppressed) != 0);
+    uint32_t manager = R32(kWeaponManager);
+    uint32_t table = manager ? R32(manager) : 0;
+    int type = G<uint8_t>(weapon + kWeaponType);
+    if (!table || type < 0) return {};
+    int count = G<uint8_t>(table + kTableCount);
+    uint32_t entries = R32(table + kTableEntries);
+    if (!entries || type >= count || count > 64) return {};
+    uint32_t e = entries + uint32_t(type) * kEntrySize;
+    return CodeOf(Decode(R32(e) | uint64_t(R32(e + 4)) << 32));
+}
 
 }  // namespace weapons
 

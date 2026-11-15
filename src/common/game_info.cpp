@@ -8,6 +8,7 @@
 #include "common/menu.h"
 #include "common/mouse_keyboard.h"
 #include "common/options.h"
+#include "game/flamethrower.h"
 
 namespace game {
 
@@ -19,6 +20,7 @@ void Pad(int port, input::Pad& pad) {
     if (port == 0) pad.connected = true;
     if (app::MenuOpen()) pad = input::Pad{.connected = pad.connected};
     else if (port == 0) input::Keyboard(pad);
+    game::flamethrower::FilterGameplayPad(port, pad);
 }
 
 // no vibration while the keyboard and mouse are in use

@@ -31,9 +31,13 @@
 #include "common/aspect.h"
 #include "common/keys.h"
 #include "common/menu.h"
+#include "common/mod_schema.h"
 #include "common/options.h"
 #include "common/translations.h"
 #include "core/log.h"
+#include "game/flamethrower.h"
+#include "game/overdrive.h"
+#include "game/time_stop.h"
 #include "host.h"
 
 namespace input {
@@ -57,6 +61,7 @@ std::mutex g_chars_lock;
 std::u16string g_chars;  // typed, not yet taken
 constexpr size_t kMaxChars = 64;
 std::atomic<int> g_wheel{0};
+std::atomic<int> g_hwheel{0};
 constexpr uint64_t kPlayMs = 250;
 constexpr uint64_t kTapMs = 80;
 constexpr uint64_t kCaptureMs = 250;  // PressedKey asked this recently: a key capture is up
@@ -109,6 +114,11 @@ constexpr Target kActions[] = {
     {{"pause", "PAUSE MENU", "Escape"}, 12},
     {{"hide_hud", "TOGGLE HUD", ""}, kHostKey},
     {{"settings_panel", "SETTINGS PANEL", "F10"}, kHostKey},
+    {{"time_stop", "TIME STOP", "T"}, kHostKey},
+    {{"flamethrower", "FLAMETHROWER", "4"}, kHostKey},
+    {{"kinetic_dash", "KINETIC DASH", "Shift"}, kHostKey},
+    {{"special_ammo", "SPECIAL AMMO MODE", "Z"}, kHostKey},
+    {{"thermal_visor", "THERMAL THREAT VISOR", "K"}, kHostKey},
     {{"look_up", "LOOK UP", "Up"}, 20},
     {{"look_down", "LOOK DOWN", "Down"}, 21},
     {{"look_left", "LOOK LEFT", "Left"}, 22},
@@ -122,6 +132,11 @@ constexpr size_t HostAction(std::string_view id) {
 }
 constexpr size_t kHudAction = HostAction("hide_hud");
 constexpr size_t kPanelAction = HostAction("settings_panel");
+constexpr size_t kTimeStopAction = HostAction("time_stop");
+constexpr size_t kFlamethrowerAction = HostAction("flamethrower");
+constexpr size_t kDashAction = HostAction("kinetic_dash");
+constexpr size_t kAmmoModeAction = HostAction("special_ammo");
+constexpr size_t kThermalAction = HostAction("thermal_visor");
 struct Name {
     int vk;
     const char* name;
@@ -399,12 +414,24 @@ std::u16string TakeChars() {
     return std::exchange(g_chars, {});
 }
 
-// a notch a call: notches that came together (a swipe's) step one menu tick each
-int TakeWheel() {
-    int w = g_wheel.load();
-    while (w && !g_wheel.compare_exchange_weak(w, w > 0 ? w - 1 : w + 1)) {
+namespace {
+
+int DrainNotch(std::atomic<int>& wheel) {
+    int w = wheel.load();
+    while (w && !wheel.compare_exchange_weak(w, w > 0 ? w - 1 : w + 1)) {
     }
     return w > 0 ? 1 : w < 0 ? -1 : 0;
+}
+
+}  // namespace
+
+// a notch a call: notches that came together (a swipe's) step one menu tick each
+int TakeWheel() {
+    return DrainNotch(g_wheel);
+}
+
+int TakeHWheel() {
+    return DrainNotch(g_hwheel);
 }
 
 const Action* Actions(size_t* count) {
@@ -511,9 +538,9 @@ enum class Role : uint8_t { None, Stick, Look, Button, Cursor, Drag, Pinch };
 
 // a control of the touch layout: what it shows and presses, on the controller (analog 0-7, button bits from 8) or on
 // the host. Where it sits is the layout's, which the player edits and picks presets for
-enum : int { kGyro = -2, kPanel = -1, kAnalogA = 0, kAnalogB = 1, kAnalogX = 2, kAnalogY = 3, kAnalogLT = 6, kAnalogRT = 7 };
+enum : int { kThermal = -6, kAmmoMode = -5, kDash = -4, kTimeStop = -3, kGyro = -2, kPanel = -1, kAnalogA = 0, kAnalogB = 1, kAnalogX = 2, kAnalogY = 3, kAnalogLT = 6, kAnalogRT = 7 };
 constexpr int kBit = 8;  // kBit + n: buttons bit n (dpad up down left right, start, back, left thumb, right thumb)
-enum class Icon : uint8_t { Bullet, Scope, Mode, Reload, Crouch, Knife, Hand, Grenade, Swap, Health, Map, Pause, Gear, Back, Gyro, Move, Suppressor, Up, Down, Left, Right, Zoom, Enter };
+enum class Icon : uint8_t { Bullet, Scope, Mode, Reload, Crouch, Knife, Hand, Grenade, Swap, Health, Map, Pause, Gear, Back, Gyro, Move, Suppressor, Up, Down, Left, Right, Zoom, Enter, TimeStop, Dash, AmmoMode, Thermal };
 // Play while the player has the controls, Game outside the menus (cutscenes too), Menus in the menus and options,
 // Always in both
 enum class When : uint8_t { Play, Menus, Game, Always };
@@ -554,6 +581,12 @@ constexpr Button kButtons[] = {
     {"panel", "Panel", Icon::Gear, kPanel, When::Always},
     // confirm in the menus, as a pad's A, where a tap on the row is hard to aim
     {"enter", "Enter", Icon::Enter, kAnalogA, When::Menus},
+    // Physics Lab selective Time Stop toggle / hold trigger, top bar beside Panel & Gyro
+    {"time_stop", "Time Stop", Icon::TimeStop, kTimeStop, When::Play},
+    // Tactical Mobility & Gear
+    {"dash", "Dash", Icon::Dash, kDash, When::Play},
+    {"ammo_mode", "Ammo Mode", Icon::AmmoMode, kAmmoMode, When::Play},
+    {"thermal", "Thermal", Icon::Thermal, kThermal, When::Play},
     // the firing mode's button again, beside use while a scope is up: the scope's level, X2 or X5, and a tap switches
     {"zoom", "Scope zoom", Icon::Zoom, kBit + 0, When::Play},
 };
@@ -579,6 +612,8 @@ constexpr Layout kTwoFinger = {{
     {0.11f, 0.60f, 0.048f}, {0.11f, 0.80f, 0.048f}, {0.064f, 0.70f, 0.048f}, {0.156f, 0.70f, 0.048f},
     {0.581f, 0.07f, 0.04f},
     {0.92f, 0.78f, 0.07f},
+    {0.635f, 0.07f, 0.04f},
+    {0.655f, 0.86f, 0.048f}, {0.440f, 0.90f, 0.044f}, {0.365f, 0.07f, 0.040f},
     {0.715f, 0.40f, 0.05f},
     {0.108f, 0.70f, 0.12f},
 }};
@@ -592,6 +627,8 @@ constexpr Layout kThreeFinger = {{
     {0.11f, 0.60f, 0.048f}, {0.11f, 0.80f, 0.048f}, {0.064f, 0.70f, 0.048f}, {0.156f, 0.70f, 0.048f},
     {0.581f, 0.07f, 0.04f},
     {0.92f, 0.78f, 0.07f},
+    {0.635f, 0.07f, 0.04f},
+    {0.640f, 0.88f, 0.046f}, {0.440f, 0.90f, 0.044f}, {0.365f, 0.07f, 0.040f},
     {0.69f, 0.40f, 0.045f},
     {0.13f, 0.72f, 0.12f},
 }};
@@ -605,6 +642,8 @@ constexpr Layout kFourFinger = {{
     {0.11f, 0.60f, 0.048f}, {0.11f, 0.80f, 0.048f}, {0.064f, 0.70f, 0.048f}, {0.156f, 0.70f, 0.048f},
     {0.581f, 0.07f, 0.04f},
     {0.92f, 0.78f, 0.07f},
+    {0.635f, 0.07f, 0.04f},
+    {0.635f, 0.88f, 0.046f}, {0.440f, 0.90f, 0.044f}, {0.365f, 0.07f, 0.040f},
     {0.655f, 0.38f, 0.045f},
     {0.13f, 0.72f, 0.12f},
 }};
@@ -637,6 +676,7 @@ struct Finger {
     MenuTouch menu = MenuTouch::Undecided;
     uint64_t down_ms = 0;
     float notch_y = 0;  // a scroll's place at its last notch
+    float notch_x = 0;  // a sideways swipe's place at its last notch
 };
 
 std::mutex g_lock;
@@ -746,6 +786,10 @@ bool ButtonShown(size_t i) {
     if (g_editing) return b.when != When::Menus;
     if (g_layout[i].hidden) return false;
     if (i == kZoomButton && !(game::g_zoom < kScoped)) return false;
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    if (b.press == kDash && !enh.kinetic_dash_enabled) {
+        return false;
+    }
     if (b.when == When::Always) return true;
     if (b.when == When::Game) return !InMenus();
     if (b.when == When::Menus) return InMenus();
@@ -845,6 +889,7 @@ void UpdateStick(const Finger& f) {
     }
     g_stick_x = dx;
     g_stick_y = -dy;
+    game::overdrive::SetTouchStickInput(g_stick_x, g_stick_y);
 }
 
 // a dpad arrow held in the menus: a step as it comes down, then steps at a calm pace once held a while; the game
@@ -865,7 +910,10 @@ void Recount() {
         if (f.role == Role::Button) g_pressed[f.button] = !Dpad(f.button) || DpadStep(NowMs() - f.down_ms);
         if (f.role == Role::Stick) stick = true;
     }
-    if (!stick) g_stick_x = g_stick_y = 0;
+    if (!stick) {
+        g_stick_x = g_stick_y = 0;
+        game::overdrive::SetTouchStickInput(0.0f, 0.0f);
+    }
 }
 
 void Resize(size_t i, float r) { g_layout[i].r = std::clamp(r, kMinRadius, kMaxRadius); }
@@ -938,6 +986,10 @@ void FingerDown(SDL_FingerID id, float x, float y) {
         f.down_ms = NowMs();
         if (kButtons[b].press == kPanel) app::ToggleMenu();
         if (kButtons[b].press == kGyro) gyro::NextMode();
+        if (kButtons[b].press == kTimeStop) game::time_stop::OnTriggerPressed();
+        if (kButtons[b].press == kDash) game::overdrive::TriggerKineticDash();
+        if (kButtons[b].press == kAmmoMode) game::overdrive::CycleSpecialAmmoMode();
+        if (kButtons[b].press == kThermal) game::overdrive::ToggleThermalVisor();
     } else if (InMenus()) {
         // not the cursor yet: a tap clicks where it lifts, a swipe scrolls without moving the cursor
         f.role = Role::Cursor;
@@ -964,11 +1016,24 @@ void MenuHold(Finger& f) {
     f.menu = MenuTouch::Cursor;
     g_cursor_x = f.x;
     g_cursor_y = f.y;
+    f.notch_x = f.x;
     g_cursor_down = true;
 }
 
-// a finger in the menus moved: up or down past kMenuMove scrolls, sideways is the cursor dragging; a scroll gives a
-// wheel notch a kScrollNotch, a finger going up shows the rows below as on a phone's lists
+void StepWheel(float pos, float& notch_pos, float notch, std::atomic<int>& wheel) {
+    while (pos <= notch_pos - notch) {
+        notch_pos -= notch;
+        if (wheel > -kMaxNotches) wheel--;
+    }
+    while (pos >= notch_pos + notch) {
+        notch_pos += notch;
+        if (wheel < kMaxNotches) wheel++;
+    }
+}
+
+// a finger in the menus moved: up or down past kMenuMove scrolls, sideways is the cursor dragging and steps horizontal
+// wheel notches; a scroll gives a wheel notch a kScrollNotch, a finger going up shows the rows below as on a phone's
+// lists
 void MenuMove(Finger& f) {
     float h = Height();
     float dx = f.x - f.x0, dy = f.y - f.y0;
@@ -978,22 +1043,17 @@ void MenuMove(Finger& f) {
             f.notch_y = f.y0;
         } else if (std::fabs(dx) > kMenuMove * h) {
             MenuHold(f);
+            f.notch_x = f.x0;
         }
     }
+    float notch = kScrollNotch * h;
     if (f.menu == MenuTouch::Cursor) {
         g_cursor_x = f.x;
         g_cursor_y = f.y;
+        StepWheel(f.x, f.notch_x, notch, input::g_hwheel);
     }
     if (f.menu != MenuTouch::Scroll) return;
-    float notch = kScrollNotch * h;
-    while (f.y <= f.notch_y - notch) {
-        f.notch_y -= notch;
-        if (input::g_wheel > -kMaxNotches) input::g_wheel--;
-    }
-    while (f.y >= f.notch_y + notch) {
-        f.notch_y += notch;
-        if (input::g_wheel < kMaxNotches) input::g_wheel++;
-    }
+    StepWheel(f.y, f.notch_y, notch, input::g_wheel);
 }
 
 // a finger in the menus still since it came down: held long enough, it is the cursor held down (a slider dragged)
@@ -1035,6 +1095,10 @@ void FingerMove(SDL_FingerID id, float x, float y) {
 
 void FingerUp(SDL_FingerID id) {
     for (const Finger& f : g_fingers) {
+        if (f.id == id && f.role == Role::Button && kButtons[f.button].press == kTimeStop) {
+            game::time_stop::SetHoldInput(false);
+            continue;
+        }
         if (f.id != id || f.role != Role::Cursor) continue;
         if (f.menu == MenuTouch::Undecided) {
             // a tap: the cursor goes there and clicks
@@ -1072,11 +1136,21 @@ void KeyEvent(const SDL_KeyboardEvent& k) {
     int vk = input::VkOf(k.scancode);
     if (!vk) return;
     input::g_down[size_t(vk)] = k.down;
-    if (!k.down) return;
+    if (!k.down) {
+        if (input::HostKeyBound(input::kTimeStopAction, vk)) {
+            game::time_stop::SetHoldInput(false);
+        }
+        return;
+    }
     input::g_keyboard = true;
     input::g_touch = false;
     if (!k.repeat && input::PanelKey(vk)) app::ToggleMenu();
     else if (!k.repeat && !app::MenuOpen() && input::HudKey(vk)) game::g_hide_hud = !game::g_hide_hud;
+    else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kTimeStopAction, vk)) game::time_stop::OnTriggerPressed();
+    else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kFlamethrowerAction, vk)) game::flamethrower::Toggle();
+    else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kDashAction, vk)) game::overdrive::TriggerKineticDash();
+    else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kAmmoModeAction, vk)) game::overdrive::CycleSpecialAmmoMode();
+    else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kThermalAction, vk)) game::overdrive::ToggleThermalVisor();
     else if (vk == VK_ESCAPE && app::MenuOpen() && !app::Capturing()) app::ToggleMenu();
     // a name being typed takes Backspace and Enter as WM_CHAR has them
     if (vk == VK_BACK) input::OnChar('\b');
@@ -1361,6 +1435,35 @@ void DrawIcon(const Pen& p, Icon icon) {
             p.dl->AddText(ImGui::GetFont(), size, ImVec2(p.c.x - ts.x / 2, p.c.y - ts.y / 2), p.col, text);
             break;
         }
+        case Icon::TimeStop:  // stopwatch face + top crown + 90-degree frozen hands
+            p.Ring(0, 0.06f, 0.44f);
+            p.Line(-0.14f, -0.5f, 0.14f, -0.5f);
+            p.Line(0, -0.5f, 0, -0.38f);
+            p.Line(0, 0.06f, 0, -0.2f);
+            p.Line(0, 0.06f, 0.22f, 0.06f);
+            break;
+        case Icon::Dash:  // twin kinetic forward chevrons + thrust trails
+            p.Line(-0.34f, -0.34f, -0.02f, 0.0f);
+            p.Line(-0.02f, 0.0f, -0.34f, 0.34f);
+            p.Line(0.06f, -0.38f, 0.42f, 0.0f);
+            p.Line(0.42f, 0.0f, 0.06f, 0.38f);
+            p.Line(-0.52f, -0.16f, -0.26f, -0.16f);
+            p.Line(-0.52f, 0.16f, -0.26f, 0.16f);
+            break;
+        case Icon::AmmoMode:  // armored tactical payload cartridge + core diamond
+            p.Cartridge(-0.14f, -0.42f, 0.28f, 0.84f);
+            p.Line(0.28f, -0.24f, 0.48f, -0.24f);
+            p.Line(0.28f, 0.0f, 0.48f, 0.0f);
+            p.Line(0.28f, 0.24f, 0.48f, 0.24f);
+            break;
+        case Icon::Thermal:  // FLIR thermal optics reticle
+            p.Ring(0, 0, 0.42f);
+            p.Dot(0, 0, 0.12f);
+            p.Line(-0.56f, 0, -0.24f, 0);
+            p.Line(0.24f, 0, 0.56f, 0);
+            p.Line(0, -0.56f, 0, -0.24f);
+            p.Line(0, 0.24f, 0, 0.56f);
+            break;
     }
 }
 
@@ -1478,6 +1581,39 @@ void Draw() {
     std::lock_guard lock(g_lock);
     EnsureLayout();
     bool editing = g_editing;
+    if (!editing && !InMenus() && !app::MenuOpen() && input::Play()) {
+        const auto ft = game::flamethrower::GetHudState();
+        if (ft.active) {
+            ImDrawList* dl = ImGui::GetForegroundDrawList();
+            const float w = Width();
+            const float h = Height();
+            const float bar_w = std::min(w * 0.16f, 220.0f);
+            const float bar_h = std::max(5.0f, h * 0.008f);
+            const float bx = w * 0.50f - bar_w * 0.5f;
+            const float by = h * 0.145f;
+            char txt[36];
+            if (ft.reloading) {
+                std::snprintf(txt, sizeof(txt), "M2 FLAME · RELOAD %d%%", int(ft.reload_progress * 100.0f));
+            } else {
+                std::snprintf(txt, sizeof(txt), "M2 FLAME · %d%%", int(std::lround(ft.fuel_pct)));
+            }
+            const float fs = std::max(12.0f, h * 0.022f);
+            const ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, txt);
+            dl->AddRectFilled(ImVec2(bx - 10.0f, by - sz.y - 6.0f), ImVec2(bx + bar_w + 10.0f, by + bar_h + 6.0f),
+                              IM_COL32(12, 10, 9, 165), 6.0f);
+            dl->AddText(ImGui::GetFont(), fs, ImVec2(w * 0.50f - sz.x * 0.5f, by - sz.y - 3.0f),
+                        ft.reloading ? IM_COL32(180, 225, 255, 235) : IM_COL32(255, 190, 95, 240), txt);
+            dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bar_w, by + bar_h), IM_COL32(22, 16, 12, 200), 3.0f);
+            const float fill_frac = std::clamp(ft.fuel_pct / 100.0f, 0.0f, 1.0f);
+            if (fill_frac > 0.005f) {
+                const ImU32 fill_col = ft.firing ? IM_COL32(255, 115, 25, 245)
+                                                 : (ft.fuel_pct < 25.0f ? IM_COL32(235, 60, 40, 240)
+                                                                        : IM_COL32(255, 170, 50, 240));
+                dl->AddRectFilled(ImVec2(bx + 1.0f, by + 1.0f),
+                                  ImVec2(bx + (bar_w - 2.0f) * fill_frac + 1.0f, by + bar_h - 1.0f), fill_col, 2.5f);
+            }
+        }
+    }
     if (!editing && !Shown()) return;
     ImDrawList* dl = ImGui::GetForegroundDrawList();
     float h = Height();
@@ -1490,7 +1626,10 @@ void Draw() {
         Centre(i, cx, cy);
         float r = Radius(i);
         bool hidden = g_layout[i].hidden;
-        bool on = !editing && (g_pressed[i] || (b.press == kGyro && gyro::CurrentMode() != gyro::kOff));
+        bool on = !editing && (g_pressed[i] || (b.press == kGyro && gyro::CurrentMode() != gyro::kOff) ||
+                               (b.press == kTimeStop && game::time_stop::IsFrozen()) ||
+                               (b.press == kThermal && game::overdrive::GetHudSnapshot().thermal_on) ||
+                               (b.press == kDash && game::overdrive::GetHudSnapshot().dashing));
         int fade = hidden ? 40 : 100;  // a hidden control shows faint in the editor
         if (Skinned()) {
             // pressed in a little and lit; the icons the skin has none of (the menus' arrows, the scope's zoom) drawn
@@ -1514,6 +1653,56 @@ void Draw() {
             float fs = r * 0.55f;
             ImVec2 ts = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, mode);
             dl->AddText(ImGui::GetFont(), fs, ImVec2(cx - ts.x / 2, cy + r * 1.08f), Fade(255, 255, 255, 180), mode);
+        }
+        if (b.press == kTimeStop && !editing) {
+            const auto ts = game::time_stop::GetTelemetry();
+            if (ts.frozen) {
+                dl->AddCircle(ImVec2(cx, cy), r * 0.96f, IM_COL32(95, 225, 255, 235), 48, th * 1.2f);
+                char txt[24];
+                if (ts.remaining_sec > 0.01f) std::snprintf(txt, sizeof(txt), "%.1fs", ts.remaining_sec);
+                else std::snprintf(txt, sizeof(txt), "%.1fs", ts.elapsed_sec);
+                float fs = r * 0.55f;
+                ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, txt);
+                dl->AddText(ImGui::GetFont(), fs, ImVec2(cx - sz.x / 2, cy + r * 1.08f),
+                            IM_COL32(160, 240, 255, 235), txt);
+            } else if (ts.on_cooldown) {
+                char txt[24];
+                std::snprintf(txt, sizeof(txt), "%.1fs", ts.cooldown_sec);
+                float fs = r * 0.55f;
+                ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, txt);
+                dl->AddText(ImGui::GetFont(), fs, ImVec2(cx - sz.x / 2, cy + r * 1.08f),
+                            IM_COL32(255, 160, 120, 200), txt);
+            }
+        }
+        if ((b.press == kDash || b.press == kAmmoMode || b.press == kThermal) && !editing) {
+            const auto od = game::overdrive::GetHudSnapshot();
+            float fs = r * 0.52f;
+            if (b.press == kDash) {
+                if (od.dash_cooldown > 0.02f) {
+                    char txt[16];
+                    std::snprintf(txt, sizeof(txt), "%.1fs", od.dash_cooldown);
+                    ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, txt);
+                    dl->AddText(ImGui::GetFont(), fs, ImVec2(cx - sz.x / 2, cy + r * 1.08f),
+                                IM_COL32(255, 175, 110, 220), txt);
+                } else {
+                    dl->AddCircle(ImVec2(cx, cy), r * 0.96f, IM_COL32(90, 225, 255, 200), 40, th * 0.95f);
+                }
+            } else if (b.press == kAmmoMode) {
+                ImU32 ring = IM_COL32(215, 225, 235, 170);
+                if (od.ammo_mode == 1) ring = IM_COL32(255, 115, 45, 235);
+                else if (od.ammo_mode == 2) ring = IM_COL32(255, 200, 60, 235);
+                else if (od.ammo_mode == 3) ring = IM_COL32(85, 230, 255, 240);
+                dl->AddCircle(ImVec2(cx, cy), r * 0.96f, ring, 40, th * (od.ammo_mode == 0 ? 0.7f : 1.15f));
+                ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, od.ammo_short);
+                dl->AddText(ImGui::GetFont(), fs, ImVec2(cx - sz.x / 2, cy + r * 1.08f), ring, od.ammo_short);
+            } else if (b.press == kThermal) {
+                if (od.thermal_on) {
+                    dl->AddCircle(ImVec2(cx, cy), r * 0.98f, IM_COL32(255, 165, 55, 240), 40, th * 1.25f);
+                    ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, "FLIR");
+                    dl->AddText(ImGui::GetFont(), fs, ImVec2(cx - sz.x / 2, cy + r * 1.08f),
+                                IM_COL32(255, 205, 95, 240), "FLIR");
+                }
+            }
         }
         if (editing && int(i) == g_selected) dl->AddCircle(ImVec2(cx, cy), r + th * 2, IM_COL32(255, 200, 60, 255), 48, th * 1.5f);
         if (editing && hidden) {

@@ -70,6 +70,9 @@ struct Voice {
     bool playing = false;
     bool looping = false;
     bool paused = false;
+    int32_t remaster_slot = -2;   // -2: unchecked, -1: not in BWAR pack, >= 0: BWAR slot ID
+    uint16_t remaster_flags = 0;  // bit0: fp_fire_loop
+    bool remaster_muted = false;  // muted at output when Enhanced audio remaster replaces this voice
     // stream: took a packet since it went quiet, quiet again once they run out
     bool active = false;
     bool ending = false;

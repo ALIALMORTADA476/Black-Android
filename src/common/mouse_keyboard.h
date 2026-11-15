@@ -49,6 +49,7 @@ bool CursorShown();            // in a menu with the keyboard or mouse used last
 // the cursor in the shown frame, 0 to 1 across and down, and the left button; false while it is not shown
 bool Cursor(float& x, float& y, bool& down);
 int TakeWheel();               // wheel notches in the menus since the last call, up positive
+int TakeHWheel();              // horizontal touch-swipe notches in the menus since the last call, right positive
 bool LeftButton();             // the left mouse button or a touch held on the screen
 void TapConfirm();             // a short press of A on the pad itself
 // a name being typed: the keys type (OnChar) and press nothing but the arrows and pause

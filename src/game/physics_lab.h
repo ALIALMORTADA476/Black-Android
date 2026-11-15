@@ -23,6 +23,10 @@ struct RuntimeParams {
     std::atomic<float> prop_bounciness{1.0f};        // 0.25 .. 6.00
     std::atomic<float> camera_shockwave{1.0f};       // 0.00 .. 4.00
     std::atomic<float> physics_time_scale{1.0f};     // 0.20 .. 2.00
+    std::atomic<bool> delirium_enabled{true};
+    std::atomic<float> delirium_intensity{1.35f};    // 0.25 .. 3.00
+    std::atomic<bool> delirium_blind_fire{true};
+    std::atomic<float> delirium_agony_duration{1.10f}; // 0.00 .. 2.50s
 };
 
 struct TelemetrySnapshot {

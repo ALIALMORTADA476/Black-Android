@@ -1,12 +1,18 @@
 // The cheats page's ESP LINES: each living enemy gets a box round it and a line to it from the bottom of the screen,
 // drawn over the finished frame with the view the scene was drawn with. AIMBOT: while the player aims in the view
 // turns to the body of the living enemy nearest the crosshair
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <mutex>
 
 #include "common/options.h"
+#include "game/delirium_physics.h"
+#include "game/flamethrower.h"
 #include "game/layout.h"
+#include "game/overdrive.h"
+#include "game/time_stop.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
 
@@ -48,6 +54,7 @@ struct Seen {
 };
 Seen g_seen[kMaxEnemies];
 size_t g_count;
+std::mutex g_seen_mutex;
 
 // the scene's view and projection, row vectors: clip = position * view * projection
 float g_view[16], g_projection[16];
@@ -115,6 +122,15 @@ Vertex* Segment(Vertex* v, float x0, float y0, float x1, float y1, float width) 
 }  // namespace
 
 namespace game {
+
+bool ProjectWorldPoint(const float world_pos[3], float out_norm_xy[2]) {
+    if (!g_camera) return false;
+    float clip[4] = {};
+    if (!Clip(world_pos, clip) || clip[3] <= kNear) return false;
+    out_norm_xy[0] = (clip[0] / clip[3] + 1.0f) * 0.5f;
+    out_norm_xy[1] = (1.0f - clip[1] / clip[3]) * 0.5f;
+    return true;
+}
 
 // the device's view and projection as the scene draws them (D3DDevice_SetTransform, view 0 and projection 1)
 void EspCamera() {
@@ -197,6 +213,29 @@ void DrawEsp(X86Context& ctx, float unit) {
     ctx.ecx = ecx;
 }
 
+size_t CopyLivingEnemies(uint32_t* out_who, size_t max_count) {
+    if (!out_who || max_count == 0) return 0;
+    const auto now = std::chrono::steady_clock::now();
+    std::lock_guard<std::mutex> lk(g_seen_mutex);
+    const size_t n = std::min(g_count, kMaxEnemies);
+    size_t out_n = 0;
+    for (size_t i = 0; i < n && out_n < max_count; ++i) {
+        if ((now - g_seen[i].at) > kSeen) continue;
+        const uint32_t who = g_seen[i].who;
+        if (who < mem::kUserLow || !mem::IsCommitted(who + kCharDying)) continue;
+        if (R32(who + kCharKind) != kEnemyKind || R32(who + kCharDying) != 0u) continue;
+        bool dup = false;
+        for (size_t j = 0; j < out_n; ++j) {
+            if (out_who[j] == who) {
+                dup = true;
+                break;
+            }
+        }
+        if (!dup) out_who[out_n++] = who;
+    }
+    return out_n;
+}
+
 }  // namespace game
 
 // The characters' update, a frame (ecx the character, its class's own; the player's is 0x1E5FA0): the enemies
@@ -204,6 +243,32 @@ void DrawEsp(X86Context& ctx, float unit) {
 X86_EXTERN_FUNC(__imp__sub_001DFD90);
 X86_FUNC(sub_001DFD90) {
     uint32_t who = ctx.ecx;
-    if ((game::Opt().esp || game::Opt().aimbot) && who && R32(who + kCharKind) == kEnemyKind && !R32(who + kCharDying)) Remember(who);
+    float frame_dt = G<float>(ctx.esp + 0x04);
+    const bool track = (game::Opt().esp || game::Opt().aimbot || game::time_stop::IsFrozen() ||
+                        game::overdrive::NeedsEnemyTracking());
+    if (track && who && R32(who + kCharKind) == kEnemyKind && !R32(who + kCharDying)) {
+        {
+            std::lock_guard<std::mutex> lk(g_seen_mutex);
+            Remember(who);
+        }
+        if (game::time_stop::IsFrozen()) {
+            game::time_stop::RecordFrozenEnemy(who);
+        }
+    }
+    if (game::time_stop::IsFrozen() && who && R32(who + kCharKind) != 2u) {
+        game::time_stop::RecordSkippedAiTick();
+        ctx.esp += 8;
+        return;
+    }
+    if (who && R32(who + kCharKind) != 2u) {
+        const float ws = game::overdrive::GetWorldTimeScaleMultiplier();
+        if (ws < 0.999f && std::isfinite(frame_dt) && frame_dt > 0.0f) {
+            frame_dt *= ws;
+            G<float>(ctx.esp + 0x04) = frame_dt;
+        }
+    }
     __imp__sub_001DFD90(ctx, base);
+    game::delirium_phys::OnEnemyFrameStep(ctx, base, who, frame_dt);
+    game::flamethrower::OnActorStep(ctx, base, who, frame_dt);
+    game::overdrive::OnEnemyFrameUpdate(ctx, base, who, frame_dt);
 }

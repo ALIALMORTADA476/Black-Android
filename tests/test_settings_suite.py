@@ -22,7 +22,7 @@ import tempfile
 import tomllib
 from typing import Any, Dict, List, Optional, Tuple
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 DEFAULTS_VERSION = 2
 
 PRESET_MANAGED_KEYS = {
@@ -47,8 +47,8 @@ PLANNED_LOCKED_KEYS = {
     "soft_shadows", "ambient_occlusion",
     "hd_texture_packs", "blood_particle_multiplier", "persistent_blood_decals",
     "max_blood_decals", "corpse_persistence_mode", "diverse_bullet_impacts",
-    "custom_character_models", "mod_audio_pack_enabled", "arabic_flash_menus",
-    "arabic_voice_pack", "enhanced_recoil_feedback", "overlay_enabled"
+    "custom_character_models", "arabic_flash_menus",
+    "arabic_voice_pack", "overlay_enabled"
 }
 
 BOOL_KEYS = {
@@ -57,11 +57,13 @@ BOOL_KEYS = {
     "god_mode", "one_hit_kill", "infinite_grenades", "unlock_levels", "unlock_black_ops",
     "esp", "aimbot", "cas_sharpen_enabled", "trilinear_filtering", "hd_texture_packs",
     "screen_damage_vignette", "low_health_desaturation", "persistent_blood_decals",
-    "diverse_bullet_impacts", "ragdoll_60fps_physics", "custom_character_models",
+    "diverse_bullet_impacts", "hitmarker_feedback", "shell_casings",
+    "ragdoll_60fps_physics", "custom_character_models",
     "combat_dynamic_boost", "mod_audio_pack_enabled", "arabic_ui_enabled",
     "arabic_rtl_mirror", "arabic_subtitles_overlay", "arabic_flash_menus",
     "arabic_voice_pack", "enhanced_recoil_feedback", "disable_aim_assist",
-    "advanced_perf_hud", "show_restart_banners", "hide_hud_on_screenshots", "overlay_enabled"
+    "advanced_perf_hud", "show_restart_banners", "hide_hud_on_screenshots", "overlay_enabled",
+    "time_stop_enabled"
 }
 
 ALLOWED_UINTS = {
@@ -72,6 +74,7 @@ ALLOWED_UINTS = {
     "fmv_scale": [0, 1],
     "audio_output": [0, 1, 2, 3],
     "fps_cap": [0, 1, 30, 60, 75, 90, 120, 144, 165, 240, 360],
+    "time_stop_mode": [0, 1],
 }
 
 ALLOWED_STRINGS = {
@@ -107,6 +110,17 @@ BOUNDS = {
     "prop_bounciness": (0.25, 6.00, 0.05),
     "camera_shockwave": (0.00, 4.00, 0.05),
     "physics_time_scale": (0.20, 2.00, 0.05),
+    "time_stop_max_duration": (0.00, 30.00, 1.00),
+    "time_stop_cooldown": (0.00, 30.00, 1.00),
+    "weapon_audio_volume": (0, 150, 5),
+    "mechanical_audio_volume": (0, 150, 5),
+    "reload_audio_volume": (0, 150, 5),
+    "environmental_audio_volume": (0, 150, 5),
+    "audio_tail_intensity": (0, 150, 5),
+    "audio_echo_intensity": (0, 150, 5),
+    "audio_distant_gunfire": (0, 150, 5),
+    "audio_bullet_flyby": (0, 150, 5),
+    "audio_variation_percent": (0, 100, 5),
 }
 
 
@@ -181,6 +195,7 @@ class SettingsRegistryModel:
             "soft_shadows": 0,
             "ambient_occlusion": 0,
             "hd_texture_packs": False,
+            "weapon_reflections": True,
         }
         self.combat: Dict[str, Any] = {
             "screen_damage_vignette": False,
@@ -193,6 +208,8 @@ class SettingsRegistryModel:
             "max_blood_decals": 128,
             "corpse_persistence_mode": 0,
             "diverse_bullet_impacts": False,
+            "hitmarker_feedback": True,
+            "shell_casings": True,
         }
         self.characters: Dict[str, Any] = {
             "ragdoll_60fps_physics": True,
@@ -202,7 +219,16 @@ class SettingsRegistryModel:
         self.audio: Dict[str, Any] = {
             "combat_dynamic_boost": False,
             "master_gain_percent": 100,
-            "mod_audio_pack_enabled": False,
+            "mod_audio_pack_enabled": True,
+            "weapon_audio_volume": 100,
+            "mechanical_audio_volume": 100,
+            "reload_audio_volume": 100,
+            "environmental_audio_volume": 100,
+            "audio_tail_intensity": 100,
+            "audio_echo_intensity": 100,
+            "audio_distant_gunfire": 100,
+            "audio_bullet_flyby": 100,
+            "audio_variation_percent": 50,
         }
         self.arabic: Dict[str, Any] = {
             "arabic_ui_enabled": True,
@@ -212,7 +238,7 @@ class SettingsRegistryModel:
             "arabic_voice_pack": False,
         }
         self.gameplay: Dict[str, Any] = {
-            "enhanced_recoil_feedback": False,
+            "enhanced_recoil_feedback": True,
             "disable_aim_assist": False,
         }
         self.interface: Dict[str, Any] = {
@@ -225,19 +251,23 @@ class SettingsRegistryModel:
             "overlay_enabled": False,
         }
         self.physics_lab: Dict[str, Any] = {
-            "preset": "classic",
-            "explosion_force": 1.00,
-            "impact_force": 1.00,
-            "gravity_scale": 1.00,
-            "debris_intensity": 1.00,
-            "character_reaction": 1.00,
-            "weapon_recoil": 1.00,
-            "explosion_radius": 1.00,
-            "ragdoll_launch": 1.00,
-            "structural_destruction": 1.00,
-            "prop_bounciness": 1.00,
-            "camera_shockwave": 1.00,
+            "preset": "realistic",
+            "explosion_force": 2.20,
+            "impact_force": 2.10,
+            "gravity_scale": 1.15,
+            "debris_intensity": 2.25,
+            "character_reaction": 1.85,
+            "weapon_recoil": 1.30,
+            "explosion_radius": 1.45,
+            "ragdoll_launch": 1.85,
+            "structural_destruction": 2.40,
+            "prop_bounciness": 1.25,
+            "camera_shockwave": 1.50,
             "physics_time_scale": 1.00,
+            "time_stop_enabled": False,
+            "time_stop_mode": 0,
+            "time_stop_max_duration": 0.00,
+            "time_stop_cooldown": 0.00,
         }
         self.presets: Dict[str, Any] = {
             "active": "custom",
@@ -356,6 +386,8 @@ class SettingsRegistryModel:
             self.graphics["tone_mapping"] = 1
         if not self.bloom and "bloom_intensity" not in data.get("graphics", {}):
             self.graphics["bloom_intensity"] = 0
+        if prev_version < 3:
+            self.audio["mod_audio_pack_enabled"] = True
 
         # Cross-validation
         if self.dynamic_min_percent > self.dynamic_max_percent:
@@ -650,7 +682,7 @@ def test_2_settings_save_and_load():
         assert parsed["bloom"] is False
         assert parsed["infinite_ammo"] is True
         assert parsed["keys"]["fire"] == "LeftMouse"
-        assert parsed["schema_version"] == 2
+        assert parsed["schema_version"] == 3
 
         reg2 = SettingsRegistryModel()
         reg2.load_from_dict(parsed)
@@ -934,7 +966,7 @@ fov = 85
     assert reg.graphics["bloom_intensity"] == 0
 
     serialized = reg.serialize_to_dict()
-    assert serialized["schema_version"] == 2
+    assert serialized["schema_version"] == 3
     assert serialized["defaults"] == 2
 
     print("[PASS] Test 9: Schema Migration")
@@ -948,6 +980,7 @@ def test_10_physics_lab_and_enhanced_implemented():
         ("graphics", "tone_mapping", 2),
         ("graphics", "bloom_intensity", 160),
         ("graphics", "trilinear_filtering", False),
+        ("graphics", "weapon_reflections", False),
         ("combat", "screen_damage_vignette", False),
         ("combat", "damage_vignette_intensity", 95),
         ("combat", "low_health_desaturation", False),
@@ -961,8 +994,8 @@ def test_10_physics_lab_and_enhanced_implemented():
     ]:
         ok, reason = reg.set_value(key, val, sect)
         assert ok, f"Expected {sect}.{key} unlocked, got: {reason}"
-    assert reg.physics_lab["preset"] == "classic"
-    assert reg.physics_lab["explosion_force"] == 1.0
+    assert reg.physics_lab["preset"] == "realistic"
+    assert reg.physics_lab["explosion_force"] == 2.20
     for phy_key, val, expected in [
         ("explosion_force", 15.0, 10.0),
         ("impact_force", 9.0, 9.0),
@@ -984,6 +1017,207 @@ def test_10_physics_lab_and_enhanced_implemented():
     return True
 
 
+def test_11_time_stop_controls_and_arabic():
+    print("[RUN ] Test 11: Time Stop Controls & Arabic Strings")
+    reg = SettingsRegistryModel()
+    for phy_key, val, expected in [
+        ("time_stop_enabled", True, True),
+        ("time_stop_mode", 1, 1),
+        ("time_stop_max_duration", 12.0, 12.0),
+        ("time_stop_cooldown", 5.0, 5.0),
+    ]:
+        ok, reason = reg.set_value(phy_key, val, "physics_lab")
+        assert ok, f"Expected physics_lab.{phy_key} unlocked, got: {reason}"
+        assert reg.physics_lab[phy_key] == expected
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    with open(os.path.join(repo_root, "src", "common", "translations.cpp"), "r", encoding="utf-8") as f:
+        tr_src = f.read()
+    for arabic_label in [
+        "إيقاف الزمن",
+        "تجميد العالم",
+        "استئناف الزمن",
+        "مدة التجميد",
+    ]:
+        assert arabic_label in tr_src, f"Missing required Arabic label in translations.cpp: {arabic_label}"
+
+    with open(os.path.join(repo_root, "src", "common", "mod_schema.cpp"), "r", encoding="utf-8") as f:
+        schema_src = f.read()
+    for key_name in [
+        "time_stop_enabled",
+        "time_stop_mode",
+        "time_stop_max_duration",
+        "time_stop_cooldown",
+    ]:
+        assert key_name in schema_src, f"Missing schema registration in mod_schema.cpp: {key_name}"
+
+    print("[PASS] Test 11: Time Stop Controls & Arabic Strings")
+    return True
+
+
+def test_12_weapon_audio_remaster_schema():
+    print("[RUN ] Test 12: Weapon Audio Remaster Schema & Controls")
+    reg = SettingsRegistryModel()
+    assert reg.audio["mod_audio_pack_enabled"] is True, "Enhanced weapon audio should default to enabled"
+    for key, val, expected in [
+        ("mod_audio_pack_enabled", False, False),
+        ("weapon_audio_volume", 140, 140),
+        ("mechanical_audio_volume", 200, 150),
+        ("reload_audio_volume", 85, 85),
+        ("environmental_audio_volume", 120, 120),
+        ("audio_tail_intensity", 135, 135),
+        ("audio_echo_intensity", 200, 150),
+        ("audio_distant_gunfire", 110, 110),
+        ("audio_bullet_flyby", 95, 95),
+        ("audio_variation_percent", 150, 100),
+    ]:
+        ok, reason = reg.set_value(key, val, "audio")
+        assert ok, f"Expected audio.{key} unlocked, got: {reason}"
+        assert reg.audio[key] == expected, f"Expected audio.{key} == {expected}, got {reg.audio[key]}"
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    with open(os.path.join(repo_root, "src", "common", "mod_schema.cpp"), "r", encoding="utf-8") as f:
+        schema_src = f.read()
+    for key_name in [
+        "mod_audio_pack_enabled",
+        "weapon_audio_volume",
+        "mechanical_audio_volume",
+        "reload_audio_volume",
+        "environmental_audio_volume",
+        "audio_tail_intensity",
+        "audio_echo_intensity",
+        "audio_distant_gunfire",
+        "audio_bullet_flyby",
+        "audio_variation_percent",
+    ]:
+        assert key_name in schema_src, f"Missing schema registration in mod_schema.cpp: {key_name}"
+
+    print("[PASS] Test 12: Weapon Audio Remaster Schema & Controls")
+    return True
+
+
+def test_13_ballistics_tracers_and_arabic():
+    print("[RUN ] Test 13: Ballistics Tracers Schema & Arabic Menu Coverage")
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    with open(os.path.join(repo_root, "src", "common", "mod_schema.cpp"), "r", encoding="utf-8") as f:
+        schema_src = f.read()
+    for key_name in [
+        "ballistics_preset",
+        "tracers_enabled",
+        "tracer_frequency",
+        "tracer_trail_length",
+        "tracer_brightness",
+        "tracer_color",
+        "smoke_trails_enabled",
+        "smoke_mode",
+        "smoke_intensity",
+        "smoke_duration",
+        "weapon_reflections",
+    ]:
+        assert key_name in schema_src, f"Missing ballistics schema key in mod_schema.cpp: {key_name}"
+
+    with open(os.path.join(repo_root, "src", "common", "translations.cpp"), "r", encoding="utf-8") as f:
+        tr_src = f.read()
+    for ar_label in [
+        "BALLISTICS & TRACERS",
+        "BULLET TRACERS",
+        "TRACER FREQUENCY",
+        "EVERY BULLET",
+        "EVERY 2ND BULLET",
+        "EVERY 3RD BULLET",
+        "EVERY 5TH BULLET",
+        "SELECTIVE",
+        "SMOKE TRAILS",
+        "SMOKE MODE",
+        "SMOKE INTENSITY",
+        "SMOKE DURATION",
+        "RESTORE ORIGINAL BULLET EFFECTS",
+    ]:
+        assert ar_label in tr_src, f"Missing Arabic translation entry in translations.cpp: {ar_label}"
+
+    print("[PASS] Test 13: Ballistics Tracers Schema & Arabic Menu Coverage")
+    return True
+
+
+def test_14_combat_juice_gyro_and_arabic():
+    print("[RUN ] Test 14: Combat Feedback, Shell Casings, Enhanced Recoil, Gyro Filter & Arabic Coverage")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    schema_h = open(os.path.join(root, "src", "common", "mod_schema.h"), encoding="utf-8").read()
+    schema_cpp = open(os.path.join(root, "src", "common", "mod_schema.cpp"), encoding="utf-8").read()
+    menu_cpp = open(os.path.join(root, "src", "common", "menu.cpp"), encoding="utf-8").read()
+    tr_cpp = open(os.path.join(root, "src", "common", "translations.cpp"), encoding="utf-8").read()
+    gyro_cpp = open(os.path.join(root, "native", "gyro.cpp"), encoding="utf-8").read()
+
+    for sym in ["CombatHitmarkers", "CombatShellCasings", "GameplayEnhancedRecoil"]:
+        assert sym in schema_h and sym in schema_cpp, f"Missing schema symbol: {sym}"
+    for key in ["hitmarker_feedback", "shell_casings", "enhanced_recoil_feedback"]:
+        assert key in schema_cpp, f"Missing TOML key: {key}"
+    for label in ["TACTICAL HITMARKERS", "3D SHELL CASINGS", "ENHANCED RECOIL CURVES"]:
+        assert label in menu_cpp, f"Missing menu option: {label}"
+        assert label in tr_cpp, f"Missing translation entry: {label}"
+    assert "OneEuroGyroFilter" in gyro_cpp, "Gyro engine must wire OneEuroGyroFilter"
+
+    print("[PASS] Test 14: Combat Feedback, Shell Casings, Enhanced Recoil, Gyro Filter & Arabic Coverage")
+    return True
+
+
+def test_15_overdrive_protocol_and_arabic():
+    print("[RUN ] Test 15: Kinetic Dash, Tactical Gear, Top-Bar Removal & Crash Safety")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    schema_h = open(os.path.join(root, "src", "common", "mod_schema.h"), encoding="utf-8").read()
+    schema_cpp = open(os.path.join(root, "src", "common", "mod_schema.cpp"), encoding="utf-8").read()
+    menu_cpp = open(os.path.join(root, "src", "common", "menu.cpp"), encoding="utf-8").read()
+    tr_cpp = open(os.path.join(root, "src", "common", "translations.cpp"), encoding="utf-8").read()
+    vulkan_cpp = open(os.path.join(root, "native", "vulkan.cpp"), encoding="utf-8").read()
+    touch_cpp = open(os.path.join(root, "native", "touch.cpp"), encoding="utf-8").read()
+    overdrive_cpp = open(os.path.join(root, "src", "game", "overdrive.cpp"), encoding="utf-8").read()
+    flame_cpp = open(os.path.join(root, "src", "game", "flamethrower.cpp"), encoding="utf-8").read()
+
+    for sym in [
+        "KineticDashEnabled",
+        "SpecialAmmoMode",
+        "ThermalVisorEnabled",
+    ]:
+        assert sym in schema_h and sym in schema_cpp, f"Missing Tactical SettingId: {sym}"
+
+    for key in [
+        "kinetic_dash_enabled",
+        "special_ammo_mode",
+        "thermal_visor_enabled",
+    ]:
+        assert key in schema_cpp, f"Missing Tactical TOML key: {key}"
+
+    for removed_label in [
+        "ADRENALINE OVERDRIVE",
+        "TRIGGER OVERDRIVE SURGE",
+        "DASH SHOCKWAVE SLAM",
+        "KILL SIPHON (HP + AMMO)",
+        "REFLEX MULTI-KILL SLOW-MO",
+    ]:
+        assert removed_label not in menu_cpp, f"Removed Adrenaline/Surge label still present in menu: {removed_label}"
+
+    for label in [
+        "KINETIC DASH & TACTICAL GEAR",
+        "KINETIC DASH",
+        "SPECIAL AMMO MODE",
+        "THERMAL THREAT VISOR",
+    ]:
+        assert label in menu_cpp, f"Missing menu option: {label}"
+        assert label in tr_cpp, f"Missing translation entry: {label}"
+
+    for btn in ['"dash"', '"ammo_mode"', '"thermal"']:
+        assert btn in touch_cpp, f"Missing touch HUD button: {btn}"
+    assert '{"overdrive"' not in touch_cpp, "Overdrive counter button must be removed from Touch HUD"
+
+    assert "ADR %.0f%%" not in overdrive_cpp and "OVERDRIVE %.1fs" not in overdrive_cpp, \
+        "Top status bar strip must be removed from DrawHudOverlay"
+    assert "FBits(4.2f)" not in overdrive_cpp and "FBits(4.5f)" not in flame_cpp, \
+        "Unsafe float-as-int8 arg5 (FBits) passed to 0x001E74B0 must not exist"
+    assert "thermal_mix" in vulkan_cpp or "ThermalVisor" in vulkan_cpp, "Thermal shader wiring missing in vulkan.cpp"
+    print("[PASS] Test 15: Kinetic Dash, Tactical Gear, Top-Bar Removal & Crash Safety")
+    return True
+
+
 def main():
     tests = [
         test_1_default_settings,
@@ -996,6 +1230,11 @@ def main():
         test_8_restart_required_settings,
         test_9_schema_migration,
         test_10_physics_lab_and_enhanced_implemented,
+        test_11_time_stop_controls_and_arabic,
+        test_12_weapon_audio_remaster_schema,
+        test_13_ballistics_tracers_and_arabic,
+        test_14_combat_juice_gyro_and_arabic,
+        test_15_overdrive_protocol_and_arabic,
     ]
     passed = 0
     failed = 0

@@ -20,7 +20,15 @@ add_executable(test_settings_core
     test_settings_core.cpp
     ${REPO_ROOT}/src/common/mod_schema.cpp
     ${REPO_ROOT}/src/common/presets.cpp
+    ${REPO_ROOT}/src/common/gyro_filter.cpp
     ${REPO_ROOT}/src/game/arabic_strings.cpp
+    ${REPO_ROOT}/src/game/ballistics_rules.cpp
+    ${REPO_ROOT}/src/game/combat_feedback_rules.cpp
+    ${REPO_ROOT}/src/game/delirium_rules.cpp
+    ${REPO_ROOT}/src/game/flamethrower_core.cpp
+    ${REPO_ROOT}/src/game/mission_select_rules.cpp
+    ${REPO_ROOT}/src/game/overdrive_rules.cpp
+    ${REPO_ROOT}/src/sound/weapon_audio.cpp
 )
 
 target_include_directories(test_settings_core PRIVATE

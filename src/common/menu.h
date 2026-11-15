@@ -10,6 +10,7 @@ enum class TacticalCategory : int {
     Graphics = 0,
     PhysicsLab,
     CombatGameplay,
+    BallisticsTracers,
     AudioLanguage,
     Interface,
     CheatsWeapons,
@@ -24,6 +25,7 @@ bool Capturing();  // a key binding waits for a key
 void ToggleMenu();
 void DrawUi(double fps);
 inline constexpr uint32_t kFpsCapRefresh = 1;  // Settings::fps_cap: just under the display's refresh rate
+uint32_t DisplayRefreshRate();                 // detected display refresh rate in Hz (0 when unknown)
 void PaceFrame();  // app::Pace, with kFpsCapRefresh; game thread, after the present
 
 // the panel's rows, for the game's own options menu

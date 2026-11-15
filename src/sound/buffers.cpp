@@ -1,5 +1,6 @@
 // IDirectSoundBuffer
 #include "sound/sound.h"
+#include "sound/weapon_audio.h"
 
 using namespace kernel;
 using namespace sound;
@@ -53,7 +54,14 @@ BUFFER(Release, 1) {
     mem::FreeSystem(obj);
     return 0;
 }
-BUFFER(Unlock, 5) { return 0; }
+BUFFER(Unlock, 5) {
+    if (!v.stream) {
+        v.remaster_slot = -2;
+        v.remaster_flags = 0;
+        v.remaster_muted = false;
+    }
+    return 0;
+}
 BUFFER(SetBufferData, 3) {
     if (a[1] == v.data && a[2] == v.bytes) return 0;
     if (v.owned != a[1]) {
@@ -66,6 +74,9 @@ BUFFER(SetBufferData, 3) {
     v.play_start = v.loop_start = 0;
     v.pos = 0;
     v.block = -1;
+    v.remaster_slot = -2;
+    v.remaster_flags = 0;
+    v.remaster_muted = false;
     return 0;
 }
 BUFFER(Play, 4) {
@@ -73,10 +84,19 @@ BUFFER(Play, 4) {
     v.looping = a[3] & 1;
     if (a[3] & 2) v.pos = 0;
     v.sync = a[3] & 4;
+    if (!v.stream && v.bytes > 0) {
+        const void* raw = v.data ? HostPtr(v.data) : nullptr;
+        v.remaster_muted = weapon_audio::OnVoicePlay(
+            v.obj, raw, v.bytes, v.remaster_slot, v.remaster_flags,
+            v.is3d, v.mode, v.p, v.min_dist, v.max_dist, v.volume);
+    } else {
+        v.remaster_muted = false;
+    }
     return 0;
 }
 BUFFER(Stop, 1) {
     v.playing = false;
+    weapon_audio::OnVoiceStop(v.obj);
     return 0;
 }
 // (this, time low, time high, flags): stops now, the release envelope is not reproduced
@@ -192,5 +212,8 @@ BUFFER(SetFormat, 2) {
     ReadFormat(v, a[1]);
     v.freq = 0;
     v.block = -1;
+    v.remaster_slot = -2;
+    v.remaster_flags = 0;
+    v.remaster_muted = false;
     return 0;
 }

@@ -11,6 +11,7 @@
 #include <mutex>
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_system.h>
 
 #include "app/app.h"
 #include "common/menu.h"
@@ -250,3 +251,43 @@ void Rumble(int port, uint16_t left, uint16_t right) {
 }
 
 }  // namespace input
+
+namespace host {
+
+void VibratePhone(uint32_t duration_ms, uint8_t amplitude) {
+#ifdef __ANDROID__
+    if (duration_ms == 0u || amplitude == 0u) return;
+    static std::mutex s_vib_mu;
+    static jmethodID s_vib_mid = nullptr;
+    auto* env = static_cast<JNIEnv*>(SDL_GetAndroidJNIEnv());
+    auto activity = static_cast<jobject>(SDL_GetAndroidActivity());
+    if (!env || !activity) return;
+
+    jmethodID mid = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(s_vib_mu);
+        if (!s_vib_mid) {
+            jclass cls = env->GetObjectClass(activity);
+            if (cls) {
+                s_vib_mid = env->GetMethodID(cls, "vibratePhone", "(II)V");
+                env->DeleteLocalRef(cls);
+            }
+            if (env->ExceptionCheck()) {
+                env->ExceptionClear();
+                s_vib_mid = nullptr;
+            }
+        }
+        mid = s_vib_mid;
+    }
+    if (mid) {
+        env->CallVoidMethod(activity, mid, jint(duration_ms), jint(amplitude));
+        if (env->ExceptionCheck()) env->ExceptionClear();
+    }
+    env->DeleteLocalRef(activity);
+#else
+    (void)duration_ms;
+    (void)amplitude;
+#endif
+}
+
+}  // namespace host

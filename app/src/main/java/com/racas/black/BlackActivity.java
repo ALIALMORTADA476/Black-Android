@@ -3,22 +3,32 @@ package com.racas.black;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.VibrationAttributes;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.Settings;
+import android.util.Log;
+import android.view.Display;
 import android.view.InputDevice;
 import android.view.InputEvent;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.File;
@@ -49,9 +59,54 @@ public class BlackActivity extends SDLActivity {
         return new String[] {"SDL3", "main"};
     }
 
+    private float preferredHz = 120.0f;
+
+    @SuppressWarnings("deprecation")
+    private void requestHighRefreshRate() {
+        Display display = (Build.VERSION.SDK_INT >= 30) ? getDisplay() : getWindowManager().getDefaultDisplay();
+        if (display == null) return;
+        Display.Mode active = display.getMode();
+        Display.Mode best = active;
+        for (Display.Mode m : display.getSupportedModes()) {
+            if (m.getPhysicalWidth() == active.getPhysicalWidth()
+                    && m.getPhysicalHeight() == active.getPhysicalHeight()
+                    && m.getRefreshRate() > best.getRefreshRate()) {
+                best = m;
+            }
+        }
+        preferredHz = best.getRefreshRate();
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        if (lp.preferredDisplayModeId != best.getModeId()) {
+            lp.preferredDisplayModeId = best.getModeId();
+            getWindow().setAttributes(lp);
+            Log.i("BlackDisplay", "Preferred display mode id=" + best.getModeId() + " (" + preferredHz + " Hz)");
+        }
+        if (mSurface != null) applySurfaceFrameRate(mSurface.getHolder().getSurface());
+    }
+
+    private void applySurfaceFrameRate(Surface surface) {
+        if (Build.VERSION.SDK_INT >= 30 && surface != null && surface.isValid()) {
+            surface.setFrameRate(preferredHz, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT,
+                    Surface.CHANGE_FRAME_RATE_ALWAYS);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestHighRefreshRate();
+        if (mSurface != null) {
+            mSurface.getHolder().addCallback(new SurfaceHolder.Callback() {
+                @Override
+                public void surfaceCreated(SurfaceHolder holder) { applySurfaceFrameRate(holder.getSurface()); }
+                @Override
+                public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+                    applySurfaceFrameRate(holder.getSurface());
+                }
+                @Override
+                public void surfaceDestroyed(SurfaceHolder holder) {}
+            });
+        }
         for (View v : new View[] {mSurface, mLayout})
             if (v != null) v.setOnCapturedPointerListener(BlackActivity::onCapturedPointer);
         File own = getExternalFilesDir(null);
@@ -169,6 +224,7 @@ public class BlackActivity extends SDLActivity {
     protected void onResume() {
         super.onResume();
         resumed = true;
+        requestHighRefreshRate();
         askForGame();
         tellOfUpdate();
     }
@@ -184,8 +240,10 @@ public class BlackActivity extends SDLActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) hideSystemBars();
-        else if (!mBrokenLibraries) nativeLooseRelease();  // its ups go elsewhere while the game is not in front
+        if (hasFocus) {
+            hideSystemBars();
+            requestHighRefreshRate();
+        } else if (!mBrokenLibraries) nativeLooseRelease();  // its ups go elsewhere while the game is not in front
     }
 
     @SuppressWarnings("deprecation")
@@ -382,6 +440,71 @@ public class BlackActivity extends SDLActivity {
                 startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                         Uri.parse("package:" + getPackageName())));
             }
+        }
+    }
+
+    private Vibrator cachedVibrator;
+    private VibrationAttributes cachedMediaVibrationAttrs;
+    private AudioAttributes cachedGameAudioAttrs;
+
+    public void vibratePhone(int durationMs, int amplitude) {
+        if (durationMs <= 0 || amplitude <= 0) return;
+        try {
+            if (cachedVibrator == null) {
+                cachedVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            }
+            if (cachedVibrator == null || !cachedVibrator.hasVibrator()) return;
+            final int dur = Math.min(Math.max(durationMs, 24), 250);
+            final int amp = Math.min(Math.max(amplitude, 1), 255);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Multi-step LRA attack-slam waveform rapidly overcomes motor inertia within
+                // 5ms HAL ramp steps, followed by a natural recoil sustain/decay tail.
+                final VibrationEffect effect;
+                if (cachedVibrator.hasAmplitudeControl()) {
+                    final int attackMs = Math.min(Math.max(dur / 3, 14), 24);
+                    final int attackAmp = Math.min(255, Math.max(amp, (amp * 135) / 100));
+                    if (dur >= 90) {
+                        final int remain = dur - attackMs;
+                        final int bodyMs = Math.max((remain * 55) / 100, 20);
+                        final int tailMs = Math.max(remain - bodyMs, 18);
+                        final int tailAmp = Math.max(48, (amp * 55) / 100);
+                        effect = VibrationEffect.createWaveform(
+                            new long[]{attackMs, bodyMs, tailMs},
+                            new int[]{attackAmp, amp, tailAmp},
+                            -1
+                        );
+                    } else {
+                        final int tailMs = Math.max(dur - attackMs, 14);
+                        final int tailAmp = Math.max(40, (amp * 78) / 100);
+                        effect = VibrationEffect.createWaveform(
+                            new long[]{attackMs, tailMs},
+                            new int[]{attackAmp, tailAmp},
+                            -1
+                        );
+                    }
+                } else {
+                    effect = VibrationEffect.createOneShot(dur, VibrationEffect.DEFAULT_AMPLITUDE);
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (cachedMediaVibrationAttrs == null) {
+                        cachedMediaVibrationAttrs =
+                            VibrationAttributes.createForUsage(VibrationAttributes.USAGE_MEDIA);
+                    }
+                    cachedVibrator.vibrate(effect, cachedMediaVibrationAttrs);
+                } else {
+                    if (cachedGameAudioAttrs == null) {
+                        cachedGameAudioAttrs = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_GAME)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                    }
+                    cachedVibrator.vibrate(effect, cachedGameAudioAttrs);
+                }
+            } else {
+                cachedVibrator.vibrate(dur);
+            }
+        } catch (Throwable ignored) {
         }
     }
 }

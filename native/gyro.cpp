@@ -12,6 +12,7 @@
 #include <toml++/toml.hpp>
 
 #include "app/app.h"
+#include "common/gyro_filter.h"
 #include "common/mouse_keyboard.h"
 #include "core/log.h"
 #include "host.h"
@@ -21,8 +22,11 @@ namespace gyro {
 namespace {
 
 constexpr float kDegreesPerCount = 0.05f;  // src/game/mouse.cpp's kDegrees
-constexpr float kDeadZone = 0.015f;        // radians a second: a hand held still
+constexpr float kIdleThreshold = 0.015f;   // coarse gamepad wake threshold
 constexpr const char* kNames[kModes] = {"OFF", "ON", "FIRE"};
+
+OneEuroGyroFilter g_phone_filter;
+OneEuroGyroFilter g_pad_filter;
 
 std::atomic<uint32_t> g_mode{kOff};
 float g_sensitivity = 1.5f;  // view degrees per degree the phone turns
@@ -161,12 +165,14 @@ void Pump() {
     if (!want) {
         SDL_CloseSensor(g_sensor);
         g_sensor = nullptr;
+        g_phone_filter.Reset();
         return;
     }
     if (!SDL_WasInit(SDL_INIT_SENSOR) && !SDL_InitSubSystem(SDL_INIT_SENSOR)) return;
     SDL_SensorID id = FindGyro();
     g_sensor = id ? SDL_OpenSensor(id) : nullptr;
     g_last_ns = 0;
+    g_phone_filter.Reset();
     if (!g_sensor) {
         LOGW("gyro: no gyroscope on this device");
         // Preserve the user's mode; a controller gyro may still be available.
@@ -175,17 +181,19 @@ void Pump() {
 }
 
 // a turn in radians a second about the view's up axis (positive: left) and its right axis (positive: looking up)
-void Turn(float yaw, float pitch, uint64_t now, uint64_t& last) {
+void Turn(float yaw, float pitch, uint64_t now, uint64_t& last, OneEuroGyroFilter& filter) {
     float dt = last && now > last ? float(now - last) * 1e-9f : 0;
     last = now;
     if (dt <= 0 || dt > 0.1f) return;
     bool firing = g_mode == kFiring ? touch::Firing() : true;
     if (!firing || !touch::LookActive()) return;
-    if (std::fabs(yaw) < kDeadZone) yaw = 0;
-    if (std::fabs(pitch) < kDeadZone) pitch = 0;
-    if (!yaw && !pitch) return;
+    float filt_yaw = 0.0f;
+    float filt_pitch = 0.0f;
+    filter.Update(yaw, pitch, dt, filt_yaw, filt_pitch);
+    if (!filt_yaw && !filt_pitch) return;
     float k = g_sensitivity * dt * (180.0f / 3.14159265f) / kDegreesPerCount;
-    touch::AddLook((g_invert_x ? yaw : -yaw) * k, (g_invert_y ? pitch : -pitch) * k);
+    touch::AddLook((g_invert_x ? filt_yaw : -filt_yaw) * k,
+                   (g_invert_y ? filt_pitch : -filt_pitch) * k);
 }
 
 // The phone's gyro reads in its natural (portrait) axes, radians a second: x right, y up, z out of the screen. Held in
@@ -213,8 +221,8 @@ void OnEvent(const SDL_Event& e) {
         // Some reported controller sensors may produce only idle readings.
         // Keep their integration clock current, but do not let those readings
         // renew controller priority or reset the phone's integration clock.
-        if (std::fabs(yaw) < kDeadZone &&
-            std::fabs(pitch) < kDeadZone) {
+        if (std::fabs(yaw) < kIdleThreshold &&
+            std::fabs(pitch) < kIdleThreshold) {
             g_pad_last_ns = now;
             return;
         }
@@ -224,7 +232,10 @@ void OnEvent(const SDL_Event& e) {
                        received - g_pad_received_ns >= kPadGyroTimeoutNs;
         g_pad_received_ns = received;
         g_pad_gyro = true;
-        if (resumed) g_pad_last_ns = 0;
+        if (resumed) {
+            g_pad_last_ns = 0;
+            g_pad_filter.Reset();
+        }
 
         // Touch controls retain priority, but remember that the pad is reporting.
         if (touch) {
@@ -232,7 +243,7 @@ void OnEvent(const SDL_Event& e) {
             return;
         }
         g_last_ns = 0;
-        Turn(yaw, pitch, now, g_pad_last_ns);
+        Turn(yaw, pitch, now, g_pad_last_ns, g_pad_filter);
         return;
     }
     if (e.type != SDL_EVENT_SENSOR_UPDATE || !g_sensor ||
@@ -245,7 +256,7 @@ void OnEvent(const SDL_Event& e) {
     float wx = e.sensor.data[0], wy = e.sensor.data[1];
     SDL_Window* w = host::Window();
     bool flipped = w && SDL_GetCurrentDisplayOrientation(SDL_GetDisplayForWindow(w)) == SDL_ORIENTATION_LANDSCAPE_FLIPPED;
-    Turn(flipped ? -wx : wx, flipped ? wy : -wy, now, g_last_ns);
+    Turn(flipped ? -wx : wx, flipped ? wy : -wy, now, g_last_ns, g_phone_filter);
 }
 
 }  // namespace gyro

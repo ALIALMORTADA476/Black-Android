@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "common/options.h"
+#include "game/layout.h"
+#include "game/mission_select_rules.h"
 #include "xdk/hle.h"
 
 using namespace kernel;
@@ -84,9 +86,68 @@ void OfferBlackOps() {
 // the level select's flags and the difficulty select's ticks, by the difficulty in play; the front end's every tick
 X86_EXTERN_FUNC(__imp__sub_00115030);
 X86_FUNC(sub_00115030) {
-    Unlock();
+    constexpr uint32_t kSelectedSlot = 0x2AC320;
+    constexpr uint32_t kFeLevelUnlocked = 0x2EC4A4;
+    constexpr uint32_t kMissionBeaten = 0x2D0D84;  // dword == 2 when mission beaten on that difficulty
+    constexpr uint32_t kPostCompleteA = 0x2F412C;
+    constexpr uint32_t kPostCompleteB = 0x2F412D;
+    constexpr uint32_t kTrophyMask = 0x2EC598;
+    constexpr uint32_t kGameDifficulty = 0x2014C;
+    constexpr uint32_t kGameLevelId = 0x2020C;
+
+    const bool unlock_levels = game::Opt().unlock_levels;
+    if (unlock_levels) Close(g_levels);  // inspect organic kMissionOpen before re-opening
+
+    const uint32_t game_ptr = R32(layout::kGame);
+    const uint32_t cur_diff = game_ptr ? (R32(game_ptr + kGameDifficulty) < game::mission::kDifficultyCount
+                                              ? R32(game_ptr + kGameDifficulty)
+                                              : 0u)
+                                       : 0u;
+    const uint8_t active_level_id = game_ptr ? G<uint8_t>(game_ptr + kGameLevelId) : 0u;
+    const uint32_t selected_slot = R32(kSelectedSlot);
+    const bool selection_unset =
+        (selected_slot == 0xFFFFFFFFu) && (G<uint8_t>(kPostCompleteA) == 0u) && (G<uint8_t>(kPostCompleteB) == 0u);
+
+    bool open_for_diff[game::mission::kMissionCount] = {};
+    bool beaten_any[game::mission::kMissionCount] = {};
+    for (uint32_t m = 0; m < game::mission::kMissionCount; m++) {
+        open_for_diff[m] = G<uint8_t>(Open(cur_diff, m)) != 0u;
+        for (uint32_t d = 0; d <= kBlackOps; d++) {
+            if (R32(kMissionBeaten + d * kDifficultySize + m * kMissionSize) == 2u) {
+                beaten_any[m] = true;
+            }
+        }
+    }
+
     __imp__sub_00115030(ctx, base);
+    Unlock();
     OfferBlackOps();
+
+    if (unlock_levels) {
+        uint32_t ui_flags[game::mission::kMissionCount] = {};
+        uint32_t focus = 0u;
+        for (uint32_t m = 0; m < game::mission::kMissionCount; m++) {
+            ui_flags[m] = R32(kFeLevelUnlocked + m * 4u);
+            if (ui_flags[m] == 2u) focus = m;
+        }
+        if (selection_unset) {
+            focus = game::mission::ResolveDefaultMissionIndex(open_for_diff, beaten_any, active_level_id, true);
+            if (game_ptr && selected_slot == 0xFFFFFFFFu) {
+                G<uint8_t>(game_ptr + kGameLevelId) = game::mission::LevelIdFromMissionIndex(focus);
+            }
+            uint32_t stars = 0u;
+            for (uint32_t d = 0; d <= kBlackOps; d++) {
+                if (R32(kMissionBeaten + d * kDifficultySize + focus * kMissionSize) == 2u) {
+                    stars |= (1u << d);
+                }
+            }
+            W32(kTrophyMask, stars);
+        }
+        game::mission::ApplyMissionUnlockUiFlags(ui_flags, focus, true);
+        for (uint32_t m = 0; m < game::mission::kMissionCount; m++) {
+            W32(kFeLevelUnlocked + m * 4u, ui_flags[m]);
+        }
+    }
 }
 
 // the level select's choice of mission: its ticks and the count of difficulties open on it

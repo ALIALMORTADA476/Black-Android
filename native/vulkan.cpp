@@ -35,6 +35,7 @@
 #include "gpu/shaders.h"
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
+#include "game/overdrive.h"
 #include "host.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
@@ -145,7 +146,7 @@ float3 Fxaa(float2 uv) {
     return lb < lo || lb > hi ? a : b;
 }
 
-// FidelityFX-style Contrast Adaptive Sharpening (stackable with FXAA & Grading)
+// FidelityFX-style Contrast Adaptive Sharpening (refined, halo-free crispness)
 float3 CasSharpen(float2 uv, float3 c) {
     if (cine.x <= 0.005) return c;
     float3 n = Fetch(uv - float2(0, src.y));
@@ -155,29 +156,29 @@ float3 CasSharpen(float2 uv, float3 c) {
     float3 lo = min(c, min(min(n, s), min(w, e)));
     float3 hi = max(c, max(max(n, s), max(w, e)));
     float3 amp = sqrt(saturate(min(lo, 1.0 - hi) / max(hi, 1e-4)));
-    float3 sharp = c + (4.0 * c - n - s - w - e) * amp * (cine.x * 0.42);
-    return lerp(c, saturate(sharp), 0.92);
+    float3 sharp = c + (4.0 * c - n - s - w - e) * amp * (cine.x * 0.30);
+    return lerp(c, saturate(sharp), 0.85);
 }
 
-// Filmic color grading presets: 1=Blockbuster Teal&Orange, 2=Gritty Tactical, 3=Warzone HDR
+// Filmic color grading presets: 1=Balanced Teal&Orange, 2=Gritty Tactical, 3=Warm Warzone HDR
 float3 CinematicGrade(float3 c) {
     int g = (int)(cine.y + 0.5);
     if (g <= 0) return c;
     float lum = Luma(c);
-    float sh = 1.0 - smoothstep(0.05, 0.55, lum);
-    float hi = smoothstep(0.35, 0.95, lum);
+    float sh = 1.0 - smoothstep(0.06, 0.55, lum);
+    float hi = smoothstep(0.38, 0.95, lum);
     float3 sc = c * c * (3.0 - 2.0 * c);
-    c = lerp(c, sc, 0.24);
+    c = lerp(c, sc, 0.12);
     if (g == 1) {
-        c = c * lerp(float3(0.95, 0.98, 1.02), float3(1.09, 0.99, 0.86), hi) + float3(0.02, 0.09, 0.14) * sh * 0.48;
-        c = lerp(lum.xxx, c, 1.12);
+        c = c * lerp(float3(0.96, 0.99, 1.02), float3(1.06, 1.00, 0.92), hi) + float3(0.01, 0.045, 0.07) * sh * 0.28;
+        c = lerp(lum.xxx, c, 1.05);
     } else if (g == 2) {
-        c = c * float3(0.96, 1.00, 1.03) + float3(0.01, 0.03, 0.05) * sh;
-        c = lerp(lum.xxx, c, 0.86);
-        c = (c - 0.5) * 1.10 + 0.5;
+        c = c * float3(0.97, 1.00, 1.02) + float3(0.01, 0.02, 0.03) * sh;
+        c = lerp(lum.xxx, c, 0.88);
+        c = (c - 0.5) * 1.05 + 0.5;
     } else {
-        c = c * lerp(float3(1.00, 0.96, 0.90), float3(1.12, 1.02, 0.84), hi) + float3(0.03, 0.01, 0.0) * sh;
-        c = lerp(lum.xxx, c, 1.16);
+        c = c * lerp(float3(0.99, 0.97, 0.94), float3(1.07, 1.01, 0.91), hi) + float3(0.015, 0.008, 0.0) * sh;
+        c = lerp(lum.xxx, c, 1.07);
     }
     return saturate(c);
 }
@@ -186,49 +187,71 @@ float3 ApplyEnh(float2 uv, float3 c) {
     float2 d = uv * 2.0 - 1.0;
     float r2 = dot(d, d);
     if (enhfx.w > 0.005) {
-        float edge = saturate((r2 - 0.10) * 0.85);
-        float2 ca = d * (edge * enhfx.w * 0.009);
-        c.r = lerp(c.r, Fetch(uv + ca).r, 0.85);
-        c.b = lerp(c.b, Fetch(uv - ca).b, 0.85);
-        c *= 1.0 + enhfx.w * 0.14 * (1.0 - edge * 0.4);
+        float edge = saturate((r2 - 0.15) * 0.80);
+        float2 ca = d * (edge * enhfx.w * 0.0055);
+        c.r = lerp(c.r, Fetch(uv + ca).r, 0.75);
+        c.b = lerp(c.b, Fetch(uv - ca).b, 0.75);
+        c *= 1.0 + enhfx.w * 0.07 * (1.0 - edge * 0.35);
     }
-    float bloom_k = max(enhfx.x, cine.y > 0.5 ? 1.18 : enhfx.x);
+    float bloom_k = enhfx.x;
     if (bloom_k > 1.02) {
         float2 o1 = src.xy * 2.5;
         float2 o2 = src.xy * 6.5;
-        float3 b1 = max(Fetch(uv + float2(o1.x, o1.y)) - 0.62, 0)
-                  + max(Fetch(uv + float2(-o1.x, o1.y)) - 0.62, 0)
-                  + max(Fetch(uv + float2(o1.x, -o1.y)) - 0.62, 0)
-                  + max(Fetch(uv + float2(-o1.x, -o1.y)) - 0.62, 0);
-        float3 b2 = max(Fetch(uv + float2(o2.x, 0)) - 0.66, 0)
-                  + max(Fetch(uv - float2(o2.x, 0)) - 0.66, 0)
-                  + max(Fetch(uv + float2(0, o2.y)) - 0.66, 0)
-                  + max(Fetch(uv - float2(0, o2.y)) - 0.66, 0);
+        float3 b1 = max(Fetch(uv + float2(o1.x, o1.y)) - 0.68, 0)
+                  + max(Fetch(uv + float2(-o1.x, o1.y)) - 0.68, 0)
+                  + max(Fetch(uv + float2(o1.x, -o1.y)) - 0.68, 0)
+                  + max(Fetch(uv + float2(-o1.x, -o1.y)) - 0.68, 0);
+        float3 b2 = max(Fetch(uv + float2(o2.x, 0)) - 0.72, 0)
+                  + max(Fetch(uv - float2(o2.x, 0)) - 0.72, 0)
+                  + max(Fetch(uv + float2(0, o2.y)) - 0.72, 0)
+                  + max(Fetch(uv - float2(0, o2.y)) - 0.72, 0);
         float2 oa = float2(src.x * 16.0, 0);
-        float3 streak = max(Fetch(uv + oa) - 0.78, 0) + max(Fetch(uv - oa) - 0.78, 0);
-        float3 warm_glow = b1 * 0.55 + b2 * 0.45 + streak * float3(1.10, 0.88, 0.65) * 0.40;
-        c += warm_glow * ((bloom_k - 1.0) * 0.34);
+        float3 streak = max(Fetch(uv + oa) - 0.86, 0) + max(Fetch(uv - oa) - 0.86, 0);
+        float3 warm_glow = b1 * 0.55 + b2 * 0.45 + streak * float3(1.06, 0.92, 0.76) * 0.24;
+        c += warm_glow * ((bloom_k - 1.0) * 0.22);
     } else if (enhfx.x < 0.98) {
-        c = lerp(min(c, 0.84), c, max(enhfx.x, 0.0));
+        c = lerp(min(c, 0.86), c, max(enhfx.x, 0.0));
     }
     c = Tone(c);
     c = CinematicGrade(c);
+    if (post.z > 0.005) {
+        float tl = Luma(Fetch(uv + float2(-src.x, -src.y) * 1.4));
+        float tr = Luma(Fetch(uv + float2(src.x, -src.y) * 1.4));
+        float bl = Luma(Fetch(uv + float2(-src.x, src.y) * 1.4));
+        float br = Luma(Fetch(uv + float2(src.x, src.y) * 1.4));
+        float edge_t = saturate((abs(tl - br) + abs(tr - bl)) * 2.4);
+        float t_lum = Luma(c);
+        float3 cold = float3(0.03, 0.11, 0.22);
+        float3 mid = float3(0.08, 0.36, 0.62);
+        float3 warm = float3(1.00, 0.56, 0.12);
+        float3 hot = float3(1.00, 0.96, 0.78);
+        float3 flir = lerp(cold, mid, smoothstep(0.06, 0.42, t_lum));
+        flir = lerp(flir, warm, smoothstep(0.45, 0.78, t_lum));
+        flir = lerp(flir, hot, smoothstep(0.76, 0.96, t_lum));
+        flir += float3(0.16, 0.62, 0.88) * edge_t * 0.42;
+        c = lerp(c, flir, saturate(post.z));
+    }
     if (enhfx.z > 0.001) {
         float lum = Luma(c);
         c = lerp(c, lum.xxx, saturate(enhfx.z));
     }
     if (cine.z > 0.001) {
-        float edge_c = smoothstep(0.45, 1.55, r2);
-        c *= 1.0 - edge_c * cine.z * 0.42;
+        float edge_c = smoothstep(0.55, 1.75, r2);
+        c *= 1.0 - edge_c * cine.z * 0.24;
     }
     if (enhfx.y > 0.001) {
         float edge = smoothstep(0.32, 1.25, r2);
         c = lerp(c, float3(0.58, 0.02, 0.02), saturate(edge * enhfx.y * 0.85));
     }
+    if (post.w > 0.005) {
+        float rim = smoothstep(0.55, 1.55, r2);
+        float wave = 0.85 + 0.15 * sin(src.z * 9.0);
+        c += float3(0.08, 0.52, 0.85) * rim * post.w * 0.28 * wave;
+    }
     if (cine.w > 0.001) {
         float g_n = Noise(uv * 880.0 + frac(src.z) * 53.7) - 0.5;
         float g_w = 1.0 - abs(Luma(c) * 2.0 - 1.0) * 0.40;
-        c += g_n * cine.w * g_w * 0.055;
+        c += g_n * cine.w * g_w * 0.022;
     }
     return saturate(c);
 }
@@ -1529,23 +1552,65 @@ private:
     }                                                                          \
   } while (0)
 
+class BlackShaderHooks final : public ShaderHooks {
+public:
+  std::string Output() const override {
+    return
+        "if (ext.x > 0.5) {\n"
+        "    float view_z = 1.0 / max(i.pos.w, 1e-4);\n"
+        "    float near_vm = saturate((1.40 - view_z) * 1.15);\n"
+        "    float vm = max(ext.y, near_vm);\n"
+        "    float focus = max(vm, saturate((4.5 - view_z) * 0.25) * 0.36);\n"
+        "    if (focus > 0.005) {\n"
+        "        float lum = dot(outc.rgb, float3(0.299, 0.587, 0.114));\n"
+        "        float maxc = max(outc.r, max(outc.g, outc.b));\n"
+        "        float minc = min(outc.r, min(outc.g, outc.b));\n"
+        "        float metal = saturate(1.14 - (maxc - minc) * 2.0) *\n"
+        "                      saturate((lum - 0.025) * 9.0) *\n"
+        "                      (1.0 - saturate((lum - 0.84) * 6.0));\n"
+        "        float scale_z = max(view_z, 0.08);\n"
+        "        float sx = clamp(ddx(view_z) * 420.0 / scale_z, -3.5, 3.5);\n"
+        "        float sy = clamp(ddy(view_z) * 420.0 / scale_z, -3.5, 3.5);\n"
+        "        float3 N = normalize(float3(-sx, sy, 1.0));\n"
+        "        float fresnel = pow(saturate(1.0 - N.z), 2.6);\n"
+        "        float3 R = reflect(float3(0.0, 0.0, -1.0), N);\n"
+        "        float sky_grad = saturate(R.y * 0.5 + 0.5);\n"
+        "        float3 env_col = lerp(float3(0.10, 0.13, 0.18), float3(0.62, 0.76, 0.94), sky_grad * sky_grad);\n"
+        "        float key_spec = pow(saturate(dot(R, normalize(float3(-0.35, 0.78, 0.52)))), 18.0);\n"
+        "        float fill_spec = pow(saturate(dot(R, normalize(float3(0.55, 0.45, 0.68)))), 10.0);\n"
+        "        float env_amt = (fresnel * 0.46 + key_spec * 0.50 + fill_spec * 0.22) * metal * (0.30 + 0.70 * saturate(lum * 3.2));\n"
+        "        float3 spec_boost = v1.rgb * (0.38 + 0.92 * vm) * metal;\n"
+        "        outc.rgb += (env_col * env_amt + spec_boost) * focus * ext.x;\n"
+        "    }\n"
+        "}\n" +
+        ShaderHooks::Output();
+  }
+};
+
+const BlackShaderHooks g_black_shader_hooks;
+
 // ---- Init
 
 bool VulkanBackend::Init(uint32_t width, uint32_t height) {
   guest_w_ = width;
   guest_h_ = height;
+  g_shader_hooks = &g_black_shader_hooks;
   vkshader::Init(app::ExeDir() / "shadercache");
-  if (!CreateInstance() || !CreateSurface() || !PickDevice() || !CreateDevice())
+  if (!CreateInstance())
+    return false;
+  const bool have_surface = CreateSurface();
+  if (!PickDevice() || !CreateDevice())
     return false;
   alloc_.Init(pd_, dev_);
-  if (!CreateLayouts() || !CreateFrames() || !CreateSwapchain() ||
-      !CreateFixedImages())
+  if (!CreateLayouts() || !CreateFrames() || !CreateFixedImages())
     return false;
   Begin();
-  ui_ = InitUi();
+  if (have_surface && CreateSwapchain())
+    ui_ = InitUi();
   scale_ = app::RenderScale(guest_h_);
-  LOGI("vulkan: %ux%u guest, %ux%u screen, render scale %.3f", width, height,
-       swap_extent_.width, swap_extent_.height, scale_);
+  LOGI("vulkan: %ux%u guest, %ux%u screen, render scale %.3f%s", width, height,
+       swap_extent_.width, swap_extent_.height, scale_,
+       swap_ ? "" : " (surface deferred)");
   return true;
 }
 
@@ -1640,8 +1705,9 @@ bool VulkanBackend::PickDevice() {
     std::vector<VkQueueFamilyProperties> qs(qn);
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &qn, qs.data());
     for (uint32_t q = 0; q < qn; q++) {
-      VkBool32 present = VK_FALSE;
-      vkGetPhysicalDeviceSurfaceSupportKHR(pd, q, surface_, &present);
+      VkBool32 present = surface_ ? VK_FALSE : VK_TRUE;
+      if (surface_)
+        vkGetPhysicalDeviceSurfaceSupportKHR(pd, q, surface_, &present);
       if (!(qs[q].queueFlags & VK_QUEUE_GRAPHICS_BIT) || !present)
         continue;
       pd_ = pd;
@@ -1805,7 +1871,8 @@ bool VulkanBackend::CreateSwapchain() {
   VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;
   if (!vsync_) {
     for (VkPresentModeKHR m :
-         {VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR})
+         {VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR,
+          VK_PRESENT_MODE_FIFO_RELAXED_KHR})
       if (std::find(modes.begin(), modes.end(), m) != modes.end()) {
         mode = m;
         break;
@@ -1869,8 +1936,8 @@ bool VulkanBackend::CreateSwapchain() {
     swap_done_.push_back(s);
   }
   swap_stale_ = false;
-  LOGI("vulkan: swap chain %ux%u, %u images, %s", w, h, count,
-       vsync_ ? "vsync" : "no vsync");
+  LOGI("vulkan: swap chain %ux%u, %u images, %s (present=%d, supported=%u)",
+       w, h, count, vsync_ ? "vsync" : "no vsync", int(mode), pn);
   return true;
 }
 
@@ -3491,7 +3558,7 @@ bool VulkanBackend::GlowComposite(const State &s,
 
 void VulkanBackend::Draw(const State &s, uint32_t prim, uint32_t start,
                          uint32_t count, const uint8_t *indices) {
-  if (DepthCopy(s))
+  if (!dev_ || DepthCopy(s))
     return;
   Assembled &a = asm_;
   if (!Assemble(s, prim, start, count, indices, a))
@@ -3546,6 +3613,18 @@ void VulkanBackend::Draw(const State &s, uint32_t prim, uint32_t start,
   GuestExtent size;
   SurfaceSize(draw_rt_ ? s.rt : s.zs, size.w, size.h);
   DrawConstants c{};
+  const bool weapon_refl =
+      modsettings::Registry().GetEnhanced().weapon_reflections;
+  const bool is_opaque_3d = sh.fixed_transform && !a.pretransformed &&
+                            s.rs[kRsZEnable] != 0 &&
+                            SimpleState(s, kMZWriteEnable) != 0 &&
+                            !SimpleState(s, kMBlendEnable);
+  const bool has_base_tex = (s.textures[0] != 0);
+  c.ext[0] = (weapon_refl && is_opaque_3d && has_base_tex) ? 1.0f : 0.0f;
+  c.ext[1] = (weapon_refl && is_opaque_3d && has_base_tex &&
+              s.viewport.max_z < 0.98f)
+                 ? 1.0f
+                 : 0.0f;
   FillSurfaceConstants(s, size, c);
   FillFogConstants(s, c);
   FillCombinerConstants(s, c);
@@ -3675,6 +3754,8 @@ void VulkanBackend::ClearTarget(Target &t, const State &s, uint32_t count,
 void VulkanBackend::Clear(const State &s, uint32_t count, const uint8_t *rects,
                           uint32_t flags, uint32_t color, float z,
                           uint32_t stencil) {
+  if (!dev_)
+    return;
   Target *rt = (flags & kClearTarget) ? EnsureTarget(s.rt, false) : nullptr;
   Target *ds =
       (flags & (kClearZ | kClearStencil)) ? EnsureTarget(s.zs, true) : nullptr;
@@ -3685,6 +3766,8 @@ void VulkanBackend::Clear(const State &s, uint32_t count, const uint8_t *rects,
 
 void VulkanBackend::Copy(const Surface &src, const Surface &dst, uint32_t count,
                          uint32_t src_rects, uint32_t dst_points) {
+  if (!dev_)
+    return;
   Target *src_t = FindTarget(src, false);
   // pixels the CPU made: the copy happens in memory, textures and targets pick
   // it up from there
@@ -3745,6 +3828,8 @@ void VulkanBackend::Copy(const Surface &src, const Surface &dst, uint32_t count,
 // ---- read-backs
 
 void VulkanBackend::Sync(uint32_t data, uint32_t) {
+  if (!dev_)
+    return;
   auto it = targets_.find(TargetMapKey(data, false));
   if (it == targets_.end() || !it->second.drawn)
     return;
@@ -3868,6 +3953,8 @@ bool VulkanBackend::AcquireImage(uint32_t &index) {
     if (!CreateSwapchain())
       return false;
   }
+  if (!ui_)
+    ui_ = InitUi();
   // a bounded wait: a window Android is taking away may never hand an image
   // back
   constexpr uint64_t kAcquireTimeout = 500'000'000;
@@ -3959,15 +4046,26 @@ void VulkanBackend::DrawFrame(Target *t, uint32_t index) {
   const float film_grain =
       t ? (std::clamp(float(enh.film_grain), 0.0f, 100.0f) * 0.01f) : 0.0f;
 
+  float thermal_mix = 0.0f;
+  float overdrive_edge = 0.0f;
+  game::overdrive::GetShaderPostParams(thermal_mix, overdrive_edge);
+  if (!t) {
+    thermal_mix = 0.0f;
+    overdrive_edge = 0.0f;
+  }
+
   bool post =
       (tone_mode > 0.0f) || fxaa || (std::fabs(glow_scale - 1.0f) > 0.02f) ||
       (vig_strength > 0.001f) || (desat_strength > 0.001f) ||
       (cas_strength > 0.005f) || (grade_mode > 0.5f) || (lens_vig > 0.005f) ||
-      (film_grain > 0.005f) || (blast_pulse > 0.005f);
+      (film_grain > 0.005f) || (blast_pulse > 0.005f) ||
+      (thermal_mix > 0.005f) || (overdrive_edge > 0.005f);
   // opts.z: the taps a side over each screen pixel, 2 averaging SSAA's samples
   float c[32] = {0, 0, 1, 1, gamma_ ? 1.0f : 0.0f, 0, ssaa ? 2.0f : 1.0f, 1};
   c[20] = tone_mode;
   c[21] = fxaa ? 1.0f : 0.0f;
+  c[22] = thermal_mix;
+  c[23] = overdrive_edge;
   c[24] = glow_scale;
   c[25] = vig_strength;
   c[26] = desat_strength;
@@ -4192,6 +4290,8 @@ void VulkanBackend::SavePipelineCache() {
 }
 
 void VulkanBackend::Present(const Surface &front) {
+  if (!dev_)
+    return;
   Target *t = EnsureTarget(front, false);
   if (t && LatchCpuWrite(*t))
     UploadTarget(*t, front);
