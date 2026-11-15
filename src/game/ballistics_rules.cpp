@@ -11,15 +11,15 @@ namespace ballistics {
 WeaponClass ClassifyWeaponCode(const char* code3) {
     if (!code3 || !code3[0]) return WeaponClass::Unknown;
     auto eq = [&](const char* k) { return std::strcmp(code3, k) == 0; };
-    if (eq("PST") || eq("PS5") || eq("GK1") || eq("GK5") || eq("MGN") || eq("MG5")) return WeaponClass::Pistol;
+    if (eq("PST") || eq("PS5") || eq("GK1") || eq("GK5") || eq("MGN") || eq("MG5") || eq("C96")) return WeaponClass::Pistol;
     if (eq("SMG") || eq("SM5") || eq("SM3") || eq("MC5") || eq("MP1") || eq("MP5") || eq("P90") || eq("P95"))
         return WeaponClass::Smg;
     if (eq("AK1") || eq("AK5") || eq("ASR") || eq("AS5") || eq("M16") || eq("M45") || eq("BNS"))
         return WeaponClass::Rifle;
     if (eq("SHG") || eq("SH5") || eq("RM1") || eq("RM5")) return WeaponClass::Shotgun;
-    if (eq("SNR") || eq("SN5")) return WeaponClass::Sniper;
-    if (eq("HVY") || eq("HV5")) return WeaponClass::Lmg;
-    if (eq("RPG") || eq("GRL")) return WeaponClass::Launcher;
+    if (eq("SNR") || eq("SN5") || eq("M91")) return WeaponClass::Sniper;
+    if (eq("HVY") || eq("HV5") || eq("MXM")) return WeaponClass::Lmg;
+    if (eq("RPG") || eq("GRL") || eq("FLM")) return WeaponClass::Launcher;
     return WeaponClass::Unknown;
 }
 
@@ -328,13 +328,13 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
         core.stretch = 1.15f + 0.80f * stretch_t;
         core.rotation = 0.0f;
         core.r = 1.0f;
-        core.g = 0.74f + 0.20f * hc;
-        core.b = 0.20f + 0.44f * hc * hc;
-        core.alpha = Clamp01((0.045f + 0.055f * hc) * stream_fade);
+        core.g = 0.76f + 0.18f * hc;
+        core.b = 0.18f + 0.36f * hc * hc;
+        core.alpha = Clamp01((0.16f + 0.22f * hc) * stream_fade);
         core.tile = 4;
         push(core);
 
-        // 2. Flow-stretched swirling flame tongue (balanced additive weight preserves crisp inner licks).
+        // 2. Flow-stretched swirling flame tongue (luminous golden-amber body without white clipping).
         FlamePlumeSprite fire;
         fire.kind = FlameSpriteKind::FireBillboard;
         fire.pos[0] = puff_pos[0];
@@ -343,14 +343,14 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
         fire.dir[0] = flow_dir[0];
         fire.dir[1] = flow_dir[1];
         fire.dir[2] = flow_dir[2];
-        fire.radius = rc * (1.28f + 0.52f * (1.0f - hc));
+        fire.radius = rc * (1.36f + 0.54f * (1.0f - hc));
         fire.stretch = 1.18f + 1.12f * stretch_t;
         fire.rotation = 0.35f * std::sin(phase * 0.65f + float(seq) * 1.45f) +
                         (1.0f - stretch_t) * (phase * 0.45f + float(seq) * 0.95f);
         fire.r = 1.0f;
-        fire.g = 0.50f + 0.36f * hc;
-        fire.b = 0.07f + 0.24f * hc * hc;
-        fire.alpha = Clamp01((0.15f + 0.09f * hc) * stream_fade);
+        fire.g = 0.52f + 0.36f * hc;
+        fire.b = 0.04f + 0.16f * hc * hc;
+        fire.alpha = Clamp01((0.36f + 0.24f * hc) * stream_fade);
         fire.tile = 4 + int((seq * 5u + 1u) & 3u);
         push(fire);
 
@@ -750,12 +750,30 @@ WeaponHapticPulse ComputeWeaponHapticPulse(const char* weapon_code,
     p.amplitude = 212u;
     p.cooldown_ms = 80u;
     p.priority = 2u;
-  // Flamethrower: rhythmic combustion pressure pulse while jetting fuel
+  // Flamethrower: heavy pressurized M2 combustion throb while jetting napalm
   } else if (is("FLM")) {
-    p.duration_ms = 48u;
-    p.amplitude = 190u;
-    p.cooldown_ms = 210u;
+    p.duration_ms = 56u;
+    p.amplitude = 212u;
+    p.cooldown_ms = 195u;
     p.priority = 1u;
+  // Mauser 1891-12 (7.65x53mm Argentine): sharp high-energy wooden-stock rifle kick
+  } else if (is("M91")) {
+    p.duration_ms = 68u;
+    p.amplitude = 232u;
+    p.cooldown_ms = 75u;
+    p.priority = 2u;
+  // Mauser C96 / M712 (7.63x25mm): snappy short-recoil high-velocity pistol impulse
+  } else if (is("C96")) {
+    p.duration_ms = 42u;
+    p.amplitude = 188u;
+    p.cooldown_ms = 48u;
+    p.priority = 1u;
+  // Maxim PM M1910 (7.62x54R): sustained heavyweight Sokolov carriage recoil cadence
+  } else if (is("MXM")) {
+    p.duration_ms = 54u;
+    p.amplitude = 218u;
+    p.cooldown_ms = 68u;
+    p.priority = 2u;
   // Assault Rifles: punchy, crisp tactile recoil snap
   } else if (is("AK1") || is("AK5") || is("ASR") || is("AS5") || is("M16") ||
              is("M15") || is("M45") || is("BNS")) {

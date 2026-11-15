@@ -308,16 +308,20 @@ inline std::string ShapeAndBidi(std::string_view utf8_input) {
             }
             tokens.push_back(std::move(t));
         } else if (IsAsciiDigit(c) || c == '%' || c == '.' || c == 'x' || c == 'X') {
-            // Keep numbers, percentages and multipliers in cohesive LTR units
+            // Keep numbers, percentages, and adjacent alphanumeric model/caliber tags cohesive (e.g. 7.62x54R, 1.85x)
             Token t{TokenType::Number, {c}};
-            while (i + 1 < n && (IsAsciiDigit(codepoints[i + 1]) || codepoints[i + 1] == '%' ||
-                                 codepoints[i + 1] == '.' || codepoints[i + 1] == 'x' || codepoints[i + 1] == 'X')) {
+            while (i + 1 < n && (IsAsciiDigit(codepoints[i + 1]) || IsAsciiAlpha(codepoints[i + 1]) ||
+                                 codepoints[i + 1] == '%' || codepoints[i + 1] == '.' ||
+                                 codepoints[i + 1] == '-' || codepoints[i + 1] == '/')) {
                 t.chars.push_back(codepoints[++i]);
             }
             tokens.push_back(std::move(t));
         } else if (IsAsciiAlpha(c)) {
+            // Keep alphanumeric Latin tokens (AK-47, M16, MP5, G36C, C96, M16A2) cohesive in LTR order
             Token t{TokenType::Latin, {c}};
-            while (i + 1 < n && (IsAsciiAlpha(codepoints[i + 1]) || codepoints[i + 1] == '-')) {
+            while (i + 1 < n && (IsAsciiAlpha(codepoints[i + 1]) || IsAsciiDigit(codepoints[i + 1]) ||
+                                 codepoints[i + 1] == '-' || codepoints[i + 1] == '.' ||
+                                 codepoints[i + 1] == '/')) {
                 t.chars.push_back(codepoints[++i]);
             }
             tokens.push_back(std::move(t));

@@ -23,11 +23,13 @@ add_executable(test_settings_core
     ${REPO_ROOT}/src/common/gyro_filter.cpp
     ${REPO_ROOT}/src/game/arabic_strings.cpp
     ${REPO_ROOT}/src/game/ballistics_rules.cpp
+    ${REPO_ROOT}/src/game/blood_decal_rules.cpp
     ${REPO_ROOT}/src/game/combat_feedback_rules.cpp
     ${REPO_ROOT}/src/game/delirium_rules.cpp
     ${REPO_ROOT}/src/game/flamethrower_core.cpp
     ${REPO_ROOT}/src/game/mission_select_rules.cpp
     ${REPO_ROOT}/src/game/overdrive_rules.cpp
+    ${REPO_ROOT}/src/game/special_arsenal_core.cpp
     ${REPO_ROOT}/src/sound/weapon_audio.cpp
 )
 

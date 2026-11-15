@@ -7,8 +7,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <deque>
 #include <iterator>
 #include <mutex>
+#include <string>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_system.h>
@@ -17,6 +19,7 @@
 #include "common/menu.h"
 #include "common/options.h"
 #include "core/log.h"
+#include "game/flamethrower.h"
 #include "host.h"
 
 namespace input {
@@ -187,6 +190,100 @@ extern "C" JNIEXPORT void JNICALL Java_com_racas_black_BlackActivity_nativeLoose
     g_loose.seen = seen;
 }
 
+namespace {
+
+std::mutex g_qa_lock;
+std::deque<std::string> g_qa_queue;
+uint64_t g_qa_fire_until_ms = 0;
+uint64_t g_qa_walk_until_ms = 0;
+uint64_t g_qa_yaw_until_ms = 0;
+int16_t g_qa_yaw_val = 0;
+uint64_t g_qa_pitch_until_ms = 0;
+int16_t g_qa_pitch_val = 0;
+uint64_t g_qa_a_until_ms = 0;
+uint64_t g_qa_start_until_ms = 0;
+
+void ExecuteQaCommand(const std::string& cmd, uint64_t now_ms) {
+    if (cmd == "menu:weapons") {
+        if (!app::MenuOpen()) app::ToggleMenu();
+        app::SetActiveCategory(app::TacticalCategory::CheatsWeapons);
+    } else if (cmd == "menu:close") {
+        if (app::MenuOpen()) app::ToggleMenu();
+    } else if (cmd == "arsenal:unequip") {
+        game::flamethrower::ForceDeactivate();
+    } else if (cmd.rfind("arsenal:select:", 0) == 0) {
+        if (app::MenuOpen()) app::ToggleMenu();
+        const int idx = std::atoi(cmd.c_str() + 15);
+        game::flamethrower::SelectSpecialWeapon(static_cast<uint8_t>(std::clamp(idx, 0, 3)));
+    } else if (cmd.rfind("arsenal:aim:", 0) == 0) {
+        game::flamethrower::SetSpecialAiming(std::atoi(cmd.c_str() + 12) != 0);
+    } else if (cmd == "arsenal:mode") {
+        game::flamethrower::ToggleFireMode();
+    } else if (cmd == "arsenal:reload") {
+        game::flamethrower::TriggerManualReload();
+    } else if (cmd.rfind("arsenal:fire:", 0) == 0) {
+        const uint64_t dur = static_cast<uint64_t>(std::clamp(std::atoi(cmd.c_str() + 13), 50, 5000));
+        g_qa_fire_until_ms = now_ms + dur;
+    } else if (cmd.rfind("pad:a:", 0) == 0) {
+        const uint64_t dur = static_cast<uint64_t>(std::clamp(std::atoi(cmd.c_str() + 6), 50, 2000));
+        g_qa_a_until_ms = now_ms + dur;
+    } else if (cmd.rfind("pad:start:", 0) == 0) {
+        const uint64_t dur = static_cast<uint64_t>(std::clamp(std::atoi(cmd.c_str() + 10), 50, 2000));
+        g_qa_start_until_ms = now_ms + dur;
+    } else if (cmd.rfind("pad:walk:", 0) == 0) {
+        const uint64_t dur = static_cast<uint64_t>(std::clamp(std::atoi(cmd.c_str() + 9), 50, 8000));
+        g_qa_walk_until_ms = now_ms + dur;
+    } else if (cmd.rfind("pad:yaw:", 0) == 0) {
+        const char* p1 = cmd.c_str() + 8;
+        char* end = nullptr;
+        const long val = std::strtol(p1, &end, 10);
+        const long dur = (end && *end == ':') ? std::strtol(end + 1, nullptr, 10) : 400;
+        g_qa_yaw_val = static_cast<int16_t>(std::clamp<long>(val, -32767, 32767));
+        g_qa_yaw_until_ms = now_ms + static_cast<uint64_t>(std::clamp<long>(dur, 50, 5000));
+    } else if (cmd.rfind("pad:pitch:", 0) == 0) {
+        const char* p1 = cmd.c_str() + 10;
+        char* end = nullptr;
+        const long val = std::strtol(p1, &end, 10);
+        const long dur = (end && *end == ':') ? std::strtol(end + 1, nullptr, 10) : 400;
+        g_qa_pitch_val = static_cast<int16_t>(std::clamp<long>(val, -32767, 32767));
+        g_qa_pitch_until_ms = now_ms + static_cast<uint64_t>(std::clamp<long>(dur, 50, 5000));
+    }
+    LOGI("[QA_CMD] %s", cmd.c_str());
+}
+
+void StepQaInput(Pad& p) {
+    const uint64_t now_ms = SDL_GetTicks();
+    std::string next_cmd;
+    {
+        std::lock_guard lock(g_qa_lock);
+        if (!g_qa_queue.empty()) {
+            next_cmd = std::move(g_qa_queue.front());
+            g_qa_queue.pop_front();
+        }
+    }
+    if (!next_cmd.empty()) ExecuteQaCommand(next_cmd, now_ms);
+    if (app::MenuOpen()) return;
+    if (now_ms < g_qa_fire_until_ms) p.analog[7] = 0xFFu;
+    if (now_ms < g_qa_a_until_ms) p.analog[0] = 0xFFu;
+    if (now_ms < g_qa_start_until_ms) p.buttons |= (1u << 4);
+    if (now_ms < g_qa_walk_until_ms) p.ly = -26000;
+    if (now_ms < g_qa_yaw_until_ms) p.rx = g_qa_yaw_val;
+    if (now_ms < g_qa_pitch_until_ms) p.ry = g_qa_pitch_val;
+}
+
+}  // namespace
+
+extern "C" JNIEXPORT void JNICALL Java_com_racas_black_BlackActivity_nativeQaCommand(JNIEnv* env, jclass, jstring jcmd) {
+    if (!env || !jcmd) return;
+    const char* utf = env->GetStringUTFChars(jcmd, nullptr);
+    if (!utf) return;
+    {
+        std::lock_guard lock(g_qa_lock);
+        g_qa_queue.emplace_back(utf);
+    }
+    env->ReleaseStringUTFChars(jcmd, utf);
+}
+
 void Init() {
     int v = SDL_GetVersion();
     LOGI("input: SDL %d.%d.%d", SDL_VERSIONNUM_MAJOR(v), SDL_VERSIONNUM_MINOR(v), SDL_VERSIONNUM_MICRO(v));
@@ -239,6 +336,7 @@ Pad Poll(int port) {
     bool analog = std::any_of(std::begin(p.analog), std::end(p.analog), [](uint8_t a) { return a > 0x20; });
     if (p.buttons || analog || pushed(p.lx) || pushed(p.ly) || pushed(p.rx) || pushed(p.ry)) touch::PadUsed();
     touch::Apply(port, p);
+    if (port == 0) StepQaInput(p);
     if (app::kGame.pad) app::kGame.pad(port, p);
     return p;
 }

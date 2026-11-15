@@ -103,6 +103,11 @@ void SetFlameStream(const FlameStreamPoint* jet, uint32_t jet_count,
 void EmitPilotFlameGlow(const float pilot_world[3], float intensity);
 void EmitBurnVictimFlames(const float world_pos[3], float ground_y, float fire_intensity,
                           bool emit_fire, bool emit_smoke, bool is_dying);
+void EmitWoundDrip(const float pos[3], float ground_y);
+void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3],
+                                   const float hit_end[3], float caliber_scale,
+                                   bool spawn_smoke, bool spark_impact);
+void EmitMaximSteamPlume(const float jacket_pos[3], float steam_intensity);
 void RegisterThermalSlot(uint32_t slot_ea, const float dir[3]);
 bool InThermalImpact();
 bool BeginThermalImpact(uint32_t slot_ea);

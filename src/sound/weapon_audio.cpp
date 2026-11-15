@@ -57,6 +57,14 @@ constexpr int32_t kSlotSniperBreath = 120, kSlotHeartbeatLowHlth = 121;
 constexpr int32_t kSlotDebrisRubble = 122, kSlotCarWindshield = 123, kSlotWeaponDrop = 124;
 constexpr int32_t kSlotUiHudConfirm = 125, kSlotUiHudHint = 126, kSlotUiHudAlert = 127;
 constexpr int32_t kSlotFlameIgnite = 128;
+// Special Arsenal CC0 Web Audio Extended Slots (129..151)
+constexpr int32_t kSlotFlmIgniteSquib = 129, kSlotFlmValveShutoff = 130, kSlotFlmTankReload = 131;
+constexpr int32_t kSlotM91Fire = 132, kSlotM91Bolt = 133, kSlotM91Clip = 134, kSlotM91Dry = 135;
+constexpr int32_t kSlotC96Fire = 136, kSlotC96Breech = 137, kSlotC96Clip = 138, kSlotC96Dry = 139, kSlotC96LockOpen = 140;
+constexpr int32_t kSlotMxmFire = 141, kSlotMxmReload = 142, kSlotMxmBoil = 143, kSlotMxmSteam = 144;
+constexpr int32_t kSlotTailM91Outdoor = 145, kSlotTailMxmHeavy = 146;
+constexpr int32_t kSlotFlmPilotHum = 147, kSlotFlmFoamSplash = 148, kSlotM91ChamberClose = 149;
+constexpr int32_t kSlotMxmWheelRoll = 150, kSlotMxmBeltAdvance = 151;
 
 struct ClipRec {
     uint32_t slot_id = 0;
@@ -222,7 +230,9 @@ bool IsDuckableSlot(StemCategory stem, uint32_t slot_id) {
 
 StemCategory StemForSlot(uint32_t slot_id) {
     if (slot_id <= uint32_t(kSlotGrlFire) || IsSuppressedFireSlot(slot_id) ||
-        slot_id == uint32_t(kSlotBnsM203) || slot_id == uint32_t(kSlotFlameIgnite)) {
+        slot_id == uint32_t(kSlotBnsM203) || slot_id == uint32_t(kSlotFlameIgnite) ||
+        slot_id == uint32_t(kSlotFlmIgniteSquib) || slot_id == uint32_t(kSlotM91Fire) ||
+        slot_id == uint32_t(kSlotC96Fire) || slot_id == uint32_t(kSlotMxmFire)) {
         return StemCategory::Weapon;
     }
     if (IsAiGunfireSlot(slot_id) || slot_id == uint32_t(kSlotDistantBattlefield)) {
@@ -230,7 +240,8 @@ StemCategory StemForSlot(uint32_t slot_id) {
     }
     if (slot_id == uint32_t(kSlotAiTail) ||
         (slot_id >= uint32_t(kSlotTailPistolOutdoor) && slot_id <= uint32_t(kSlotTailHeavyMattak)) ||
-        slot_id == uint32_t(kSlotTailShotgunOutdoor) || slot_id == uint32_t(kSlotTailSuppressedCrack)) {
+        slot_id == uint32_t(kSlotTailShotgunOutdoor) || slot_id == uint32_t(kSlotTailSuppressedCrack) ||
+        slot_id == uint32_t(kSlotTailM91Outdoor) || slot_id == uint32_t(kSlotTailMxmHeavy)) {
         return StemCategory::GunshotTail;
     }
     if (slot_id == uint32_t(kSlotEnvTail) || slot_id == uint32_t(kSlotTailIndoorEcho)) {
@@ -241,6 +252,21 @@ StemCategory StemForSlot(uint32_t slot_id) {
         return StemCategory::BulletFlyby;
     }
     if (slot_id >= uint32_t(kSlotEnvRpgPass) && slot_id <= uint32_t(kSlotExplosion)) {
+        return StemCategory::Environment;
+    }
+    if (slot_id == uint32_t(kSlotFlmTankReload) || slot_id == uint32_t(kSlotM91Clip) ||
+        slot_id == uint32_t(kSlotC96Clip) || slot_id == uint32_t(kSlotMxmReload)) {
+        return StemCategory::Reload;
+    }
+    if (slot_id == uint32_t(kSlotFlmValveShutoff) || slot_id == uint32_t(kSlotM91Bolt) ||
+        slot_id == uint32_t(kSlotM91Dry) || slot_id == uint32_t(kSlotM91ChamberClose) ||
+        slot_id == uint32_t(kSlotC96Breech) || slot_id == uint32_t(kSlotC96Dry) ||
+        slot_id == uint32_t(kSlotC96LockOpen) || slot_id == uint32_t(kSlotMxmBeltAdvance)) {
+        return StemCategory::Mechanical;
+    }
+    if (slot_id == uint32_t(kSlotMxmBoil) || slot_id == uint32_t(kSlotMxmSteam) ||
+        slot_id == uint32_t(kSlotFlmPilotHum) || slot_id == uint32_t(kSlotFlmFoamSplash) ||
+        slot_id == uint32_t(kSlotMxmWheelRoll)) {
         return StemCategory::Environment;
     }
     // Expanded BWAR v3 non-weapon slots:
@@ -335,11 +361,17 @@ int32_t SlotForPlayerFire(std::string_view code_raw, bool suppressed, bool alt_f
     if (code == "RPG") return kSlotRpgFire;
     if (code == "GRL") return kSlotGrlFire;
     if (code == "FLM" || code == "FLAME") return kSlotFlameIgnite;
+    if (code == "M91") return kSlotM91Fire;
+    if (code == "C96") return kSlotC96Fire;
+    if (code == "MXM") return kSlotMxmFire;
     return -1;
 }
 
 uint32_t TailSlotForPlayerSlot(uint32_t fire_slot) {
     if (fire_slot == uint32_t(kSlotFlameIgnite)) return uint32_t(kSlotFireLoop);
+    if (fire_slot == uint32_t(kSlotM91Fire)) return uint32_t(kSlotTailM91Outdoor);
+    if (fire_slot == uint32_t(kSlotC96Fire)) return uint32_t(kSlotTailPistolOutdoor);
+    if (fire_slot == uint32_t(kSlotMxmFire)) return uint32_t(kSlotTailMxmHeavy);
     if (IsSuppressedFireSlot(fire_slot)) return uint32_t(kSlotTailSuppressedCrack);
     if (fire_slot <= uint32_t(kSlotGk1Fire)) return uint32_t(kSlotTailPistolOutdoor);
     if (fire_slot >= uint32_t(kSlotSmgFire) && fire_slot <= uint32_t(kSlotP90Fire)) return uint32_t(kSlotTailSmgOutdoor);
@@ -1008,6 +1040,14 @@ void TriggerSpecialAmmoCue(uint8_t ammo_mode) {
     const float pitch = 0.88f + float(ammo_mode % 4u) * 0.14f;
     SpawnSynthLocked(SynthKind::SpecialAmmoSwitch, 4200u, 0u, 0.26f, 0.26f, pitch);
     g_state.synth_overdrive_cues.fetch_add(1, std::memory_order_relaxed);
+}
+
+void TriggerSpecialSlot(int32_t slot_id, float gain, bool is_loop) {
+    if (slot_id < 0 || !modsettings::Registry().GetEnhanced().mod_audio_pack_enabled) return;
+    if (!EnsureLoaded()) return;
+    std::lock_guard<std::mutex> lock(g_state.mix_mutex);
+    SpawnClipForSlotLocked(uint32_t(slot_id), 0u, false, 0, nullptr, 2.0f, 120.0f,
+                           std::clamp(gain, 0.05f, 1.45f), 0u, 0.18f, is_loop);
 }
 
 void RenderMix(float* out, float* send, uint32_t frames,

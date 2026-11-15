@@ -2024,6 +2024,33 @@ void DrawViewmodelMesh(const ViewmodelVertex *verts, uint32_t vertex_count,
   const uint32_t saved_tss0_aa1 = g_state.tss[0][gpu::kTssAlphaArg1];
 
   const ScopedOverlayExtraState extra_state_guard;
+  struct ScopedVmPipelineFix {
+    uint32_t spec_src, emis_src;
+    std::array<uint32_t, 3> cop, aop;
+    ScopedVmPipelineFix()
+        : spec_src(g_state.rs[gpu::kRsSpecularMaterialSource]),
+          emis_src(g_state.rs[gpu::kRsEmissiveMaterialSource]),
+          cop{g_state.tss[1][gpu::kTssColorOp], g_state.tss[2][gpu::kTssColorOp],
+              g_state.tss[3][gpu::kTssColorOp]},
+          aop{g_state.tss[1][gpu::kTssAlphaOp], g_state.tss[2][gpu::kTssAlphaOp],
+              g_state.tss[3][gpu::kTssAlphaOp]} {
+      g_state.rs[gpu::kRsSpecularMaterialSource] = 0u; // D3DMCS_MATERIAL
+      g_state.rs[gpu::kRsEmissiveMaterialSource] = 0u; // D3DMCS_MATERIAL
+      for (int s = 1; s <= 3; ++s) {
+        g_state.tss[s][gpu::kTssColorOp] = 1u; // D3DTOP_DISABLE
+        g_state.tss[s][gpu::kTssAlphaOp] = 1u;
+      }
+    }
+    ~ScopedVmPipelineFix() {
+      g_state.rs[gpu::kRsSpecularMaterialSource] = spec_src;
+      g_state.rs[gpu::kRsEmissiveMaterialSource] = emis_src;
+      for (int i = 0; i < 3; ++i) {
+        g_state.tss[1 + i][gpu::kTssColorOp] = cop[i];
+        g_state.tss[1 + i][gpu::kTssAlphaOp] = aop[i];
+      }
+    }
+  } vm_pipeline_fix;
+
   g_state.vs_handle = 0x52u; // D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE
   g_state.vs = nullptr;
   g_state.ps = nullptr;
@@ -2049,7 +2076,7 @@ void DrawViewmodelMesh(const ViewmodelVertex *verts, uint32_t vertex_count,
   g_state.rs[gpu::kRsColorVertex] = 1;
   g_state.rs[gpu::kRsDiffuseMaterialSource] = 1; // D3DMCS_COLOR1
   g_state.rs[gpu::kRsAmbientMaterialSource] = 1; // D3DMCS_COLOR1
-  g_state.rs[gpu::kRsAmbient] = 0xFF4C4E54u;
+  g_state.rs[gpu::kRsAmbient] = 0xFF202226u;
   g_state.rs[gpu::kRsFogEnable] = 0;
   g_state.rs[gpu::kRsTwoSidedLighting] = 0;
 
@@ -2173,6 +2200,294 @@ void DrawViewmodelMesh(const ViewmodelVertex *verts, uint32_t vertex_count,
   g_state.tss[0][gpu::kTssColorArg1] = saved_tss0_ca1;
   g_state.tss[0][gpu::kTssAlphaOp] = saved_tss0_aop;
   g_state.tss[0][gpu::kTssAlphaArg1] = saved_tss0_aa1;
+}
+
+namespace {
+
+uint32_t EnsureViewmodelBtexTexture(uint64_t cache_key, const uint32_t *swizzled_bgra,
+                                    uint32_t width, uint32_t height) {
+  if (!cache_key || !swizzled_bgra || width != 1024u || height != 1024u) {
+    return 0u;
+  }
+  struct BtexSlot {
+    uint64_t key = 0u;
+    uint32_t hdr_va = 0u;
+  };
+  static std::array<BtexSlot, 8> s_cache{};
+  for (const auto &entry : s_cache) {
+    if (entry.key == cache_key && entry.hdr_va != 0u) return entry.hdr_va;
+  }
+
+  const uint32_t byte_size = width * height * 4u;
+  const uint32_t data_va = mem::AllocSystem(byte_size, 256u);
+  const uint32_t hdr_va = mem::AllocSystem(kHeaderBytes, 16u);
+  if (!data_va || !hdr_va) return 0u;
+
+  uint32_t *dst = reinterpret_cast<uint32_t *>(HostPtr(data_va));
+  if (!dst) return 0u;
+  std::memcpy(dst, swizzled_bgra, byte_size);
+
+  std::memset(HostPtr(hdr_va), 0, kHeaderBytes);
+  W32(hdr_va + kResCommon, 0x00040001u); // D3DTYPE_TEXTURE
+  W32(hdr_va + kResData, mem::PhysicalFromVirtual(data_va));
+  W32(hdr_va + kResLock, 0u);
+  W32(hdr_va + kContainerFormat, 0x0AA10621u); // 1024x1024 swizzled A8R8G8B8, 1 level
+  W32(hdr_va + 16, 0u);
+  gpu::MarkDirty(data_va);
+
+  static size_t s_next = 0u;
+  s_cache[s_next % s_cache.size()] = {cache_key, hdr_va};
+  s_next++;
+  return hdr_va;
+}
+
+} // namespace
+
+void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t vertex_count,
+                               const uint16_t *indices, uint32_t index_count,
+                               uint64_t texture_cache_key, const uint32_t *swizzled_bgra_pixels,
+                               uint32_t tex_width, uint32_t tex_height,
+                               const float world[16], const float view[16], const float proj[16],
+                               const float flame_pos_world[3], float flame_intensity) {
+  if (!g_backend || !verts || !indices || vertex_count == 0u ||
+      index_count < 3u || !world || !view || !proj) {
+    return;
+  }
+
+  std::lock_guard<std::recursive_mutex> lock(g_lock);
+
+  static uint32_t s_tex_vb_hdr = 0u;
+  static uint32_t s_tex_vb_data = 0u;
+  constexpr uint32_t kMaxVertBytes = 65500u * uint32_t(sizeof(ViewmodelTexturedVertex));
+  if (!s_tex_vb_hdr) {
+    s_tex_vb_data = mem::AllocSystem(kMaxVertBytes, 256u);
+    s_tex_vb_hdr = mem::AllocSystem(kHeaderBytes, 16u);
+    if (!s_tex_vb_data || !s_tex_vb_hdr) return;
+    std::memset(HostPtr(s_tex_vb_hdr), 0, kHeaderBytes);
+    W32(s_tex_vb_hdr + kResCommon, 1u);
+    W32(s_tex_vb_hdr + kResData, mem::PhysicalFromVirtual(s_tex_vb_data));
+  }
+
+  const uint32_t clamped_vc = std::min<uint32_t>(vertex_count, 65500u);
+  const uint32_t upload_bytes = clamped_vc * uint32_t(sizeof(ViewmodelTexturedVertex));
+  std::memcpy(HostPtr(s_tex_vb_data), verts, upload_bytes);
+  gpu::MarkDirty(s_tex_vb_data);
+
+  const uint32_t tex_hdr = EnsureViewmodelBtexTexture(
+      texture_cache_key, swizzled_bgra_pixels, tex_width, tex_height);
+
+  const auto saved_stream = g_state.streams[0];
+  const auto saved_viewport = g_state.viewport;
+  const auto saved_view = g_state.transforms[2];
+  const auto saved_proj = g_state.transforms[3];
+  const auto saved_world = g_state.transforms[256];
+  const auto saved_material = g_state.material;
+  const auto saved_lights0 = g_state.lights[0];
+  const auto saved_lights1 = g_state.lights[1];
+  const auto saved_lights2 = g_state.lights[2];
+  const uint32_t saved_light_enable = g_state.light_enable;
+  const auto saved_textures = g_state.textures;
+  const auto saved_palettes = g_state.palettes;
+  const uint32_t saved_vs_handle = g_state.vs_handle;
+  const auto saved_vs = g_state.vs;
+  const auto saved_ps = g_state.ps;
+  const uint32_t saved_base = g_state.base_vertex;
+  const uint32_t saved_scissor = g_state.scissor_count;
+  const auto saved_tss = g_state.tss;
+
+  const uint32_t saved_ze = g_state.rs[gpu::kRsZEnable];
+  const uint32_t saved_cull = g_state.rs[gpu::kRsCullMode];
+  const uint32_t saved_fill = g_state.rs[gpu::kRsFillMode];
+  const uint32_t saved_light = g_state.rs[gpu::kRsLighting];
+  const uint32_t saved_spec = g_state.rs[gpu::kRsSpecularEnable];
+  const uint32_t saved_loc = g_state.rs[gpu::kRsLocalViewer];
+  const uint32_t saved_norm = g_state.rs[gpu::kRsNormalizeNormals];
+  const uint32_t saved_cv = g_state.rs[gpu::kRsColorVertex];
+  const uint32_t saved_diff_src = g_state.rs[gpu::kRsDiffuseMaterialSource];
+  const uint32_t saved_amb_src = g_state.rs[gpu::kRsAmbientMaterialSource];
+  const uint32_t saved_spec_src = g_state.rs[gpu::kRsSpecularMaterialSource];
+  const uint32_t saved_emis_src = g_state.rs[gpu::kRsEmissiveMaterialSource];
+  const uint32_t saved_amb = g_state.rs[gpu::kRsAmbient];
+  const uint32_t saved_fog = g_state.rs[gpu::kRsFogEnable];
+  const uint32_t saved_two = g_state.rs[gpu::kRsTwoSidedLighting];
+  const uint32_t saved_sten = g_state.rs[gpu::kRsStencilEnable];
+  const uint32_t saved_zw = g_state.simple[gpu::kMZWriteEnable >> 2];
+  const uint32_t saved_zf = g_state.simple[gpu::kMZFunc >> 2];
+  const uint32_t saved_at = g_state.simple[gpu::kMAlphaTestEnable >> 2];
+  const uint32_t saved_be = g_state.simple[gpu::kMBlendEnable >> 2];
+  const uint32_t saved_cw = g_state.simple[gpu::kMColorWriteEnable >> 2];
+  const uint32_t saved_sm = g_state.simple[gpu::kMShadeMode >> 2];
+  const uint32_t saved_so = g_state.simple[gpu::kMSolidOffsetEnable >> 2];
+
+  const ScopedOverlayExtraState extra_state_guard;
+
+  g_state.vs_handle = tex_hdr ? 0x152u : 0x52u;
+  g_state.vs = nullptr;
+  g_state.ps = nullptr;
+  g_state.textures = {};
+  g_state.textures[0] = tex_hdr;
+  g_state.palettes = {};
+  g_state.base_vertex = 0u;
+  g_state.scissor_count = 0u;
+
+  g_state.viewport.min_z = 0.0f;
+  g_state.viewport.max_z = 0.08f;
+  std::memcpy(g_state.transforms[2].data(), view, 64);
+  std::memcpy(g_state.transforms[3].data(), proj, 64);
+  std::memcpy(g_state.transforms[256].data(), world, 64);
+
+  g_state.rs[gpu::kRsZEnable] = 1u;
+  g_state.simple[gpu::kMZWriteEnable >> 2] = 1u;
+  g_state.simple[gpu::kMZFunc >> 2] = 0x203u; // D3DCMP_LESSEQUAL
+  g_state.simple[gpu::kMAlphaTestEnable >> 2] = 0u;
+  g_state.simple[gpu::kMBlendEnable >> 2] = 0u;
+  g_state.rs[gpu::kRsCullMode] = 0u;          // double-sided for shroud holes & stamped metal
+  g_state.rs[gpu::kRsFillMode] = 0x1B02u;     // D3DFILL_SOLID
+  g_state.rs[gpu::kRsLighting] = 1u;
+  g_state.rs[gpu::kRsSpecularEnable] = 1u;
+  g_state.rs[gpu::kRsLocalViewer] = 1u;
+  g_state.rs[gpu::kRsNormalizeNormals] = 1u;
+  g_state.rs[gpu::kRsColorVertex] = 1u;
+  g_state.rs[gpu::kRsDiffuseMaterialSource] = 1u;  // D3DMCS_COLOR1
+  g_state.rs[gpu::kRsAmbientMaterialSource] = 1u;  // D3DMCS_COLOR1
+  g_state.rs[gpu::kRsSpecularMaterialSource] = 0u; // D3DMCS_MATERIAL (prevent white blowout!)
+  g_state.rs[gpu::kRsEmissiveMaterialSource] = 0u; // D3DMCS_MATERIAL
+  g_state.rs[gpu::kRsAmbient] = 0xFF282A30u;
+  g_state.rs[gpu::kRsFogEnable] = 0u;
+  g_state.rs[gpu::kRsTwoSidedLighting] = 0u;
+  g_state.rs[gpu::kRsStencilEnable] = 0u;
+  g_state.simple[gpu::kMColorWriteEnable >> 2] = 0x01010101u;
+  g_state.simple[gpu::kMShadeMode >> 2] = 0x1D01u;
+  g_state.simple[gpu::kMSolidOffsetEnable >> 2] = 0u;
+
+  if (tex_hdr) {
+    g_state.tss[0][gpu::kTssAddressU] = 1u; // D3DTADDRESS_WRAP
+    g_state.tss[0][gpu::kTssAddressV] = 1u;
+    g_state.tss[0][gpu::kTssMagFilter] = 2u; // D3DTEXF_LINEAR
+    g_state.tss[0][gpu::kTssMinFilter] = 2u;
+    g_state.tss[0][gpu::kTssTexCoordIndex] = 0u;
+    g_state.tss[0][gpu::kTssAlphaKill] = 0u;
+    g_state.tss[0][gpu::kTssColorOp] = 4u;   // D3DTOP_MODULATE
+    g_state.tss[0][gpu::kTssColorArg1] = 2u; // D3DTA_TEXTURE
+    g_state.tss[0][gpu::kTssColorArg2] = 0u; // D3DTA_DIFFUSE
+    g_state.tss[0][gpu::kTssAlphaOp] = 4u;
+    g_state.tss[0][gpu::kTssAlphaArg1] = 2u;
+    g_state.tss[0][gpu::kTssAlphaArg2] = 0u;
+  } else {
+    g_state.tss[0][gpu::kTssColorOp] = 2u;
+    g_state.tss[0][gpu::kTssColorArg1] = 0u;
+    g_state.tss[0][gpu::kTssAlphaOp] = 2u;
+    g_state.tss[0][gpu::kTssAlphaArg1] = 0u;
+  }
+  for (int s = 1; s <= 3; ++s) {
+    g_state.tss[s][gpu::kTssColorOp] = 1u; // D3DTOP_DISABLE
+    g_state.tss[s][gpu::kTssAlphaOp] = 1u;
+  }
+
+  const float mat[17] = {
+      0.84f, 0.84f, 0.84f, 1.0f, // Diffuse (tempered so light steel keeps brushed texture contrast)
+      0.42f, 0.42f, 0.46f, 1.0f, // Ambient
+      0.14f, 0.14f, 0.16f, 1.0f, // Specular (crisp machined steel glint without chalky blowout)
+      0.0f, 0.0f, 0.0f, 0.0f,    // Emissive (strictly zero!)
+      54.0f                      // Power (tight metallic highlight)
+  };
+  std::memcpy(g_state.material.data(), mat, sizeof(mat));
+
+  auto write_light = [](std::array<uint32_t, 26> &dst, uint32_t type,
+                        const float diff[4], const float spec[4], const float amb[4],
+                        const float pos[3], const float dir[3], float range,
+                        float att0, float att1, float att2) {
+    auto fbits = [](float v) -> uint32_t {
+      uint32_t u = 0u;
+      std::memcpy(&u, &v, 4);
+      return u;
+    };
+    dst.fill(0u);
+    dst[0] = type;
+    for (int k = 0; k < 4; ++k) {
+      dst[1 + k] = fbits(diff[k]);
+      dst[5 + k] = fbits(spec[k]);
+      dst[9 + k] = fbits(amb[k]);
+    }
+    for (int k = 0; k < 3; ++k) {
+      dst[13 + k] = fbits(pos[k]);
+      dst[16 + k] = fbits(dir[k]);
+    }
+    dst[19] = fbits(range);
+    dst[20] = fbits(1.0f);
+    dst[21] = fbits(att0);
+    dst[22] = fbits(att1);
+    dst[23] = fbits(att2);
+  };
+
+  const float z3[3] = {0.0f, 0.0f, 0.0f};
+  const float k0_dir[3] = {-0.58f, -0.48f, 0.66f};
+  const float k0_diff[4] = {0.66f, 0.64f, 0.60f, 1.0f};
+  const float k0_spec[4] = {0.22f, 0.22f, 0.24f, 1.0f};
+  const float k0_amb[4] = {0.12f, 0.12f, 0.14f, 1.0f};
+  write_light(g_state.lights[0], 3u, k0_diff, k0_spec, k0_amb, z3, k0_dir, 1000.0f, 1.0f, 0.0f, 0.0f);
+
+  const float k1_dir[3] = {0.62f, 0.55f, -0.56f};
+  const float k1_diff[4] = {0.22f, 0.25f, 0.32f, 1.0f};
+  const float k1_spec[4] = {0.06f, 0.08f, 0.10f, 1.0f};
+  const float k1_amb[4] = {0.04f, 0.04f, 0.05f, 1.0f};
+  write_light(g_state.lights[1], 3u, k1_diff, k1_spec, k1_amb, z3, k1_dir, 1000.0f, 1.0f, 0.0f, 0.0f);
+
+  const float fi = std::clamp(flame_intensity, 0.0f, 1.0f);
+  const float fpos[3] = {flame_pos_world ? flame_pos_world[0] : 0.0f,
+                         flame_pos_world ? flame_pos_world[1] : 0.0f,
+                         flame_pos_world ? flame_pos_world[2] : 0.0f};
+  const float k2_diff[4] = {0.58f * fi, 0.32f * fi, 0.08f * fi, 1.0f};
+  const float k2_spec[4] = {0.28f * fi, 0.15f * fi, 0.04f * fi, 1.0f};
+  const float k2_amb[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+  write_light(g_state.lights[2], 1u, k2_diff, k2_spec, k2_amb, fpos, k0_dir, 3.8f, 0.7f, 1.2f, 0.9f);
+  g_state.light_enable = (fi > 0.01f) ? 0x7u : 0x3u;
+
+  g_state.streams[0] = {s_tex_vb_hdr, uint32_t(sizeof(ViewmodelTexturedVertex))};
+  g_backend->Draw(g_state, 5 /* D3DPT_TRIANGLELIST */, 0, index_count,
+                  reinterpret_cast<const uint8_t *>(indices));
+
+  g_state.streams[0] = saved_stream;
+  g_state.textures = saved_textures;
+  g_state.palettes = saved_palettes;
+  g_state.vs_handle = saved_vs_handle;
+  g_state.vs = saved_vs;
+  g_state.ps = saved_ps;
+  g_state.base_vertex = saved_base;
+  g_state.scissor_count = saved_scissor;
+  g_state.viewport = saved_viewport;
+  g_state.transforms[2] = saved_view;
+  g_state.transforms[3] = saved_proj;
+  g_state.transforms[256] = saved_world;
+  g_state.material = saved_material;
+  g_state.lights[0] = saved_lights0;
+  g_state.lights[1] = saved_lights1;
+  g_state.lights[2] = saved_lights2;
+  g_state.light_enable = saved_light_enable;
+  g_state.tss = saved_tss;
+  g_state.rs[gpu::kRsZEnable] = saved_ze;
+  g_state.rs[gpu::kRsCullMode] = saved_cull;
+  g_state.rs[gpu::kRsFillMode] = saved_fill;
+  g_state.rs[gpu::kRsLighting] = saved_light;
+  g_state.rs[gpu::kRsSpecularEnable] = saved_spec;
+  g_state.rs[gpu::kRsLocalViewer] = saved_loc;
+  g_state.rs[gpu::kRsNormalizeNormals] = saved_norm;
+  g_state.rs[gpu::kRsColorVertex] = saved_cv;
+  g_state.rs[gpu::kRsDiffuseMaterialSource] = saved_diff_src;
+  g_state.rs[gpu::kRsAmbientMaterialSource] = saved_amb_src;
+  g_state.rs[gpu::kRsSpecularMaterialSource] = saved_spec_src;
+  g_state.rs[gpu::kRsEmissiveMaterialSource] = saved_emis_src;
+  g_state.rs[gpu::kRsAmbient] = saved_amb;
+  g_state.rs[gpu::kRsFogEnable] = saved_fog;
+  g_state.rs[gpu::kRsTwoSidedLighting] = saved_two;
+  g_state.rs[gpu::kRsStencilEnable] = saved_sten;
+  g_state.simple[gpu::kMZWriteEnable >> 2] = saved_zw;
+  g_state.simple[gpu::kMZFunc >> 2] = saved_zf;
+  g_state.simple[gpu::kMAlphaTestEnable >> 2] = saved_at;
+  g_state.simple[gpu::kMBlendEnable >> 2] = saved_be;
+  g_state.simple[gpu::kMColorWriteEnable >> 2] = saved_cw;
+  g_state.simple[gpu::kMShadeMode >> 2] = saved_sm;
+  g_state.simple[gpu::kMSolidOffsetEnable >> 2] = saved_so;
 }
 
 } // namespace d3d

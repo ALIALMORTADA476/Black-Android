@@ -1,4 +1,5 @@
 #include "game/flamethrower_core.h"
+#include "game/special_arsenal_core.h"
 
 #include <algorithm>
 #include <cmath>
@@ -36,7 +37,30 @@ bool ParseBmsh(const void* data, size_t size, BmshMesh& out) {
 
     BmshHeader hdr{};
     std::memcpy(&hdr, data, sizeof(hdr));
-    if (hdr.magic != kBmshMagic || hdr.version != kBmshVersion) return false;
+    if (hdr.magic != kBmshMagic) return false;
+
+    // Support both legacy v1 static BMSH and v2 articulated+UV BMSH models cleanly.
+    if (hdr.version == 2u) {
+        game::special_arsenal::BmshModel v2{};
+        if (!game::special_arsenal::ParseBmsh(static_cast<const uint8_t*>(data), size, v2)) {
+            return false;
+        }
+        out.vertices.resize(v2.vertices.size());
+        for (size_t i = 0; i < v2.vertices.size(); ++i) {
+            const auto& sv = v2.vertices[i];
+            out.vertices[i] = BmshVertex{sv.x, sv.y, sv.z, sv.nx, sv.ny, sv.nz, sv.bgra};
+        }
+        out.indices = std::move(v2.indices);
+        for (int i = 0; i < 3; ++i) {
+            out.nozzle_pos[i] = v2.nozzle_pos[i];
+            out.pilot_pos[i] = v2.pilot_pos[i];
+            out.bounds_min[i] = v2.bounds_min[i];
+            out.bounds_max[i] = v2.bounds_max[i];
+        }
+        return true;
+    }
+
+    if (hdr.version != kBmshVersion) return false;
     if (hdr.vertex_count == 0 || hdr.vertex_count > 65535u) return false;
     if (hdr.index_count == 0 || (hdr.index_count % 3u) != 0u) return false;
 

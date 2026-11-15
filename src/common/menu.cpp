@@ -151,14 +151,6 @@ inline TacticalTheme CurrentTheme() {
 
 TacticalCategory g_active_category = TacticalCategory::Graphics;
 
-TacticalCategory GetActiveCategory() { return g_active_category; }
-
-void SetActiveCategory(TacticalCategory cat) {
-  if (int(cat) >= 0 && int(cat) < int(TacticalCategory::Count)) {
-    g_active_category = cat;
-  }
-}
-
 constexpr uint32_t kAnisoValues[] = {0, 2, 4, 8, 16};
 const char *const kAnisoNames[] = {"GAME DEFAULT", "2x", "4x", "8x", "16x"};
 constexpr uint32_t kDistances[] = {1, 2, 4, 8};
@@ -1246,11 +1238,97 @@ void DrawRows(int page) {
 // any level); the one given goes in the slot not in hand and the game switches
 // to it Level weapons and arsenal manager: allows equipping any player weapon
 // and replenishing supplies
+void DrawSpecialArsenalSection(const TacticalTheme &theme, float btn_h,
+                               float gap) {
+  Section("SPECIAL ARSENAL");
+  const auto ft = game::flamethrower::GetHudState();
+  const float avail = ImGui::GetContentRegionAvail().x;
+  const float w2 = (avail - gap) * 0.5f;
+
+  for (uint8_t i = 0; i < 4; ++i) {
+    if (i % 2)
+      ImGui::SameLine();
+    const bool selected = ft.active && (ft.weapon_id == i);
+    ImGui::PushID(int(i) + 910);
+    if (selected) {
+      ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
+      ImGui::PushStyleColor(ImGuiCol_Button, theme.highlight);
+      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.52f, 0.14f, 0.95f));
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.5f);
+    } else {
+      ImGui::PushStyleColor(ImGuiCol_Button, kTab);
+      ImGui::PushStyleColor(ImGuiCol_Text, kText);
+      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.85f, 0.42f, 0.12f, 0.65f));
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.3f);
+    }
+    const char *nm = game::flamethrower::GetSpecialWeaponName(i);
+    if (ImGui::Button(Ui(nm, false).c_str(), ImVec2(w2, btn_h))) {
+      if (selected)
+        game::flamethrower::ForceDeactivate();
+      else
+        game::flamethrower::SelectSpecialWeapon(i);
+    }
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+    ImGui::PopID();
+  }
+
+  // Action row + live telemetry
+  if (ft.active) {
+    const bool has_mode = (ft.weapon_id == 2);
+    const int cols = has_mode ? 3 : 2;
+    const float aw = (avail - gap * float(cols - 1)) / float(cols);
+    if (ImGui::Button(Ui("UNEQUIP SPECIAL", false).c_str(), ImVec2(aw, btn_h))) {
+      game::flamethrower::ForceDeactivate();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(Ui("REFILL SPECIAL", false).c_str(), ImVec2(aw, btn_h))) {
+      game::flamethrower::RefillFuel();
+    }
+    if (has_mode) {
+      ImGui::SameLine();
+      const char *mlbl = ft.full_auto_mode ? "MODE: FULL-AUTO" : "MODE: SEMI-AUTO";
+      if (ImGui::Button(Ui(mlbl, false).c_str(), ImVec2(aw, btn_h))) {
+        game::flamethrower::ToggleFireMode();
+      }
+    }
+
+    char stats[128]{};
+    if (ft.weapon_id == 0) {
+      std::snprintf(stats, sizeof(stats), "FUEL: %u%%  |  SQUIBS: %d  |  BURNING: %u",
+                    unsigned(std::lround(ft.fuel_pct)), ft.ignition_cartridges,
+                    ft.active_burning_enemies);
+    } else if (ft.weapon_id == 3) {
+      std::snprintf(stats, sizeof(stats), "7.62x54R BELT: %d/%d  |  RES: %d  |  COOLANT: %dC%s",
+                    ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
+                    int(std::lround(ft.water_temp_c)),
+                    ft.water_boiling ? " (BOIL!)" : "");
+    } else if (ft.weapon_id == 2) {
+      std::snprintf(stats, sizeof(stats), "7.63x25 MAG: %d/%d  |  RES: %d  |  %s%s",
+                    ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
+                    ft.full_auto_mode ? "AUTO 950RPM" : "SEMI",
+                    ft.bolt_locked_open ? " (BOLT OPEN)" : "");
+    } else {
+      std::snprintf(stats, sizeof(stats), "7.65x53 CLIP: %d/%d  |  RES: %d  |  ADS: 1.85x",
+                    ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo);
+    }
+    ImGui::PushStyleColor(
+        ImGuiCol_Text,
+        ft.water_boiling ? ImVec4(1.0f, 0.35f, 0.25f, 1.0f)
+                         : ImVec4(1.0f, 0.72f, 0.30f, 1.0f));
+    ImGui::TextUnformatted(stats);
+    ImGui::PopStyleColor();
+  }
+}
+
 void DrawWeapons() {
   weapons::View v = weapons::Current();
   float em = ImGui::GetFontSize();
   float btn_h = std::max(ImGui::GetFrameHeight(), em * 2.2f);
+  float gap = ImGui::GetStyle().ItemSpacing.x;
   TacticalTheme theme = CurrentTheme();
+
+  DrawSpecialArsenalSection(theme, btn_h, gap);
 
   Section("LEVEL WEAPON ARSENAL");
 
@@ -1288,7 +1366,6 @@ void DrawWeapons() {
                                                      "RPG",
                                                      "M16A2 + M203"};
     constexpr int kColumns = 3;
-    float gap = ImGui::GetStyle().ItemSpacing.x;
     float w =
         (ImGui::GetContentRegionAvail().x - gap * (kColumns - 1)) / kColumns;
 
@@ -1304,42 +1381,6 @@ void DrawWeapons() {
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
 
-    Section("SPECIAL WEAPON");
-    ImGui::PushStyleColor(ImGuiCol_Button, kTab);
-    ImGui::PushStyleColor(ImGuiCol_Text, kDim);
-    ImGui::Button(Ui("FLAMETHROWER (M2)", false).c_str(), ImVec2(w, btn_h));
-    ImGui::PopStyleColor(2);
-
-    Section("SPECIAL WEAPON");
-  {
-    const auto ft = game::flamethrower::GetHudState();
-    const bool ft_on = ft.active;
-    if (ft_on) {
-      ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
-      ImGui::PushStyleColor(ImGuiCol_Button, theme.highlight);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.52f, 0.14f, 0.95f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.5f);
-    } else {
-      ImGui::PushStyleColor(ImGuiCol_Button, kTab);
-      ImGui::PushStyleColor(ImGuiCol_Text, kText);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.85f, 0.42f, 0.12f, 0.70f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.4f);
-    }
-    const char *ft_lbl = ft_on ? "UNEQUIP FLAMETHROWER" : "EQUIP FLAMETHROWER";
-    if (ImGui::Button(Ui(ft_lbl, false).c_str(), ImVec2(w, btn_h))) {
-      game::flamethrower::Toggle();
-    }
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    char fuel_buf[40];
-    std::snprintf(fuel_buf, sizeof(fuel_buf), "%u%%", unsigned(std::lround(ft.fuel_pct)));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.68f, 0.25f, 1.0f));
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(fuel_buf);
-    ImGui::PopStyleColor();
-  }
-
   Section("SUPPLIES");
     float supply_w = (ImGui::GetContentRegionAvail().x - gap) * 0.5f;
     ImGui::PushStyleColor(ImGuiCol_Button, kTab);
@@ -1352,7 +1393,6 @@ void DrawWeapons() {
   }
 
   constexpr int kColumns = 3;
-  float gap = ImGui::GetStyle().ItemSpacing.x;
   float w =
       (ImGui::GetContentRegionAvail().x - gap * (kColumns - 1)) / kColumns;
   for (size_t i = 0; i < v.choices.size(); i++) {
@@ -1377,35 +1417,6 @@ void DrawWeapons() {
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
     ImGui::PopID();
-  }
-  Section("SPECIAL WEAPON");
-  {
-    const auto ft = game::flamethrower::GetHudState();
-    const bool ft_on = ft.active;
-    if (ft_on) {
-      ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
-      ImGui::PushStyleColor(ImGuiCol_Button, theme.highlight);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.52f, 0.14f, 0.95f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.5f);
-    } else {
-      ImGui::PushStyleColor(ImGuiCol_Button, kTab);
-      ImGui::PushStyleColor(ImGuiCol_Text, kText);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.85f, 0.42f, 0.12f, 0.70f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.4f);
-    }
-    const char *ft_lbl = ft_on ? "UNEQUIP FLAMETHROWER" : "EQUIP FLAMETHROWER";
-    if (ImGui::Button(Ui(ft_lbl, false).c_str(), ImVec2(w, btn_h))) {
-      game::flamethrower::Toggle();
-    }
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    char fuel_buf[40];
-    std::snprintf(fuel_buf, sizeof(fuel_buf), "%u%%", unsigned(std::lround(ft.fuel_pct)));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.68f, 0.25f, 1.0f));
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(fuel_buf);
-    ImGui::PopStyleColor();
   }
 
   Section("SUPPLIES");
@@ -4495,6 +4506,14 @@ bool rows::Opens(const Row &row) {
 }
 
 bool MenuOpen() { return g_open.load(std::memory_order_relaxed); }
+
+TacticalCategory GetActiveCategory() { return g_active_category; }
+
+void SetActiveCategory(TacticalCategory cat) {
+  if (int(cat) >= 0 && int(cat) < int(TacticalCategory::Count)) {
+    g_active_category = cat;
+  }
+}
 
 bool Capturing() { return g_capture >= 0; }
 

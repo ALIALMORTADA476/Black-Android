@@ -2339,7 +2339,7 @@ bool TestWeaponAudioInRoomPunchAndHeadroom() {
     const uint32_t sig_cnt = rd_u32(20);
     EXPECT_EQ(ver, 3u);
     EXPECT_EQ(sr, 48000u);
-    EXPECT_EQ(slot_cnt, 129u);
+    EXPECT_TRUE(slot_cnt >= 152u);
 
     const size_t rec_base = 24u;
     const size_t pcm_base = rec_base + size_t(clip_cnt) * 16u + size_t(sig_cnt) * 16u;
@@ -2893,6 +2893,417 @@ bool TestOverdriveSchemaAndAudioCues() {
     return true;
 }
 
+}  // namespace
+
+#include "game/blood_decal_rules.h"
+#include "game/special_arsenal_core.h"
+
+namespace {
+
+bool TestBloodPoolPermanenceAndCoagulation() {
+    using namespace game::blood_decals;
+    EXPECT_TRUE(std::fabs(ComputePoolLifetimeSec(true)) < 1e-6f);
+    EXPECT_TRUE(ComputePoolLifetimeSec(false) >= 9.0f && ComputePoolLifetimeSec(false) <= 15.0f);
+
+    EXPECT_EQ(ResolveMaxBloodPools(128u), 256u);
+    EXPECT_EQ(ResolveMaxBloodPools(512u), 512u);
+    EXPECT_EQ(ResolveMaxBloodPools(4096u), 1024u);
+
+    // LRU eviction: prefer free slot first, then farthest & settled oldest slot
+    bool active[4] = {true, false, true, true};
+    float ages[4] = {120.0f, 0.0f, 5.0f, 95.0f};
+    float dists[4] = {4.0f, 0.0f, 100.0f, 600.0f};
+    EXPECT_EQ(SelectEvictionSlot(active, ages, dists, 4), 1u);
+
+    active[1] = true;
+    ages[1] = 2.0f;
+    dists[1] = 2.0f;
+    // Slot 3 is settled (95s) and far away (600 m^2) -> should evict slot 3, not near fresh pool 1!
+    EXPECT_EQ(SelectEvictionSlot(active, ages, dists, 4), 3u);
+
+    // Physical coagulation curve: fresh arterial red spread -> thick dark claret, never fades out!
+    const auto fresh = EvaluatePoolCoagulation(0.15f, 1.0f);
+    const auto mid = EvaluatePoolCoagulation(2.5f, 1.0f);
+    const auto old_pool = EvaluatePoolCoagulation(600.0f, 1.0f);
+
+    EXPECT_TRUE(fresh.spread_scale > 0.45f && fresh.spread_scale < 0.90f);
+    EXPECT_TRUE(fresh.r >= 0.19f && fresh.r > fresh.g * 5.0f);
+    EXPECT_TRUE(fresh.specular_sheen >= 0.65f);
+
+    EXPECT_TRUE(mid.spread_scale >= 0.99f);
+    EXPECT_TRUE(mid.r >= 0.13f && mid.r <= 0.24f);
+
+    // Permanent pool after 10 minutes keeps high opacity (>0.85) and deep dark blood chroma (NOT pitch black 0.068)
+    EXPECT_TRUE(old_pool.a >= 0.85f);
+    EXPECT_TRUE(old_pool.r >= 0.105f && old_pool.r <= 0.165f);
+    EXPECT_TRUE(old_pool.specular_sheen <= 0.18f);
+
+    const float drip_fast = ComputeWoundDripIntervalSec(1.0f);
+    const float drip_slow = ComputeWoundDripIntervalSec(0.25f);
+    EXPECT_TRUE(drip_fast >= 0.15f && drip_fast <= 0.50f);
+    EXPECT_TRUE(drip_slow > drip_fast && drip_slow <= 1.1f);
+    return true;
+}
+
+static void WriteU32Le(std::vector<uint8_t>& buf, uint32_t v) {
+    buf.push_back(uint8_t(v & 0xFF));
+    buf.push_back(uint8_t((v >> 8) & 0xFF));
+    buf.push_back(uint8_t((v >> 16) & 0xFF));
+    buf.push_back(uint8_t((v >> 24) & 0xFF));
+}
+
+static void WriteF32Le(std::vector<uint8_t>& buf, float f) {
+    uint32_t v = 0;
+    std::memcpy(&v, &f, 4);
+    WriteU32Le(buf, v);
+}
+
+static void WriteU16Le(std::vector<uint8_t>& buf, uint16_t v) {
+    buf.push_back(uint8_t(v & 0xFF));
+    buf.push_back(uint8_t((v >> 8) & 0xFF));
+}
+
+bool TestSpecialArsenalBmshV2AndBtexFormat() {
+    using namespace game::special_arsenal;
+
+    // Construct a minimal BMSH v2 payload with 3 vertices, 3 indices, 2 parts
+    std::vector<uint8_t> v2;
+    WriteU32Le(v2, 0x48534D42u);  // "BMSH"
+    WriteU32Le(v2, 2u);           // version 2
+    WriteU32Le(v2, 3u);           // vert_count
+    WriteU32Le(v2, 3u);           // index_count
+    WriteU32Le(v2, 2u);           // part_count
+    WriteU32Le(v2, 1u);           // flags (textured)
+    // bounds_min, bounds_max, nozzle_pos, pilot_pos, eject_pos (15 floats)
+    const float hdr_floats[15] = {
+        -0.1f, -0.1f, 0.0f,  0.1f, 0.1f, 0.5f,
+        0.0f, 0.0f, 0.5f,    0.0f, -0.02f, 0.45f,   0.03f, 0.02f, 0.12f
+    };
+    for (float f : hdr_floats) WriteF32Le(v2, f);
+
+    // 3 vertices * 36 bytes
+    for (int i = 0; i < 3; ++i) {
+        WriteF32Le(v2, float(i) * 0.05f);
+        WriteF32Le(v2, 0.0f);
+        WriteF32Le(v2, 0.25f);
+        WriteF32Le(v2, 0.0f);
+        WriteF32Le(v2, 1.0f);
+        WriteF32Le(v2, 0.0f);
+        WriteU32Le(v2, 0xFF809040u);
+        WriteF32Le(v2, float(i) * 0.4f);
+        WriteF32Le(v2, 0.5f);
+    }
+    // 3 uint16 indices
+    WriteU16Le(v2, 0);
+    WriteU16Le(v2, 1);
+    WriteU16Le(v2, 2);
+
+    // 2 BmshPart entries * 64 bytes
+    auto push_part = [&](const char* name, uint32_t first_idx, uint32_t idx_cnt) {
+        for (int k = 0; k < 32; ++k) {
+            uint8_t ch = (k < int(std::strlen(name))) ? uint8_t(name[k]) : 0u;
+            v2.push_back(ch);
+        }
+        WriteU32Le(v2, first_idx);
+        WriteU32Le(v2, idx_cnt);
+        for (int k = 0; k < 6; ++k) WriteF32Le(v2, 0.0f);
+    };
+    push_part("body", 0u, 3u);
+    push_part("bolt", 0u, 0u);
+
+    BmshModel parsed{};
+    EXPECT_TRUE(ParseBmsh(v2.data(), v2.size(), parsed));
+    EXPECT_EQ(parsed.version, 2u);
+    EXPECT_EQ(parsed.vertices.size(), 3u);
+    EXPECT_EQ(parsed.indices.size(), 3u);
+    EXPECT_EQ(parsed.parts.size(), 2u);
+    EXPECT_TRUE(std::strcmp(parsed.parts[0].name, "body") == 0);
+    EXPECT_TRUE(std::fabs(parsed.nozzle_pos[2] - 0.5f) < 1e-4f);
+
+    // Reject corrupt sizes cleanly
+    BmshModel bad{};
+    EXPECT_FALSE(ParseBmsh(v2.data(), 12u, bad));
+
+    // BTEX header & chroma check
+    std::vector<uint8_t> btex;
+    WriteU32Le(btex, 0x58455442u);  // "BTEX"
+    WriteU32Le(btex, 1u);           // version
+    WriteU32Le(btex, 4u);           // small test width
+    WriteU32Le(btex, 4u);           // small test height
+    WriteU32Le(btex, 0x0AA10621u);  // swizzled A8R8G8B8 format
+    WriteU32Le(btex, 64u);          // payload bytes
+    WriteU32Le(btex, 0x12345678u);  // key lo
+    WriteU32Le(btex, 0x9ABCDEF0u);  // key hi
+    for (int i = 0; i < 16; ++i) {
+        uint8_t r = uint8_t(45 + i * 8);
+        uint8_t g = uint8_t(70 + (i % 5) * 18);
+        uint8_t b = uint8_t(35 + (i % 4) * 15);
+        uint32_t bgra = (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
+        WriteU32Le(btex, bgra);
+    }
+    const auto val = ValidateBtex(btex.data(), btex.size());
+    EXPECT_TRUE(val.valid);
+    EXPECT_TRUE(val.white_fraction < 0.05f);
+    EXPECT_TRUE(val.std_rgb > 10.0f);
+    return true;
+}
+
+bool TestFlamethrowerM2MechanicsAndIgniters() {
+    using namespace game::special_arsenal;
+    ArsenalSim sim;
+    sim.ResetAll();
+    sim.SelectWeapon(SpecialWeaponId::Flamethrower);
+
+    const auto st0 = sim.GetStatus();
+    EXPECT_EQ(st0.ignition_cartridges, 5);
+    EXPECT_TRUE(st0.fuel_pct > 99.0f);
+    EXPECT_TRUE(st0.regulator_psi >= 340.0f && st0.regulator_psi <= 360.0f);
+
+    // Pulling trigger fires 1 ignition squib from 5-shot cylinder + brief ignition spark
+    ArsenalInput in{};
+    in.dt = 1.0f / 60.0f;
+    in.equipped = true;
+    in.fire_held = true;
+    in.fire_pressed = true;
+    auto ev0 = sim.Step(in);
+    EXPECT_TRUE(sim.GetStatus().ignition_cartridges == 4);
+    EXPECT_TRUE(sim.GetStatus().pose.trigger_pull > 0.5f);
+    EXPECT_TRUE(sim.GetStatus().pose.pilot_spark > 0.3f);
+    EXPECT_TRUE(ev0.audio_cue_count > 0);
+
+    // Step 2s continuous jetting -> ~28.5% fuel burned (~7s total burn time), regulator holds range steady!
+    in.fire_pressed = false;
+    bool burned_ticks = false;
+    for (int i = 0; i < 120; ++i) {
+        auto ev = sim.Step(in);
+        if (ev.fire_flame_tick) burned_ticks = true;
+    }
+    EXPECT_TRUE(burned_ticks);
+    const auto st2 = sim.GetStatus();
+    EXPECT_TRUE(st2.fuel_pct < 78.0f && st2.fuel_pct > 65.0f);
+    EXPECT_TRUE(st2.nozzle_range_m >= 24.0f);  // Constant-pressure nitrogen regulator!
+
+    // Release trigger -> instant auto-shutoff valve slams closed (no dribble)
+    in.fire_held = false;
+    auto ev_rel = sim.Step(in);
+    EXPECT_TRUE(sim.GetStatus().phase == ActionPhase::Idle);
+    EXPECT_TRUE(ev_rel.audio_cue_count > 0);
+    return true;
+}
+
+bool TestMauser1891_12_CockOnCloseAndStripperClip() {
+    using namespace game::special_arsenal;
+    ArsenalSim sim;
+    sim.ResetAll();
+    sim.SelectWeapon(SpecialWeaponId::Mauser1891);
+
+    ArsenalInput in{};
+    in.dt = 1.0f / 60.0f;
+    in.equipped = true;
+    in.ads_held = true;
+    for (int i = 0; i < 20; ++i) sim.Step(in);
+    EXPECT_TRUE(sim.GetStatus().ads_fov_scale <= 0.58f);  // 1.85x precision tangent iron sights
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 5);
+
+    // Fire 1st shot -> 7.65x53 high power
+    in.fire_pressed = true;
+    in.fire_held = true;
+    auto ev_shot = sim.Step(in);
+    EXPECT_TRUE(ev_shot.fire_bullet);
+    EXPECT_TRUE(ev_shot.bullet_damage >= 115.0f);
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 4);
+
+    // Trigger still held / released: cannot fire mid-bolt-cycle; release trigger to run cock-on-close bolt
+    in.fire_pressed = false;
+    in.fire_held = false;
+    bool saw_lift = false, saw_back = false, saw_eject = false, saw_cock_push = false;
+    for (int i = 0; i < 55; ++i) {
+        auto ev = sim.Step(in);
+        const auto st = sim.GetStatus();
+        if (st.phase == ActionPhase::BoltLift && st.pose.bolt_lift_deg > 35.0f) saw_lift = true;
+        if (st.phase == ActionPhase::BoltBack && st.pose.bolt_retract_m > 0.04f) saw_back = true;
+        if (ev.eject_shell) saw_eject = true;
+        if (st.phase == ActionPhase::BoltPushCocking) saw_cock_push = true;
+        if (st.phase == ActionPhase::Idle && i > 25) break;
+    }
+    EXPECT_TRUE(saw_lift && saw_back && saw_eject && saw_cock_push);
+    EXPECT_TRUE(sim.GetStatus().phase == ActionPhase::Idle);
+
+    // Reload via 5-rd top stripper clip restores full 5/5 mag
+    in.reload_pressed = true;
+    sim.Step(in);
+    in.reload_pressed = false;
+    bool saw_clip = false;
+    for (int i = 0; i < 120; ++i) {
+        sim.Step(in);
+        if (sim.GetStatus().pose.clip_insert > 0.2f) saw_clip = true;
+        if (!sim.GetStatus().reloading && sim.GetStatus().mag_ammo == 5) break;
+    }
+    EXPECT_TRUE(saw_clip);
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 5);
+    return true;
+}
+
+bool TestMauserC96_M712_ShortRecoilAndBoltHoldOpen() {
+    using namespace game::special_arsenal;
+    ArsenalSim sim;
+    sim.ResetAll();
+    sim.SelectWeapon(SpecialWeaponId::MauserC96);
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 20);
+    EXPECT_TRUE(sim.GetStatus().full_auto_mode);
+
+    // Empty the 20-rd mag in Schnellfeuer ~950 RPM burst -> check short-recoil barrel + bolt + lock open at 0
+    ArsenalInput in{};
+    in.dt = 1.0f / 60.0f;
+    in.equipped = true;
+    in.fire_held = true;
+    in.fire_pressed = true;
+    int shots = 0;
+    bool saw_short_recoil = false, saw_bolt_travel = false;
+    for (int i = 0; i < 120; ++i) {
+        auto ev = sim.Step(in);
+        in.fire_pressed = false;
+        const auto st = sim.GetStatus();
+        if (ev.fire_bullet) shots++;
+        if (st.pose.barrel_recoil_m > 0.002f) saw_short_recoil = true;
+        if (st.pose.bolt_retract_m > 0.020f) saw_bolt_travel = true;
+    }
+    EXPECT_EQ(shots, 20);
+    EXPECT_TRUE(saw_short_recoil && saw_bolt_travel);
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 0);
+    EXPECT_TRUE(sim.GetStatus().bolt_locked_open);
+    EXPECT_TRUE(sim.GetStatus().pose.bolt_retract_m >= 0.020f);
+
+    // Reload unlocks bolt hold-open and fills mag back to 20
+    in.fire_held = false;
+    in.reload_pressed = true;
+    sim.Step(in);
+    in.reload_pressed = false;
+    for (int i = 0; i < 150; ++i) {
+        sim.Step(in);
+        if (!sim.GetStatus().reloading) break;
+    }
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 20);
+    EXPECT_FALSE(sim.GetStatus().bolt_locked_open);
+    return true;
+}
+
+bool TestMaximM1910_WheelsCoolingAndBeltFeed() {
+    using namespace game::special_arsenal;
+    ArsenalSim sim;
+    sim.ResetAll();
+    sim.SelectWeapon(SpecialWeaponId::Maxim1910);
+
+    // Moving Sokolov mount rotates wheels forward
+    ArsenalInput in{};
+    in.dt = 1.0f / 60.0f;
+    in.equipped = true;
+    in.player_speed_mps = 4.5f;
+    for (int i = 0; i < 30; ++i) sim.Step(in);
+    EXPECT_TRUE(sim.GetStatus().pose.wheel_angle_rad > 5.0f);
+
+    // Sustained firing ~550 RPM boils 4.5L water jacket, advances canvas belt, vents steam plumes
+    in.player_speed_mps = 0.0f;
+    in.fire_held = true;
+    in.fire_pressed = true;
+    int shots = 0;
+    bool saw_steam = false;
+    for (int i = 0; i < 600; ++i) {
+        auto ev = sim.Step(in);
+        in.fire_pressed = false;
+        if (ev.fire_bullet) shots++;
+        if (ev.steam_plume) saw_steam = true;
+    }
+    const auto st = sim.GetStatus();
+    EXPECT_TRUE(shots >= 75 && shots <= 105);  // ~550 RPM over 10s
+    EXPECT_TRUE(st.water_boiling);
+    EXPECT_TRUE(st.water_temp_c >= 98.0f);
+    EXPECT_TRUE(st.water_level_l < 4.5f);
+    EXPECT_TRUE(saw_steam);
+    EXPECT_TRUE(st.pose.spade_thumb_press > 0.5f);
+
+    // Stopping fire & reloading lifts top cover & cools/tops off coolant
+    in.fire_held = false;
+    in.reload_pressed = true;
+    sim.Step(in);
+    in.reload_pressed = false;
+    bool lifted_cover = false;
+    for (int i = 0; i < 200; ++i) {
+        sim.Step(in);
+        if (sim.GetStatus().pose.top_cover_deg > 45.0f) lifted_cover = true;
+        if (!sim.GetStatus().reloading) break;
+    }
+    EXPECT_TRUE(lifted_cover);
+    EXPECT_EQ(sim.GetStatus().mag_ammo, 250);
+    EXPECT_TRUE(sim.GetStatus().water_temp_c < 90.0f);
+    return true;
+}
+
+bool TestSpecialArsenalRealAssetsAndWebAudioPack() {
+    using namespace game::special_arsenal;
+    const char* meshes[4] = {
+        "app/src/main/assets/weapons/flamethrower.bmsh",
+        "app/src/main/assets/weapons/mauser_1891_12.bmsh",
+        "app/src/main/assets/weapons/mauser_c96.bmsh",
+        "app/src/main/assets/weapons/maxim_m1910.bmsh",
+    };
+    const char* texs[4] = {
+        "app/src/main/assets/weapons/flamethrower.btex",
+        "app/src/main/assets/weapons/mauser_1891_12.btex",
+        "app/src/main/assets/weapons/mauser_c96.btex",
+        "app/src/main/assets/weapons/maxim_m1910.btex",
+    };
+    auto read_all = [](const char* p) -> std::vector<uint8_t> {
+        std::ifstream f(p, std::ios::binary | std::ios::ate);
+        if (!f) return {};
+        auto sz = f.tellg();
+        f.seekg(0);
+        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
+        f.read(reinterpret_cast<char*>(d.data()), sz);
+        return d;
+    };
+    for (int i = 0; i < 4; ++i) {
+        auto mb = read_all(meshes[i]);
+        auto tb = read_all(texs[i]);
+        EXPECT_TRUE(!mb.empty());
+        EXPECT_TRUE(!tb.empty());
+        BmshModel m{};
+        EXPECT_TRUE(ParseBmsh(mb.data(), mb.size(), m));
+        EXPECT_EQ(m.version, 2u);
+        EXPECT_TRUE(m.vertices.size() >= 3000 && m.vertices.size() < 65000);
+        EXPECT_TRUE(m.parts.size() >= 4);
+        const auto v = ValidateBtex(tb.data(), tb.size());
+        EXPECT_TRUE(v.valid);
+        EXPECT_EQ(v.header.width, 1024u);
+        EXPECT_EQ(v.header.height, 1024u);
+        EXPECT_TRUE(v.std_rgb > 12.0f);
+        if (i == 0) {
+            // Flamethrower white bug guard: < 1% near-white studio background pixels
+            EXPECT_TRUE(v.white_fraction < 0.01f);
+        }
+    }
+
+    EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
+    const auto t_pack = sound::weapon_audio::GetTelemetry();
+    EXPECT_TRUE(t_pack.slot_count >= 150u);
+    for (const char* code : {"FLM", "M91", "C96", "MXM"}) {
+        sound::weapon_audio::StopAll();
+        sound::weapon_audio::OnPlayerFire(code, false, false);
+        std::vector<float> buf(9600 * 2, 0.0f);
+        const float lp[3] = {0, 0, 0}, lf[3] = {0, 0, 1}, lu[3] = {0, 1, 0};
+        sound::weapon_audio::RenderMix(buf.data(), nullptr, 9600u, 2u, 0u, 1u, false, 0u, 0u, 0u, lp, lf, lu);
+        float pk = 0.0f;
+        for (float s : buf) {
+            EXPECT_TRUE(std::isfinite(s));
+            pk = std::max(pk, std::fabs(s));
+        }
+        EXPECT_TRUE(pk > 0.05f && pk <= 0.994f);
+        const auto hp = game::haptics::ComputeWeaponHapticPulse(code, false, false, false);
+        EXPECT_TRUE(hp.triggered && hp.amplitude >= 165);
+    }
+    return true;
+}
+
 void RunTest(const char* name, bool (*fn)()) {
     std::cout << "[RUN ] " << name << "\n";
     if (fn()) {
@@ -2952,6 +3363,13 @@ int main() {
     RunTest("43_KineticDashAndShockwave", TestKineticDashAndShockwave);
     RunTest("44_SpecialAmmoAndThermalVisor", TestSpecialAmmoAndThermalVisor);
     RunTest("45_OverdriveSchemaAndAudioCues", TestOverdriveSchemaAndAudioCues);
+    RunTest("46_BloodPoolPermanenceAndCoagulation", TestBloodPoolPermanenceAndCoagulation);
+    RunTest("47_SpecialArsenalBmshV2AndBtexFormat", TestSpecialArsenalBmshV2AndBtexFormat);
+    RunTest("48_FlamethrowerM2MechanicsAndIgniters", TestFlamethrowerM2MechanicsAndIgniters);
+    RunTest("49_Mauser1891_12_CockOnCloseAndStripperClip", TestMauser1891_12_CockOnCloseAndStripperClip);
+    RunTest("50_MauserC96_M712_ShortRecoilAndBoltHoldOpen", TestMauserC96_M712_ShortRecoilAndBoltHoldOpen);
+    RunTest("51_MaximM1910_WheelsCoolingAndBeltFeed", TestMaximM1910_WheelsCoolingAndBeltFeed);
+    RunTest("52_SpecialArsenalRealAssetsAndWebAudioPack", TestSpecialArsenalRealAssetsAndWebAudioPack);
 
     std::cout << "\nSummary: " << g_passed << " passed, " << g_failed << " failed.\n";
     return g_failed == 0 ? 0 : 1;

@@ -84,6 +84,9 @@ void TriggerKineticDash(bool with_shockwave = false);
 void TriggerOverdriveCue(bool activating);
 void TriggerSpecialAmmoCue(uint8_t ammo_mode);
 
+// Authentic Special Arsenal BWAR v3 extended cues (slots 129..151: M2-2, Mauser 1891-12, C96, Maxim M1910)
+void TriggerSpecialSlot(int32_t slot_id, float gain = 1.0f, bool is_loop = false);
+
 // Renders active 48 kHz polyphonic layered weapon/tail/echo/distant/flyby stems into `out` and `send`
 // before g_reverb.Run() executes in mixer.cpp. Safe on the audio thread.
 void RenderMix(float* out, float* send, uint32_t frames,

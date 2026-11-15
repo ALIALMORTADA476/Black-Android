@@ -245,7 +245,7 @@ X86_FUNC(sub_001DFD90) {
     uint32_t who = ctx.ecx;
     float frame_dt = G<float>(ctx.esp + 0x04);
     const bool track = (game::Opt().esp || game::Opt().aimbot || game::time_stop::IsFrozen() ||
-                        game::overdrive::NeedsEnemyTracking());
+                        game::overdrive::NeedsEnemyTracking() || game::flamethrower::IsActive());
     if (track && who && R32(who + kCharKind) == kEnemyKind && !R32(who + kCharDying)) {
         {
             std::lock_guard<std::mutex> lk(g_seen_mutex);

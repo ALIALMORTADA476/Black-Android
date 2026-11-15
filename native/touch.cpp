@@ -534,7 +534,18 @@ namespace {
 using input::NowMs;
 
 // what a finger on the screen does
-enum class Role : uint8_t { None, Stick, Look, Button, Cursor, Drag, Pinch };
+enum class Role : uint8_t { None, Stick, Look, Button, Cursor, Drag, Pinch, HudPill };
+
+struct SpecialHudRect {
+    float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
+    bool active = false;
+    bool Contains(float x, float y) const noexcept {
+        return active && x >= x0 && x <= x1 && y >= y0 && y <= y1;
+    }
+};
+SpecialHudRect g_hud_cycle_pill{};
+SpecialHudRect g_hud_mode_pill{};
+SpecialHudRect g_hud_reload_pill{};
 
 // a control of the touch layout: what it shows and presses, on the controller (analog 0-7, button bits from 8) or on
 // the host. Where it sits is the layout's, which the player edits and picks presets for
@@ -979,6 +990,26 @@ void FingerDown(SDL_FingerID id, float x, float y) {
         return;
     }
     input::g_touch = true;
+    if (!InMenus() && !app::MenuOpen() && input::Play() && game::flamethrower::IsActive()) {
+        if (g_hud_cycle_pill.Contains(x, y)) {
+            game::flamethrower::CycleSpecialWeapon(1);
+            f.role = Role::HudPill;
+            g_fingers.push_back(f);
+            return;
+        }
+        if (g_hud_mode_pill.Contains(x, y)) {
+            game::flamethrower::ToggleFireMode();
+            f.role = Role::HudPill;
+            g_fingers.push_back(f);
+            return;
+        }
+        if (g_hud_reload_pill.Contains(x, y)) {
+            game::flamethrower::TriggerManualReload();
+            f.role = Role::HudPill;
+            g_fingers.push_back(f);
+            return;
+        }
+    }
     size_t b = HitButton(x, y);
     if (b < kButtonCount) {
         f.role = Role::Button;
@@ -1148,6 +1179,7 @@ void KeyEvent(const SDL_KeyboardEvent& k) {
     else if (!k.repeat && !app::MenuOpen() && input::HudKey(vk)) game::g_hide_hud = !game::g_hide_hud;
     else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kTimeStopAction, vk)) game::time_stop::OnTriggerPressed();
     else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kFlamethrowerAction, vk)) game::flamethrower::Toggle();
+    else if (!k.repeat && !app::MenuOpen() && vk == '5') game::flamethrower::CycleSpecialWeapon(1);
     else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kDashAction, vk)) game::overdrive::TriggerKineticDash();
     else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kAmmoModeAction, vk)) game::overdrive::CycleSpecialAmmoMode();
     else if (!k.repeat && !app::MenuOpen() && input::HostKeyBound(input::kThermalAction, vk)) game::overdrive::ToggleThermalVisor();
@@ -1581,37 +1613,103 @@ void Draw() {
     std::lock_guard lock(g_lock);
     EnsureLayout();
     bool editing = g_editing;
+    g_hud_cycle_pill.active = false;
+    g_hud_mode_pill.active = false;
+    g_hud_reload_pill.active = false;
     if (!editing && !InMenus() && !app::MenuOpen() && input::Play()) {
         const auto ft = game::flamethrower::GetHudState();
         if (ft.active) {
             ImDrawList* dl = ImGui::GetForegroundDrawList();
             const float w = Width();
             const float h = Height();
-            const float bar_w = std::min(w * 0.16f, 220.0f);
+            const float bar_w = std::min(w * 0.24f, 300.0f);
             const float bar_h = std::max(5.0f, h * 0.008f);
             const float bx = w * 0.50f - bar_w * 0.5f;
-            const float by = h * 0.145f;
-            char txt[36];
-            if (ft.reloading) {
-                std::snprintf(txt, sizeof(txt), "M2 FLAME · RELOAD %d%%", int(ft.reload_progress * 100.0f));
+            const float by = h * 0.140f;
+            char txt[96];
+            float fill_frac = 1.0f;
+            ImU32 fill_col = IM_COL32(255, 170, 50, 240);
+            ImU32 txt_col = IM_COL32(255, 200, 110, 245);
+
+            if (ft.weapon_id == 0) {
+                fill_frac = std::clamp(ft.fuel_pct / 100.0f, 0.0f, 1.0f);
+                if (ft.reloading) {
+                    std::snprintf(txt, sizeof(txt), "M2 FLAME · RELOAD %d%% · SQ %d",
+                                  int(ft.reload_progress * 100.0f), ft.ignition_cartridges);
+                } else {
+                    std::snprintf(txt, sizeof(txt), "M2 FLAME · %d%% · SQ %d",
+                                  int(std::lround(ft.fuel_pct)), ft.ignition_cartridges);
+                }
+                fill_col = ft.firing ? IM_COL32(255, 115, 25, 245)
+                                     : (ft.fuel_pct < 25.0f ? IM_COL32(235, 60, 40, 240)
+                                                            : IM_COL32(255, 170, 50, 240));
+            } else if (ft.weapon_id == 3) {
+                fill_frac = std::clamp(float(ft.mag_ammo) / float(std::max(ft.max_mag_ammo, 1)), 0.0f, 1.0f);
+                std::snprintf(txt, sizeof(txt), "MAXIM M1910 · %d/%d (%d) · %dC%s",
+                              ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
+                              int(std::lround(ft.water_temp_c)),
+                              ft.water_boiling ? " BOIL" : "");
+                fill_col = ft.water_boiling ? IM_COL32(255, 75, 55, 245) : IM_COL32(145, 210, 115, 240);
+                if (ft.water_boiling) txt_col = IM_COL32(255, 115, 95, 245);
+            } else if (ft.weapon_id == 2) {
+                fill_frac = std::clamp(float(ft.mag_ammo) / float(std::max(ft.max_mag_ammo, 1)), 0.0f, 1.0f);
+                std::snprintf(txt, sizeof(txt), "MAUSER C96 · %d/%d (%d) · %s%s",
+                              ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
+                              ft.full_auto_mode ? "AUTO" : "SEMI",
+                              ft.bolt_locked_open ? " · OPEN" : "");
+                fill_col = ft.bolt_locked_open ? IM_COL32(235, 70, 50, 240) : IM_COL32(235, 185, 90, 240);
             } else {
-                std::snprintf(txt, sizeof(txt), "M2 FLAME · %d%%", int(std::lround(ft.fuel_pct)));
+                fill_frac = std::clamp(float(ft.mag_ammo) / float(std::max(ft.max_mag_ammo, 1)), 0.0f, 1.0f);
+                std::snprintf(txt, sizeof(txt), "MAUSER 1891-12 · %d/%d (%d)%s",
+                              ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
+                              ft.reloading ? " · CLIP" : "");
+                fill_col = IM_COL32(215, 165, 95, 240);
             }
-            const float fs = std::max(12.0f, h * 0.022f);
+            if (ft.reloading) txt_col = IM_COL32(180, 225, 255, 240);
+
+            const float fs = std::max(12.0f, h * 0.021f);
             const ImVec2 sz = ImGui::GetFont()->CalcTextSizeA(fs, FLT_MAX, 0, txt);
-            dl->AddRectFilled(ImVec2(bx - 10.0f, by - sz.y - 6.0f), ImVec2(bx + bar_w + 10.0f, by + bar_h + 6.0f),
-                              IM_COL32(12, 10, 9, 165), 6.0f);
+            const float box_w = std::max(bar_w, sz.x + 16.0f);
+            const float box_x0 = w * 0.50f - box_w * 0.5f - 8.0f;
+            const float box_x1 = w * 0.50f + box_w * 0.5f + 8.0f;
+            dl->AddRectFilled(ImVec2(box_x0, by - sz.y - 6.0f), ImVec2(box_x1, by + bar_h + 6.0f),
+                              IM_COL32(12, 10, 9, 175), 6.0f);
             dl->AddText(ImGui::GetFont(), fs, ImVec2(w * 0.50f - sz.x * 0.5f, by - sz.y - 3.0f),
-                        ft.reloading ? IM_COL32(180, 225, 255, 235) : IM_COL32(255, 190, 95, 240), txt);
+                        txt_col, txt);
             dl->AddRectFilled(ImVec2(bx, by), ImVec2(bx + bar_w, by + bar_h), IM_COL32(22, 16, 12, 200), 3.0f);
-            const float fill_frac = std::clamp(ft.fuel_pct / 100.0f, 0.0f, 1.0f);
             if (fill_frac > 0.005f) {
-                const ImU32 fill_col = ft.firing ? IM_COL32(255, 115, 25, 245)
-                                                 : (ft.fuel_pct < 25.0f ? IM_COL32(235, 60, 40, 240)
-                                                                        : IM_COL32(255, 170, 50, 240));
                 dl->AddRectFilled(ImVec2(bx + 1.0f, by + 1.0f),
                                   ImVec2(bx + (bar_w - 2.0f) * fill_frac + 1.0f, by + bar_h - 1.0f), fill_col, 2.5f);
             }
+
+            // Interactive HUD pills directly under HUD bar: [NEXT WPN], [AUTO/SEMI], [RLD]
+            const float py0 = by + bar_h + 10.0f;
+            const float pill_h = std::max(26.0f, h * 0.040f);
+            const float pfs = std::max(11.0f, h * 0.017f);
+            const float pad_x = 12.0f;
+            const float pgap = 8.0f;
+            const bool has_mode = (ft.weapon_id == 2);
+            const char* lbl_next = "NEXT WPN";
+            const char* lbl_mode = ft.full_auto_mode ? "MODE: AUTO" : "MODE: SEMI";
+            const char* lbl_rld = "RELOAD";
+            const float w_next = ImGui::GetFont()->CalcTextSizeA(pfs, FLT_MAX, 0, lbl_next).x + pad_x * 2.0f;
+            const float w_mode = has_mode ? (ImGui::GetFont()->CalcTextSizeA(pfs, FLT_MAX, 0, lbl_mode).x + pad_x * 2.0f) : 0.0f;
+            const float w_rld = ImGui::GetFont()->CalcTextSizeA(pfs, FLT_MAX, 0, lbl_rld).x + pad_x * 2.0f;
+            const float tot_w = w_next + w_rld + w_mode + (has_mode ? pgap * 2.0f : pgap);
+            float cx = w * 0.50f - tot_w * 0.5f;
+
+            auto draw_pill = [&](const char* lbl, float pw, SpecialHudRect& out_rect, ImU32 border) {
+                out_rect = {cx, py0, cx + pw, py0 + pill_h, true};
+                dl->AddRectFilled(ImVec2(cx, py0), ImVec2(cx + pw, py0 + pill_h), IM_COL32(18, 16, 14, 195), 6.0f);
+                dl->AddRect(ImVec2(cx, py0), ImVec2(cx + pw, py0 + pill_h), border, 6.0f, 0, 1.4f);
+                const ImVec2 ts = ImGui::GetFont()->CalcTextSizeA(pfs, FLT_MAX, 0, lbl);
+                dl->AddText(ImGui::GetFont(), pfs, ImVec2(cx + (pw - ts.x) * 0.5f, py0 + (pill_h - ts.y) * 0.5f),
+                            IM_COL32(250, 225, 180, 245), lbl);
+                cx += pw + pgap;
+            };
+            draw_pill(lbl_next, w_next, g_hud_cycle_pill, IM_COL32(240, 150, 50, 220));
+            if (has_mode) draw_pill(lbl_mode, w_mode, g_hud_mode_pill, IM_COL32(110, 200, 255, 220));
+            draw_pill(lbl_rld, w_rld, g_hud_reload_pill, IM_COL32(200, 190, 175, 190));
         }
     }
     if (!editing && !Shown()) return;

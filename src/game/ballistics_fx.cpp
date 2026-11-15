@@ -15,6 +15,7 @@
 #include "common/mod_schema.h"
 #include "common/options.h"
 #include "d3d/world_overlay.h"
+#include "game/blood_decal_rules.h"
 #include "game/flame_plume.h"
 #include "game/layout.h"
 #include "game/overdrive_rules.h"
@@ -55,15 +56,15 @@ constexpr int kPoolBCount = 16;
 constexpr size_t kMaxTracers = 96;
 constexpr size_t kMaxSmokeNodes = 192;
 constexpr size_t kMaxBloodNodes = 256;
-constexpr size_t kMaxWoundStreams = 24;
-constexpr size_t kMaxBloodPools = 128;
+constexpr size_t kMaxWoundStreams = 48;
+constexpr size_t kMaxBloodPools = 512;
 constexpr size_t kMaxMuzzleFlashes = 16;
-constexpr size_t kMaxImpactNodes = 96;
+constexpr size_t kMaxImpactNodes = 160;
 constexpr size_t kMaxExplosionFlames = 128;
 constexpr size_t kMaxExplosionEmbers = 256;
 constexpr size_t kMaxRecentExplosions = 16;
 constexpr size_t kMuzzleCacheSize = 24;
-constexpr size_t kMaxShellCasings = 64;
+constexpr size_t kMaxShellCasings = 96;
 constexpr size_t kMaxHazeMotes = 72;
 
 // Table layout matching weapons.cpp
@@ -980,6 +981,22 @@ void SampleSmokeConfig(const modsettings::EnhancedOptions &enh, bool is_perf,
   out_cap = is_perf ? 64u : kMaxSmokeNodes;
 }
 
+size_t AllocateBloodPoolSlotLocked(size_t max_cap, const CameraState &cam) {
+  const size_t cap = std::clamp<size_t>(max_cap, 1u, kMaxBloodPools);
+  std::array<bool, kMaxBloodPools> act{};
+  std::array<float, kMaxBloodPools> ages{};
+  std::array<float, kMaxBloodPools> d2{};
+  for (size_t i = 0; i < cap; ++i) {
+    act[i] = g_blood_pools[i].active;
+    ages[i] = g_blood_pools[i].age;
+    d2[i] = cam.valid ? VecDistSq(g_blood_pools[i].pos, cam.eye) : 0.0f;
+  }
+  const uint32_t chosen = blood_decals::SelectEvictionSlot(
+      act.data(), ages.data(), d2.data(), uint32_t(cap));
+  g_pool_cursor = (size_t(chosen) + 1u) % cap;
+  return chosen;
+}
+
 } // namespace
 
 bool IsPerformancePresetActive() {
@@ -1502,6 +1519,7 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
   if (!hit_pos || !IsFiniteVec3(hit_pos))
     return;
   const auto &enh = modsettings::Registry().GetEnhanced();
+  const bool perf = IsPerformancePresetActive();
   const uint32_t mult = std::clamp(enh.blood_particle_multiplier, 1u, 4u);
 
   float dir[3] = {0.0f, 0.0f, 1.0f};
@@ -1641,41 +1659,36 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
 
   // Layer 4: Immediate ground splatter beneath the wounded soldier
   {
-    const float pool_ttl = enh.persistent_blood_decals ? 22.0f : 8.0f;
+    const float pool_ttl =
+        blood_decals::ComputePoolLifetimeSec(enh.persistent_blood_decals);
+    const size_t pool_cap = std::min<size_t>(
+        blood_decals::ResolveMaxBloodPools(perf ? 256u : 512u),
+        kMaxBloodPools);
     float p_pos[3] = {hit_pos[0] + dir[0] * (0.18f + next_rand() * 0.25f),
                       ground_y,
                       hit_pos[2] + dir[2] * (0.18f + next_rand() * 0.25f)};
     size_t chosen = kMaxBloodPools;
-    for (size_t i = 0; i < kMaxBloodPools; i++) {
+    for (size_t i = 0; i < pool_cap; i++) {
       if (g_blood_pools[i].active &&
-          VecDistSq(g_blood_pools[i].pos, p_pos) < 0.22f * 0.22f) {
+          VecDistSq(g_blood_pools[i].pos, p_pos) < 0.28f * 0.28f) {
         chosen = i;
         g_blood_pools[i].target_radius =
-            std::min(0.82f, g_blood_pools[i].target_radius +
-                                (is_lethal ? 0.16f : 0.08f));
-        g_blood_pools[i].age = 0.0f;
+            std::min(0.95f, g_blood_pools[i].target_radius +
+                                (is_lethal ? 0.18f : 0.09f));
+        g_blood_pools[i].age = std::min(g_blood_pools[i].age, 0.35f);
         g_blood_pools[i].ttl = pool_ttl;
         break;
       }
     }
     if (chosen == kMaxBloodPools) {
-      for (size_t i = 0; i < kMaxBloodPools; i++) {
-        size_t idx = (g_pool_cursor + i) % kMaxBloodPools;
-        if (!g_blood_pools[idx].active) {
-          chosen = idx;
-          break;
-        }
-      }
-      if (chosen == kMaxBloodPools)
-        chosen = g_pool_cursor % kMaxBloodPools;
-      g_pool_cursor = (chosen + 1) % kMaxBloodPools;
+      chosen = AllocateBloodPoolSlotLocked(pool_cap, g_cam);
       BloodPoolNode &pl = g_blood_pools[chosen];
       pl.active = true;
       std::memcpy(pl.pos, p_pos, sizeof(pl.pos));
       pl.age = 0.0f;
       pl.ttl = pool_ttl;
       pl.radius = 0.11f;
-      pl.target_radius = (is_lethal ? 0.52f : 0.28f) + float(mult) * 0.045f;
+      pl.target_radius = (is_lethal ? 0.56f : 0.30f) + float(mult) * 0.05f;
       pl.seed = next_rand() * 6.28f;
       pl.opacity = 0.94f;
     }
@@ -2235,6 +2248,183 @@ void EmitBurnVictimFlames(const float world_pos[3], float ground_y,
         0.18f + next_rand() * 0.10f, is_dying ? 0.44f : 0.38f, true, 0u,
         IsPerformancePresetActive() ? 64u : kMaxSmokeNodes, false, 0.12f);
   }
+}
+
+void EmitWoundDrip(const float pos[3], float ground_y) {
+  if (!pos || !IsFiniteVec3(pos) || !std::isfinite(ground_y))
+    return;
+  std::lock_guard<std::mutex> lock(g_mutex);
+  auto next_rand = [&]() -> float {
+    g_fx_rng ^= g_fx_rng << 13;
+    g_fx_rng ^= g_fx_rng >> 17;
+    g_fx_rng ^= g_fx_rng << 5;
+    return float(g_fx_rng & 0xFFFFu) / 65535.0f;
+  };
+  size_t chosen = kMaxBloodNodes;
+  for (size_t b = 0; b < kMaxBloodNodes; b++) {
+    size_t idx = (g_blood_cursor + b) % kMaxBloodNodes;
+    if (!g_blood[idx].active) {
+      chosen = idx;
+      break;
+    }
+  }
+  if (chosen == kMaxBloodNodes)
+    chosen = g_blood_cursor % kMaxBloodNodes;
+  g_blood_cursor = (chosen + 1) % kMaxBloodNodes;
+
+  BloodNode &bn = g_blood[chosen];
+  bn.active = true;
+  bn.is_mist = false;
+  bn.pos[0] = pos[0] + (next_rand() - 0.5f) * 0.10f;
+  bn.pos[1] = pos[1];
+  bn.pos[2] = pos[2] + (next_rand() - 0.5f) * 0.10f;
+  std::memcpy(bn.prev_pos, bn.pos, sizeof(bn.prev_pos));
+  bn.vel[0] = (next_rand() - 0.5f) * 0.32f;
+  bn.vel[1] = -0.45f - next_rand() * 0.40f;
+  bn.vel[2] = (next_rand() - 0.5f) * 0.32f;
+  bn.ground_y = ground_y;
+  bn.age = 0.0f;
+  bn.ttl = 0.72f + next_rand() * 0.25f;
+  bn.radius = 0.022f + next_rand() * 0.014f;
+  bn.opacity = 0.95f;
+  bn.r = 0.044f + next_rand() * 0.024f;
+  bn.g = 0.0005f;
+  bn.b = 0.0012f;
+}
+
+void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3],
+                                   const float hit_end[3], float caliber_scale,
+                                   bool spawn_smoke, bool spark_impact) {
+  if (!muzzle_pos || !dir || !hit_end || !IsFiniteVec3(muzzle_pos) ||
+      !IsFiniteVec3(dir) || !IsFiniteVec3(hit_end))
+    return;
+  const auto &enh = modsettings::Registry().GetEnhanced();
+  const bool perf = IsPerformancePresetActive();
+  std::lock_guard<std::mutex> lock(g_mutex);
+  auto next_rand = [&]() -> float {
+    g_fx_rng ^= g_fx_rng << 13;
+    g_fx_rng ^= g_fx_rng >> 17;
+    g_fx_rng ^= g_fx_rng << 5;
+    return float(g_fx_rng & 0xFFFFu) / 65535.0f;
+  };
+
+  const float cs = std::clamp(caliber_scale, 0.55f, 1.85f);
+  // 1. Crisp directional muzzle flash
+  {
+    size_t chosen = g_flash_cursor % kMaxMuzzleFlashes;
+    g_flash_cursor = (chosen + 1) % kMaxMuzzleFlashes;
+    MuzzleFlashNode &mf = g_muzzle_flashes[chosen];
+    mf.active = true;
+    std::memcpy(mf.pos, muzzle_pos, sizeof(mf.pos));
+    std::memcpy(mf.dir, dir, sizeof(mf.dir));
+    mf.age = 0.0f;
+    mf.ttl = 0.046f;
+    mf.radius = 0.095f * cs;
+    mf.rot = next_rand() * 6.28318f;
+    mf.tile = 4 + int(chosen & 3u);
+  }
+
+  // 2. High-pressure cordite gunsmoke puff out of bore
+  if (spawn_smoke) {
+    const float sv[3] = {dir[0] * (1.25f * cs) + (next_rand() - 0.5f) * 0.25f,
+                         dir[1] * (1.25f * cs) + 0.35f + next_rand() * 0.28f,
+                         dir[2] * (1.25f * cs) + (next_rand() - 0.5f) * 0.25f};
+    PushSmokeNodeLocked(muzzle_pos, muzzle_pos, false, sv,
+                        0.72f + next_rand() * 0.35f, 0.055f * cs, 0.22f, false,
+                        g_next_group_id, perf ? 64u : kMaxSmokeNodes, true, 0.78f);
+  }
+
+  // 3. Incandescent ballistic tracer streak to impact target
+  const float dx = hit_end[0] - muzzle_pos[0];
+  const float dy = hit_end[1] - muzzle_pos[1];
+  const float dz = hit_end[2] - muzzle_pos[2];
+  const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+  if (dist > 0.25f && enh.tracers_enabled && enh.tracer_frequency != 0) {
+    const size_t max_t = perf ? 32u : kMaxTracers;
+    size_t chosen = max_t;
+    for (size_t i = 0; i < max_t; i++) {
+      size_t idx = (g_tracer_cursor + i) % max_t;
+      if (!g_tracers[idx].active) {
+        chosen = idx;
+        break;
+      }
+    }
+    if (chosen == max_t)
+      chosen = g_tracer_cursor % max_t;
+    g_tracer_cursor = (chosen + 1) % max_t;
+    TracerInstance &t = g_tracers[chosen];
+    t.active = true;
+    t.is_physical = false;
+    t.is_player = true;
+    t.hit_locked = false;
+    t.suppressed = false;
+    t.cls = (cs > 1.15f) ? WeaponClass::Sniper
+                         : (cs < 0.85f ? WeaponClass::Pistol : WeaponClass::Lmg);
+    t.guest_slot = 0;
+    std::memcpy(t.visual_origin, muzzle_pos, sizeof(t.visual_origin));
+    std::memcpy(t.physics_origin, muzzle_pos, sizeof(t.physics_origin));
+    std::memcpy(t.head_pos, muzzle_pos, sizeof(t.head_pos));
+    std::memcpy(t.target_end, hit_end, sizeof(t.target_end));
+    std::memcpy(t.dir, dir, sizeof(t.dir));
+    t.speed = std::max(280.0f, dist / 0.085f);
+    t.age = 0.0f;
+    t.hit_age = -1.0f;
+    t.afterglow_ttl = 0.12f;
+    GetWeaponVisualProfile(t.cls, false, cs > 1.15f, t.core_thickness,
+                           t.trail_scale, t.brightness);
+    t.color_override = enh.tracer_color;
+    t.group_id = g_next_group_id++;
+    t.last_smoke_dist = 0.0f;
+    g_tracers_emitted.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  // 4. Metallic / stone impact sparks at termination point
+  if (spark_impact) {
+    const int n_sp = perf ? 4 : 8;
+    for (int s = 0; s < n_sp; ++s) {
+      size_t idx = (g_impact_cursor++) % kMaxImpactNodes;
+      ImpactNode &n = g_impacts[idx];
+      n.active = true;
+      n.is_spark = true;
+      std::memcpy(n.pos, hit_end, sizeof(n.pos));
+      std::memcpy(n.prev_pos, hit_end, sizeof(n.prev_pos));
+      const float sp = (2.8f + next_rand() * 4.8f) * cs;
+      n.vel[0] = (-dir[0] * 0.7f + (next_rand() - 0.5f) * 1.4f) * sp;
+      n.vel[1] = (0.35f + next_rand() * 0.95f) * sp;
+      n.vel[2] = (-dir[2] * 0.7f + (next_rand() - 0.5f) * 1.4f) * sp;
+      n.age = 0.0f;
+      n.ttl = 0.18f + next_rand() * 0.22f;
+      n.radius = 0.012f * cs;
+      n.opacity = 0.96f;
+    }
+    const float dv[3] = {-dir[0] * 0.25f, 0.65f + next_rand() * 0.45f,
+                         -dir[2] * 0.25f};
+    PushSmokeNodeLocked(hit_end, hit_end, false, dv, 0.85f + next_rand() * 0.4f,
+                        0.09f * cs, 0.22f, false, g_next_group_id,
+                        perf ? 64u : kMaxSmokeNodes, false, 0.72f);
+  }
+}
+
+void EmitMaximSteamPlume(const float jacket_pos[3], float steam_intensity) {
+  if (!jacket_pos || steam_intensity <= 0.05f || !IsFiniteVec3(jacket_pos))
+    return;
+  std::lock_guard<std::mutex> lock(g_mutex);
+  auto next_rand = [&]() -> float {
+    g_fx_rng ^= g_fx_rng << 13;
+    g_fx_rng ^= g_fx_rng >> 17;
+    g_fx_rng ^= g_fx_rng << 5;
+    return float(g_fx_rng & 0xFFFFu) / 65535.0f;
+  };
+  const float s = std::clamp(steam_intensity, 0.1f, 1.5f);
+  const float sp[3] = {jacket_pos[0] + (next_rand() - 0.5f) * 0.04f,
+                       jacket_pos[1] + 0.04f,
+                       jacket_pos[2] + (next_rand() - 0.5f) * 0.04f};
+  const float sv[3] = {(next_rand() - 0.5f) * 0.28f, 1.25f + next_rand() * 0.75f,
+                       (next_rand() - 0.5f) * 0.28f};
+  PushSmokeNodeLocked(sp, sp, false, sv, 1.05f + next_rand() * 0.55f,
+                      0.07f + next_rand() * 0.06f, 0.24f * s, false, 0u,
+                      IsPerformancePresetActive() ? 64u : kMaxSmokeNodes, true,
+                      0.92f);
 }
 
 void OnHitscanShot(const float start[3], const float end[3],
@@ -3058,7 +3248,10 @@ void RenderWorldScene() {
       };
       const bool keep_pools =
           modsettings::Registry().GetEnhanced().persistent_blood_decals;
-      const float pool_ttl = keep_pools ? 22.0f : 8.0f;
+      const float pool_ttl = blood_decals::ComputePoolLifetimeSec(keep_pools);
+      const size_t pool_cap = std::min<size_t>(
+          blood_decals::ResolveMaxBloodPools(perf_mode ? 256u : 512u),
+          kMaxBloodPools);
 
       // 3a. Emit pouring liquid streams from active wounded soldiers
       for (size_t i = 0; i < kMaxWoundStreams; i++) {
@@ -3156,37 +3349,29 @@ void RenderWorldScene() {
               // Droplet hits the floor: spawn/grow organic blood pool
               float hit_floor[3] = {bn.pos[0], bn.ground_y, bn.pos[2]};
               size_t chosen = kMaxBloodPools;
-              for (size_t p = 0; p < kMaxBloodPools; p++) {
+              for (size_t p = 0; p < pool_cap; p++) {
                 if (g_blood_pools[p].active &&
                     VecDistSq(g_blood_pools[p].pos, hit_floor) <
-                        0.24f * 0.24f) {
+                        0.28f * 0.28f) {
                   chosen = p;
                   g_blood_pools[p].target_radius =
-                      std::min(0.82f, g_blood_pools[p].target_radius + 0.032f);
-                  g_blood_pools[p].age = std::min(g_blood_pools[p].age, 0.5f);
+                      std::min(0.95f, g_blood_pools[p].target_radius + 0.036f);
+                  g_blood_pools[p].age = std::min(g_blood_pools[p].age, 0.4f);
+                  g_blood_pools[p].ttl = pool_ttl;
                   break;
                 }
               }
               if (chosen == kMaxBloodPools) {
-                for (size_t p = 0; p < kMaxBloodPools; p++) {
-                  size_t idx = (g_pool_cursor + p) % kMaxBloodPools;
-                  if (!g_blood_pools[idx].active) {
-                    chosen = idx;
-                    break;
-                  }
-                }
-                if (chosen == kMaxBloodPools)
-                  chosen = g_pool_cursor % kMaxBloodPools;
-                g_pool_cursor = (chosen + 1) % kMaxBloodPools;
+                chosen = AllocateBloodPoolSlotLocked(pool_cap, g_cam);
                 BloodPoolNode &pl = g_blood_pools[chosen];
                 pl.active = true;
                 std::memcpy(pl.pos, hit_floor, sizeof(pl.pos));
                 pl.age = 0.0f;
                 pl.ttl = pool_ttl;
                 pl.radius = 0.07f;
-                pl.target_radius = 0.16f + next_rand() * 0.14f;
+                pl.target_radius = 0.16f + next_rand() * 0.16f;
                 pl.seed = next_rand() * 6.28f;
-                pl.opacity = 0.88f;
+                pl.opacity = 0.90f;
               }
               bn.active = false;
               continue;
@@ -3230,18 +3415,18 @@ void RenderWorldScene() {
         }
       }
 
-      // 3c. Update & Emit Horizontal Ground Blood Pools
+      // 3c. Update & Emit Horizontal Ground Blood Pools (permanent coagulation when enabled)
       for (size_t i = 0; i < kMaxBloodPools; i++) {
         BloodPoolNode &pl = g_blood_pools[i];
         if (!pl.active)
           continue;
         pl.age += world_dt;
-        if (pl.age >= pl.ttl) {
+        if (pl.ttl > 0.0f && pl.age >= pl.ttl) {
           pl.active = false;
           continue;
         }
         if (world_dt > 0.0f && pl.radius < pl.target_radius) {
-          pl.radius = std::min(pl.target_radius, pl.radius + world_dt * 0.38f);
+          pl.radius = std::min(pl.target_radius, pl.radius + world_dt * 0.42f);
         }
         float dz = (pl.pos[0] - g_cam.eye[0]) * g_cam.forward[0] +
                    (pl.pos[1] - g_cam.eye[1]) * g_cam.forward[1] +
@@ -3249,14 +3434,24 @@ void RenderWorldScene() {
         if (dz <= -1.0f)
           continue;
 
-        const float life = std::clamp(pl.age / pl.ttl, 0.0f, 1.0f);
-        const float fade = (life > 0.72f)
+        const float life =
+            (pl.ttl > 0.0f) ? std::clamp(pl.age / pl.ttl, 0.0f, 1.0f) : 0.0f;
+        const float fade = (pl.ttl > 0.0f && life > 0.72f)
                                ? std::clamp((1.0f - life) / 0.28f, 0.0f, 1.0f)
                                : 1.0f;
-        EmitTexturedGroundTile(smoke_tex_verts, pl.pos, pl.radius * 1.25f,
-                               pl.seed, 8 + (int(pl.seed * 10.0f) & 3),
-                               d3d::PackColorBgra(0.068f, 0.0005f, 0.0012f,
-                                                  pl.opacity * fade * 0.97f));
+        const auto coag =
+            blood_decals::EvaluatePoolCoagulation(pl.age, pl.opacity * fade);
+        const float pool_r = pl.radius * 1.25f * coag.spread_scale;
+        EmitTexturedGroundTile(smoke_tex_verts, pl.pos, pool_r, pl.seed,
+                               8 + (int(pl.seed * 10.0f) & 3),
+                               d3d::PackColorBgra(coag.r, coag.g, coag.b, coag.a));
+        if (coag.specular_sheen > 0.04f) {
+          EmitTexturedGroundTile(
+              smoke_tex_verts, pl.pos, pool_r * 0.62f, pl.seed + 1.1f,
+              8 + ((int(pl.seed * 10.0f) + 1) & 3),
+              d3d::PackColorBgra(coag.r * 1.45f, coag.g * 1.35f, coag.b * 1.35f,
+                                 coag.a * coag.specular_sheen * 0.58f));
+        }
       }
     }
 

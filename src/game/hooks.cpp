@@ -233,6 +233,9 @@ void FieldOfView(X86Context &ctx, uint8_t *) {
   float &fov = ctx.xmm[1].f[0];
   if (view != 1)
     fov = std::atan(std::tan(fov * kHalf) * view) / kHalf;
+  const float ads_scale = game::flamethrower::GetAdsFovScale();
+  if (ads_scale > 1.01f)
+    fov = std::atan(std::tan(fov * kHalf) / ads_scale) / kHalf;
   const float dash_fov = game::overdrive::GetDashFovBoostDeg() * hip;
   if (dash_fov > 0.05f && std::isfinite(fov))
     fov = std::clamp(fov + dash_fov, 20.0f, 138.0f);

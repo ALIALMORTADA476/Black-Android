@@ -29,6 +29,13 @@ struct ViewmodelVertex {
     uint32_t bgra;  // D3DCOLOR: (A << 24) | (R << 16) | (G << 8) | B
 };
 
+struct ViewmodelTexturedVertex {
+    float x, y, z;
+    float nx, ny, nz;
+    uint32_t bgra;  // D3DCOLOR: (A << 24) | (R << 16) | (G << 8) | B
+    float u, v;
+};
+
 // Submits a camera-transformed 3D triangle list directly into the active scene pass
 // with hardware depth testing (ZENABLE=1, ZWRITE=0, ZFUNC=LESSEQUAL, CULL=NONE).
 // Must be called on the guest thread during the 3D scene pass (e.g. after kAlphaDrawList).
@@ -57,5 +64,15 @@ void DrawViewmodelMesh(const ViewmodelVertex* verts, uint32_t vertex_count,
                        const uint16_t* indices, uint32_t index_count,
                        const float world[16], const float view[16], const float proj[16],
                        const float flame_pos_world[3], float flame_intensity);
+
+// Draws a textured PBR-shaded 3D viewmodel mesh (FVF 0x152: XYZ|NORMAL|DIFFUSE|TEX1)
+// using a cached 1024x1024 Morton-swizzled A8R8G8B8 texture, explicitly resetting
+// all fixed-function texture stages [1..3] and material sources to prevent scene blowout.
+void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex* verts, uint32_t vertex_count,
+                               const uint16_t* indices, uint32_t index_count,
+                               uint64_t texture_cache_key, const uint32_t* swizzled_bgra_pixels,
+                               uint32_t tex_width, uint32_t tex_height,
+                               const float world[16], const float view[16], const float proj[16],
+                               const float flame_pos_world[3], float flame_intensity);
 
 }  // namespace d3d

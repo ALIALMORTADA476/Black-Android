@@ -3,8 +3,11 @@ package com.racas.black;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.net.Uri;
@@ -119,7 +122,61 @@ public class BlackActivity extends SDLActivity {
                 tellOfUpdate();
             });
         }
+        handleQaIntent(getIntent());
+        registerQaReceiver();
     }
+
+    private BroadcastReceiver qaReceiver;
+
+    private void registerQaReceiver() {
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) == 0 || qaReceiver != null) return;
+        qaReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                handleQaIntent(intent);
+            }
+        };
+        IntentFilter filter = new IntentFilter("com.racas.black.QA_CMD");
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(qaReceiver, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(qaReceiver, filter);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (qaReceiver != null) {
+            try {
+                unregisterReceiver(qaReceiver);
+            } catch (IllegalArgumentException ignored) {
+            }
+            qaReceiver = null;
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleQaIntent(intent);
+    }
+
+    private void handleQaIntent(Intent intent) {
+        if (intent == null || mBrokenLibraries) return;
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) == 0) return;
+        if (!"com.racas.black.QA_CMD".equals(intent.getAction())) return;
+        String cmd = intent.getStringExtra("cmd");
+        if (cmd == null || cmd.isEmpty()) return;
+        Log.i("BLACK_QA", "Dispatch cmd=" + cmd);
+        try {
+            nativeQaCommand(cmd);
+        } catch (UnsatisfiedLinkError ignored) {
+        }
+    }
+
+    private static native void nativeQaCommand(String cmd);
 
     // STARTUP UPDATE CHECK in the options menu, from the game's thread
     public boolean isStartupCheckEnabled() {

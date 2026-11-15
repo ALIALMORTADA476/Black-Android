@@ -9,6 +9,8 @@
 #include <cstring>
 #include <mutex>
 
+#include "game/ballistics_fx.h"
+#include "game/blood_decal_rules.h"
 #include "game/delirium_rules.h"
 #include "game/layout.h"
 #include "game/physics_lab.h"
@@ -44,6 +46,38 @@ inline bool IsValidGuestAddr(uint32_t addr, uint32_t span = 16u) noexcept {
         return false;
     }
     return mem::IsCommitted(addr) && mem::IsCommitted(addr + span - 1u);
+}
+
+struct WoundDripSlot {
+    uint32_t who = 0;
+    float accum = 0.0f;
+};
+constexpr size_t kMaxDripSlots = 32;
+WoundDripSlot g_drip_slots[kMaxDripSlots]{};
+
+void StepWoundBloodDrip(uint32_t who, float dt, float intensity) noexcept {
+    if (!who || dt <= 0.0f || intensity <= 0.02f) return;
+    if (!IsValidGuestAddr(who + kCharPosOffset, 12u)) return;
+    const float* pos = &G<float>(who + kCharPosOffset);
+    if (!std::isfinite(pos[0]) || !std::isfinite(pos[1]) || !std::isfinite(pos[2])) return;
+
+    const float interval = game::blood_decals::ComputeWoundDripIntervalSec(intensity);
+    size_t free_idx = kMaxDripSlots;
+    size_t idx = kMaxDripSlots;
+    for (size_t i = 0; i < kMaxDripSlots; ++i) {
+        if (g_drip_slots[i].who == who) { idx = i; break; }
+        if (free_idx == kMaxDripSlots && g_drip_slots[i].who == 0u) free_idx = i;
+    }
+    if (idx == kMaxDripSlots) {
+        idx = (free_idx < kMaxDripSlots) ? free_idx : (who % kMaxDripSlots);
+        g_drip_slots[idx] = {who, 0.0f};
+    }
+    g_drip_slots[idx].accum += dt;
+    if (g_drip_slots[idx].accum >= interval) {
+        g_drip_slots[idx].accum -= interval;
+        const float drip_pos[3] = {pos[0], pos[1] + 0.85f, pos[2]};
+        game::ballistics::EmitWoundDrip(drip_pos, pos[1] + 0.024f);
+    }
 }
 
 inline uint32_t PlayerEa() noexcept {
@@ -267,6 +301,10 @@ void OnEnemyFrameStep(X86Context& ctx, uint8_t* base, uint32_t who,
         if (step.trigger_clutch_overlay) {
             DriveClutchAndAnim(ctx, base, who, step);
         }
+        if (step.apply_stumble_vel || step.blind_fire_ready) {
+            StepWoundBloodDrip(who, clamped_dt,
+                               step.apply_stumble_vel ? 0.85f : 0.45f);
+        }
     } else if (cfg.agony_duration > 1e-3f) {
         const uint32_t body = R32(who + kCharBodyOffset);
         if (!IsValidGuestAddr(body, 0x94u) || R32(body + 0x90u) != 2u) {
@@ -280,6 +318,7 @@ void OnEnemyFrameStep(X86Context& ctx, uint8_t* base, uint32_t who,
         }
         if (pulse.active) {
             DriveAgonyPulse(ctx, base, who, pulse);
+            StepWoundBloodDrip(who, clamped_dt, 0.55f);
         }
     }
 }
@@ -334,6 +373,7 @@ void ResetAll() noexcept {
     std::lock_guard<std::mutex> lock(g_sim_mutex);
     g_sim.Reset();
     g_last_lethal_victim = 0;
+    std::memset(g_drip_slots, 0, sizeof(g_drip_slots));
 }
 
 }  // namespace game::delirium_phys

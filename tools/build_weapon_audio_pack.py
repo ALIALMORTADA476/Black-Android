@@ -35,6 +35,7 @@ GDC_DIR = os.path.join(REPO, ".local", "audio_src", "gdc")
 GDC_EXTRA_DIR = os.path.join(REPO, ".local", "audio_src", "gdc_extra")
 SOTIYAT_DIR = os.path.join(REPO, "صوتيات")
 FFX_MASTER_DIR = os.path.join(REPO, ".local", "audio_src", "ffx", "Master Tracks")
+WEB_DIR = os.path.join(REPO, ".local", "audio_src", "web")
 ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_analysis.json")
 EXTRA_ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_extra_analysis.json")
 SCRATCH = r"C:\Users\313\.gemini\antigravity\brain\db2924e5-7d7e-4013-bc79-497f520eff0a\scratch"
@@ -115,6 +116,30 @@ SLOTS = {
     "UI_HUD_HINT": 126,
     "UI_HUD_ALERT": 127,
     "FLAME_IGNITE": 128,
+    # Special Arsenal CC0 Web Audio Master Slots (BWAR v3 Extended, 129..151)
+    "FLM_IGNITE_SQUIB": 129,
+    "FLM_VALVE_SHUTOFF": 130,
+    "FLM_TANK_RELOAD": 131,
+    "M91_FIRE": 132,
+    "M91_BOLT": 133,
+    "M91_CLIP": 134,
+    "M91_DRY": 135,
+    "C96_FIRE": 136,
+    "C96_BREECH": 137,
+    "C96_CLIP": 138,
+    "C96_DRY": 139,
+    "C96_LOCKOPEN": 140,
+    "MXM_FIRE": 141,
+    "MXM_RELOAD": 142,
+    "MXM_BOIL": 143,
+    "MXM_STEAM": 144,
+    "TAIL_M91_OUTDOOR": 145,
+    "TAIL_MXM_HEAVY": 146,
+    "FLM_PILOT_HUM": 147,
+    "FLM_FOAM_SPLASH": 148,
+    "M91_CHAMBER_CLOSE": 149,
+    "MXM_WHEEL_ROLL": 150,
+    "MXM_BELT_ADVANCE": 151,
 }
 
 # Stem categories: matches StemCategory enum & StemForSlot() in weapon_audio.cpp
@@ -127,15 +152,21 @@ def slot_stem(slot_name):
         return STEM_TAIL
     if slot_name in ("ENV_TAIL", "TAIL_INDOOR_ECHO"):
         return STEM_ECHO
-    if "_FIRE" in slot_name or slot_name.endswith("_SUPP") or slot_name in ("BNS_M203", "FLAME_IGNITE"):
+    if "_FIRE" in slot_name or slot_name.endswith("_SUPP") or slot_name in (
+        "BNS_M203", "FLAME_IGNITE", "FLM_IGNITE_SQUIB"
+    ):
         return STEM_WEAPON
     if slot_name.startswith("AI_") or slot_name == "DISTANT_BATTLEFIELD":
         return STEM_DISTANT
     if slot_name in ("ENV_FLYBY", "IMP_RICOCHET", "ENV_SUPERSONIC_CRACK"):
         return STEM_FLYBY
-    if any(k in slot_name for k in ("_UNLD", "_LD", "RPG_ATTACH", "GRL_CASE", "GRL_OPEN")):
+    if any(k in slot_name for k in ("_UNLD", "_LD", "RPG_ATTACH", "GRL_CASE", "GRL_OPEN", "_CLIP", "TANK_RELOAD", "MXM_RELOAD")):
         return STEM_RELOAD
-    if slot_name in ("MELEE_SWING", "MELEE_HIT", "PICKUP_AMMO", "PICKUP_HEALTH", "WEAPON_DROP") or any(
+    if slot_name in (
+        "MELEE_SWING", "MELEE_HIT", "PICKUP_AMMO", "PICKUP_HEALTH", "WEAPON_DROP",
+        "FLM_VALVE_SHUTOFF", "M91_BOLT", "M91_DRY", "M91_CHAMBER_CLOSE",
+        "C96_BREECH", "C96_DRY", "C96_LOCKOPEN", "MXM_BELT_ADVANCE"
+    ) or any(
         k in slot_name for k in ("_COCK", "FIRE_SELECT", "SILENCER_", "DEAD_CLICK", "CHNG_WPN", "CASING_", "_CASE")
     ):
         return STEM_MECH
@@ -176,10 +207,15 @@ def F(rel):
     return ("ffx", rel)
 
 
+def W(rel):
+    """Reference a downloaded Archive.org CC0 48 kHz/24-bit WAV inside .local/audio_src/web."""
+    return ("web", rel)
+
+
 def resolve_ref(ref):
     if isinstance(ref, tuple):
         kind, rel = ref
-        base = SOTIYAT_DIR if kind == "sotiyat" else FFX_MASTER_DIR
+        base = SOTIYAT_DIR if kind == "sotiyat" else (WEB_DIR if kind == "web" else FFX_MASTER_DIR)
         full = os.path.join(base, rel.replace("/", os.sep))
         label = f"{kind}:{os.path.basename(rel)}"
         return full, label, None
@@ -643,6 +679,27 @@ def get_loop_slices(ref, dur_ms=2100.0, count=3, xfade_ms=90.0, hpf_hz=38.0):
                 body[:xf] = body[:xf] * fi + head_blend * fo
         loops.append(body)
     return loops
+
+
+def stereoize_web(seg, refl_gain=0.22):
+    """Promote 1ch studio/web 48 kHz WAV into coherent True Stereo [N, 2] with crisp early room decorrelation."""
+    if seg is None:
+        return None
+    if seg.ndim == 2 and seg.shape[1] == 2:
+        return repair_stereo_phase(seg)
+    m = seg.astype(np.float32)
+    hi = fft_hpf(m, cutoff=240.0)
+    d_l = int(0.0038 * SR)
+    d_r = int(0.0056 * SR)
+    l = m.copy()
+    r = m.copy()
+    if d_l < len(m):
+        l[d_l:] += hi[:-d_l] * refl_gain
+        r[d_l:] -= hi[:-d_l] * (refl_gain * 0.45)
+    if d_r < len(m):
+        r[d_r:] += hi[:-d_r] * (refl_gain * 1.08)
+        l[d_r:] -= hi[:-d_r] * (refl_gain * 0.42)
+    return np.column_stack([l, r]).astype(np.float32)
 
 
 def norm_unit(seg):
@@ -1202,6 +1259,40 @@ def build_all_clips():
     ui_hint   = T(2139, 550, 60.0, whole=True) + T(2141, 450, 60.0, whole=True) + T(2332, 650, 60.0, gap=300.0)[:2]
     ui_alert  = get_loop_slices(110, dur_ms=1450.0, count=2, xfade_ms=65.0, hpf_hz=60.0) + T(1911, 650, 60.0, whole=True)
 
+    # 4. Downloaded Archive.org CC0 48 kHz/24-bit WAV Pools (.local/audio_src/web/)
+    def TW(rel, mx=780.0, hpf=34.0, gap=320.0):
+        res = T(W(rel), mx, hpf, gap=gap)
+        if len(res) < 2:
+            res = res + get_loop_slices(W(rel), dur_ms=min(mx, 900.0), count=3, xfade_ms=35.0, hpf_hz=hpf)
+        return res
+
+    web_flm_lp    = get_loop_slices(W("flamethrower_burst.wav"), dur_ms=2100.0, count=3, xfade_ms=90.0, hpf_hz=36.0)
+    web_napalm_lp = get_loop_slices(W("napalm_spray_foam.wav"), dur_ms=2100.0, count=3, xfade_ms=80.0, hpf_hz=45.0)
+    web_rumble_lp = get_loop_slices(W("fire_rumble.wav"), dur_ms=2100.0, count=3, xfade_ms=90.0, hpf_hz=30.0)
+    web_pilot     = get_loop_slices(W("pilot_torch.wav"), dur_ms=1600.0, count=3, xfade_ms=70.0, hpf_hz=70.0)
+    web_boil_lp   = get_loop_slices(W("maxim_water_boil.wav"), dur_ms=1900.0, count=3, xfade_ms=80.0, hpf_hz=55.0)
+    web_steam_1   = TW("maxim_steam_hiss1.wav", 680.0, 120.0, gap=450.0)
+    web_steam_2   = TW("maxim_steam_hiss2.wav", 680.0, 120.0, gap=450.0)
+    web_flare     = TW("flare_ignite.wav", 480.0, 80.0, gap=240.0)
+    web_gas_ig    = TW("gas_ignite.wav", 680.0, 38.0, gap=380.0)
+    web_flm_bst   = TW("flamethrower_burst.wav", 780.0, 34.0, gap=650.0)
+    web_valve     = TW("valve_sizzle.wav", 450.0, 95.0, gap=250.0)
+    web_rfl_hvy   = TW("rifle_heavy_british.wav", 920.0, 28.0, gap=380.0)
+    web_rfl_30    = TW("rifle_3030.wav", 900.0, 28.0, gap=380.0)
+    web_rfl_ck    = L(W("rifle_fire_cocked.wav"), 42.0, 2100.0, 42.0, gap=380.0) or TW("rifle_fire_cocked.wav", 1200.0, 42.0, gap=380.0)
+    web_bolt      = TW("mech_bolt_action.wav", 620.0, 55.0, gap=240.0)
+    web_clip      = TW("mech_stripper_clip.wav", 700.0, 55.0, gap=280.0)
+    web_rfl_dry   = TW("mech_dry_fire_rifle.wav", 320.0, 90.0, gap=180.0)
+    web_pst_big   = TW("pistol_big_ring.wav", 720.0, 32.0, gap=340.0)
+    web_pst_rap   = TW("pistol_rapid.wav", 560.0, 36.0, gap=95.0)
+    web_pst_brc   = TW("mech_pistol_breech.wav", 420.0, 65.0, gap=200.0)
+    web_pst_ham   = TW("mech_pistol_hammer.wav", 360.0, 70.0, gap=180.0)
+    web_pst_dry   = TW("pistol_dry_ext.wav", 280.0, 95.0, gap=160.0)
+    web_hmg_brn   = TW("hmg_browning_auto.wav", 680.0, 28.0, gap=95.0)
+    web_hmg_lrg   = TW("hmg_large_auto.wav", 700.0, 28.0, gap=100.0)
+    web_hmg_tail  = L(W("hmg_bren_tail.wav"), 38.0, 2100.0, 40.0, gap=320.0) or TW("hmg_bren_tail.wav", 1300.0, 40.0, gap=320.0)
+    web_mxm_lch   = TW("maxim_heavy_latch.wav", 680.0, 50.0, gap=280.0)
+
     clips = []  # (slot_name, desc, arr, channels, width_pct, st_raw, st_mast, src_fid)
 
     def add(slot_name, desc, raw_arr, src_fid, **mkw):
@@ -1503,14 +1594,26 @@ def build_all_clips():
         add("MELEE_HIT",       f"Sotiyat Knife + GDC1631/5892 Melee Hit #{i+1}", pick(melee_ht, i), "sotiyat:Knife+1631+5892", eq_bands=[(95, 1.3, 3.2), (2400, 1.4, 2.0)], transient_boost_db=1.6, width_pct=104)
         add("WATER_SPLASH",    f"GDC4430/4432 Water Splash #{i+1}", pick(water_sp, i), "4430+4432", eq_bands=[(180, 1.2, 2.0), (3800, 1.3, 1.6)], transient_boost_db=0.8, fade_out_ms=110.0, width_pct=115)
     for i in range(3):
-        add("FIRE_LOOP",       f"GDC1493 Gas Burner Seamless Stereo Loop #{i+1}",
-            align_mix([(pick(gas_loops, i), 0.85, 0), (pick(flamer_c, i), 0.22, 0)], len(pick(gas_loops, i)) * 1000.0 / SR),
-            "1493+2893", eq_bands=[(75, 1.2, 3.4), (520, 1.3, 1.8), (4200, 1.3, 1.5)],
-            transient_boost_db=0.0, comp_ratio=1.6, ceil_db=-3.0, is_loop=True, width_pct=114)
-        add("FLAME_IGNITE",    f"GDC2893 Firestorm Flamer + GDC4679 Ignite #{i+1}",
-            align_mix([(pick(flamer_c, i + 1), 0.85, 0), (pick(match_ig, i), 0.42, 0)], 720),
-            "2893+4679", eq_bands=[(72, 1.2, 4.0), (650, 1.3, 2.0), (4800, 1.3, 1.8)],
-            transient_boost_db=1.6, comp_ratio=2.0, width_pct=112)
+        add("FIRE_LOOP",       f"Web CC0 Flame Jet + GDC1493 Gas Burner Loop #{i+1}",
+            align_mix([
+                (stereoize_web(pick(web_flm_lp, i)), 0.72, 0),
+                (stereoize_web(pick(web_napalm_lp, i)), 0.56, 0),
+                (stereoize_web(pick(web_rumble_lp, i)), 0.44, 0),
+                (pick(gas_loops, i), 0.34, 0),
+            ], 2100.0),
+            "web:flamethrower_burst+napalm_spray_foam+fire_rumble+1493",
+            eq_bands=[(68, 1.2, 3.8), (520, 1.3, 2.0), (4400, 1.3, 1.6)],
+            transient_boost_db=0.0, comp_ratio=1.7, ceil_db=-2.8, is_loop=True, width_pct=114)
+        add("FLAME_IGNITE",    f"Web CC0 Gas/Flare Ignite + Pressurized Napalm Roar #{i+1}",
+            align_mix([
+                (stereoize_web(pick(web_gas_ig, i)), 0.72, 0),
+                (stereoize_web(pick(web_flm_bst, i)), 0.78, 4),
+                (stereoize_web(pick(web_napalm_lp, i)), 0.38, 10),
+                (pick(flamer_c, i + 1), 0.32, 0),
+            ], 760),
+            "web:gas_ignite+flamethrower_burst+napalm_spray_foam",
+            eq_bands=[(68, 1.2, 4.4), (620, 1.3, 2.2), (4800, 1.3, 1.8)],
+            transient_boost_db=1.8, comp_ratio=2.1, width_pct=114)
     for i in range(3):
         add("PICKUP_AMMO",     f"GDC2510/2522/972 Ammo Pickup #{i+1}", pick(pck_ammo, i), "2510+2522+972", eq_bands=eq_f, transient_boost_db=1.2, width_pct=96)
         add("PICKUP_HEALTH",   f"GDC250/2522 Medkit Pickup #{i+1}",    pick(pck_hlth, i), "250+2522",      eq_bands=eq_f, transient_boost_db=1.0, width_pct=96)
@@ -1527,6 +1630,91 @@ def build_all_clips():
         is_lp = (i < 2)
         add("UI_HUD_ALERT",    f"GDC110/1911 Alert Siren/Deny #{i+1}", pick(ui_alert, i), "110+1911",
             eq_bands=[(950, 1.3, 1.8), (3200, 1.3, 1.2)], transient_boost_db=0.2, ceil_db=-2.8, is_loop=is_lp, width_pct=106)
+
+    # =========================================================================
+    # 8. SPECIAL ARSENAL CC0 WEB AUDIO SLOTS (BWAR v3 Extended: 129..151)
+    # =========================================================================
+    for i in range(3):
+        add("FLM_IGNITE_SQUIB", f"Web CC0 M2-2 Electrical Squib Spark #{i+1}",
+            align_mix([(stereoize_web(pick(web_flare, i)), 0.88, 0), (stereoize_web(pick(web_gas_ig, i)), 0.36, 12)], 420),
+            "web:flare_ignite+gas_ignite", eq_bands=[(240, 1.3, 2.0), (4200, 1.4, 3.2)], transient_boost_db=2.0, width_pct=104)
+        add("FLM_VALVE_SHUTOFF", f"Web CC0 M2-2 Dump Valve Shutoff Snap #{i+1}",
+            stereoize_web(pick(web_valve, i)), "web:valve_sizzle",
+            eq_bands=[(180, 1.3, 1.6), (5600, 1.4, 2.8)], transient_boost_db=1.8, width_pct=102)
+        add("FLM_TANK_RELOAD", f"Web CC0 M2-2 N2 Tank Swap & Valve Lock #{i+1}",
+            align_mix([(stereoize_web(pick(web_mxm_lch, i)), 0.78, 0), (stereoize_web(pick(web_valve, i + 1)), 0.56, 45)], 780),
+            "web:maxim_heavy_latch+valve_sizzle", eq_bands=[(140, 1.3, 2.4), (3200, 1.4, 2.0)], transient_boost_db=1.5, width_pct=100)
+        add("FLM_PILOT_HUM", f"Web CC0 Pilot Torch Loop #{i+1}",
+            stereoize_web(pick(web_pilot, i)), "web:pilot_torch",
+            eq_bands=[(120, 1.3, 1.6), (3400, 1.3, 1.2)], transient_boost_db=0.0, ceil_db=-5.0, is_loop=True, width_pct=106)
+        add("FLM_FOAM_SPLASH", f"Web CC0 Napalm Gel Splatter #{i+1}",
+            stereoize_web(pick(web_napalm_lp, i)), "web:napalm_spray_foam",
+            eq_bands=[(140, 1.3, 2.8), (2800, 1.3, 1.6)], transient_boost_db=1.0, fade_out_ms=90.0, width_pct=108)
+
+    # Mauser 1891-12 (7.65x53mm Argentine + Cock-on-Close Bolt + 5-rd Stripper Clip)
+    for i in range(4):
+        add("M91_FIRE", f"Web CC0 Mauser 1891-12 7.65x53mm Rifle Crack #{i+1}",
+            align_mix([(stereoize_web(pick(web_rfl_hvy, i)), 0.86, 0), (stereoize_web(pick(web_rfl_30, i)), 0.56, 3)], 920),
+            "web:rifle_heavy_british+rifle_3030",
+            eq_bands=[(72, 1.2, 4.2), (1650, 1.4, 2.6), (5200, 1.4, 1.8)],
+            in_room_punch=True, ceil_db=-0.95, transient_boost_db=2.2, comp_ratio=2.3, width_pct=106)
+    for i in range(3):
+        add("M91_BOLT", f"Web CC0 Mauser Bolt Lift & Throw #{i+1}",
+            stereoize_web(pick(web_bolt, i)), "web:mech_bolt_action", eq_bands=eq_f, transient_boost_db=1.6, width_pct=96)
+        add("M91_CLIP", f"Web CC0 Mauser 5-rd Stripper Clip Load #{i+1}",
+            stereoize_web(pick(web_clip, i)), "web:mech_stripper_clip", eq_bands=eq_f, transient_boost_db=1.6, width_pct=96)
+        add("M91_DRY", f"Web CC0 Mauser Dry Fire Pin #{i+1}",
+            stereoize_web(pick(web_rfl_dry, i)), "web:mech_dry_fire_rifle", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
+        add("M91_CHAMBER_CLOSE", f"Web CC0 Mauser Cock-on-Close Sear Lock #{i+1}",
+            stereoize_web(pick(web_bolt, i + 1)), "web:mech_bolt_action", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
+        add("TAIL_M91_OUTDOOR", f"Web CC0 Rifle Valley Rolling Tail #{i+1}",
+            stereoize_web(pick(web_rfl_ck, i)), "web:rifle_fire_cocked",
+            eq_bands=[(110, 1.2, 2.8), (1800, 1.3, 1.4)], transient_boost_db=0.4, fade_out_ms=120.0, width_pct=116)
+
+    # Mauser C96 / M712 (7.63x25mm Bottle-Neck + Short-Recoil + Hold-Open + Clip)
+    for i in range(4):
+        add("C96_FIRE", f"Web CC0 Mauser C96 7.63x25mm Whip Crack #{i+1}",
+            align_mix([(stereoize_web(pick(web_pst_big, i)), 0.84, 0), (stereoize_web(pick(web_pst_rap, i)), 0.48, 2)], 680),
+            "web:pistol_big_ring+pistol_rapid",
+            eq_bands=[(95, 1.3, 3.0), (2400, 1.5, 2.8), (6400, 1.4, 1.8)],
+            in_room_punch=True, ceil_db=-0.95, transient_boost_db=2.1, comp_ratio=2.3, width_pct=102)
+    for i in range(3):
+        add("C96_BREECH", f"Web CC0 C96 Breech & Hammer Cycle #{i+1}",
+            align_mix([(stereoize_web(pick(web_pst_brc, i)), 0.78, 0), (stereoize_web(pick(web_pst_ham, i)), 0.42, 8)], 360),
+            "web:mech_pistol_breech+hammer", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
+        add("C96_CLIP", f"Web CC0 C96 Top Stripper Clip Push #{i+1}",
+            align_mix([(stereoize_web(pick(web_clip, i + 1)), 0.82, 0), (stereoize_web(pick(web_pst_brc, i)), 0.48, 120)], 720),
+            "web:mech_stripper_clip+pistol_breech", eq_bands=eq_f, transient_boost_db=1.6, width_pct=98)
+        add("C96_DRY", f"Web CC0 C96 Dry Fire Click #{i+1}",
+            stereoize_web(pick(web_pst_dry, i)), "web:pistol_dry_ext", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
+        add("C96_LOCKOPEN", f"Web CC0 C96 Empty Bolt-Hold-Open Catch #{i+1}",
+            stereoize_web(pick(web_pst_brc, i + 1)), "web:mech_pistol_breech", eq_bands=[(400, 1.3, 1.5), (4200, 1.5, 2.8)], transient_boost_db=2.0, width_pct=98)
+
+    # Maxim PM M1910 (7.62x54R ~550 RPM + Sokolov Wheels + Water Boil/Steam)
+    for i in range(4):
+        add("MXM_FIRE", f"Web CC0 Maxim M1910 7.62x54R Heavy MG Stroke #{i+1}",
+            align_mix([(stereoize_web(pick(web_hmg_brn, i)), 0.86, 0), (stereoize_web(pick(web_hmg_lrg, i)), 0.56, 3)], 760),
+            "web:hmg_browning_auto+hmg_large_auto",
+            eq_bands=[(62, 1.2, 4.8), (1100, 1.4, 2.2), (3800, 1.4, 1.8)],
+            in_room_punch=True, ceil_db=-0.95, transient_boost_db=2.0, comp_ratio=2.4, width_pct=110)
+    for i in range(3):
+        add("MXM_RELOAD", f"Web CC0 Maxim Top Cover & 250-rd Belt Feed #{i+1}",
+            stereoize_web(pick(web_mxm_lch, i)), "web:maxim_heavy_latch", eq_bands=eq_f, transient_boost_db=1.7, width_pct=100)
+        add("MXM_BOIL", f"Web CC0 Maxim 4.5L Jacket Water Boil #{i+1}",
+            stereoize_web(pick(web_boil_lp, i)), "web:maxim_water_boil",
+            eq_bands=[(95, 1.2, 3.2), (820, 1.3, 1.8)], transient_boost_db=0.0, ceil_db=-3.2, is_loop=True, width_pct=112)
+        add("MXM_STEAM", f"Web CC0 Maxim Steam Valve Hiss #{i+1}",
+            stereoize_web(pick(web_steam_1 if i != 1 else web_steam_2, i)), "web:maxim_steam_hiss",
+            eq_bands=[(2200, 1.3, 2.2), (6800, 1.4, 2.4)], transient_boost_db=0.4, fade_out_ms=95.0, width_pct=112)
+        add("TAIL_MXM_HEAVY", f"Web CC0 Maxim Heavy MG Outdoor Rolling Tail #{i+1}",
+            stereoize_web(pick(web_hmg_tail, i)), "web:hmg_bren_tail",
+            eq_bands=[(95, 1.2, 3.0), (1400, 1.3, 1.5)], transient_boost_db=0.4, fade_out_ms=130.0, width_pct=118)
+        add("MXM_WHEEL_ROLL", f"Web CC0 Sokolov Carriage Steel Wheel Roll #{i+1}",
+            stereoize_web(pick(web_mxm_lch, i + 1)), "web:maxim_heavy_latch",
+            eq_bands=[(110, 1.3, 2.6), (1600, 1.4, 1.0)], transient_boost_db=0.8, fade_out_ms=65.0, width_pct=100)
+        add("MXM_BELT_ADVANCE", f"Web CC0 Maxim Canvas Belt Pawl Click #{i+1}",
+            stereoize_web(pick(web_pst_ham, i + 1)), "web:mech_pistol_hammer",
+            eq_bands=[(350, 1.3, 1.4), (3600, 1.5, 2.2)], transient_boost_db=1.8, fade_out_ms=35.0, width_pct=96)
 
     return clips
 
