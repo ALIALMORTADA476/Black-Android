@@ -39,4 +39,4 @@ black.toml
 /tests/build/
 
 # Raw studio audio packs (>100MB, packed into black_weapon_audio.pak)
-/??????/
+/صوتيات/
