@@ -1,0 +1,19 @@
+# Wavefront MTL - Hard-Surface Engine Spec (§4)
+newmtl Paint_Olive
+Kd 0.2400 0.2800 0.1600
+
+newmtl Steel_Blued
+Kd 0.2000 0.2600 0.3400
+
+newmtl Steel_Gunmetal
+Kd 0.3000 0.3100 0.3300
+
+newmtl Steel_Bare
+Kd 0.4000 0.4000 0.4100
+
+newmtl Wood_Walnut
+Kd 0.2600 0.1700 0.1000
+
+newmtl Brass
+Kd 0.4400 0.3100 0.1400
+

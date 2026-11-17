@@ -45,6 +45,11 @@ void RecordSkippedParticleTick();
 bool TryQueueOverflowBullet(uint32_t mgr, uint32_t muzzle_ea, uint32_t fire_pkt, uint32_t dir_ea,
                             float range, float speed, uint8_t flags, uint32_t caller_esp);
 
+// Last genuine player-owned fire packet the guest spawned a physical bullet with (valid only while its
+// weapon is still owned by the player). Lets Special Arsenal weapons spawn real world-interacting bullets.
+bool LastPlayerFirePkt(uint32_t& pkt, float& range, float& speed, uint8_t& flags);
+bool IsFrozen();
+
 // Visual HUD badge + suspended physical bullet spatial indicators.
 void DrawOverlay(float screen_w, float screen_h);
 

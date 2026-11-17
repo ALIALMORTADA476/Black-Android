@@ -694,9 +694,39 @@ X86_EXTERN_FUNC(__imp__sub_001DB7B0);
 
 namespace game::time_stop {
 
+namespace {
+std::atomic<uint32_t> g_last_player_pkt{0};
+std::atomic<float> g_last_player_range{80.0f};
+std::atomic<float> g_last_player_speed{160.0f};
+std::atomic<uint32_t> g_last_player_flags{0};
+}  // namespace
+
+bool LastPlayerFirePkt(uint32_t& pkt, float& range, float& speed, uint8_t& flags) {
+    pkt = g_last_player_pkt.load(std::memory_order_relaxed);
+    if (!pkt || !IsValidAnyGuestAddr(pkt, 8u)) return false;
+    const uint32_t wpn = R32(pkt + 4u);
+    const uint32_t world = R32(layout::kWorld);
+    if (!wpn || !world || !IsValidAnyGuestAddr(wpn, 0x110u)) return false;
+    if (R32(wpn + 0xF0u) != world + layout::kWorldPlayer) return false;
+    range = g_last_player_range.load(std::memory_order_relaxed);
+    speed = g_last_player_speed.load(std::memory_order_relaxed);
+    flags = uint8_t(g_last_player_flags.load(std::memory_order_relaxed) & 0xFFu);
+    return std::isfinite(range) && std::isfinite(speed) && range > 1.0f && speed > 1.0f;
+}
+
 void InvokeBulletSpawnerAndObserve(X86Context& ctx, uint8_t* base, uint32_t expected_mgr, uint32_t arg_mgr,
                                    uint32_t muzzle_ea, uint32_t fire_pkt, uint32_t dir_ea,
                                    float range, float speed, uint8_t flags) {
+    if (fire_pkt && IsValidAnyGuestAddr(fire_pkt, 8u)) {
+        const uint32_t wpn = R32(fire_pkt + 4u);
+        const uint32_t world = R32(layout::kWorld);
+        if (wpn && world && IsValidAnyGuestAddr(wpn, 0x110u) && R32(wpn + 0xF0u) == world + layout::kWorldPlayer) {
+            g_last_player_pkt.store(fire_pkt, std::memory_order_relaxed);
+            g_last_player_range.store(range, std::memory_order_relaxed);
+            g_last_player_speed.store(speed, std::memory_order_relaxed);
+            g_last_player_flags.store(flags, std::memory_order_relaxed);
+        }
+    }
     bool tracked = (expected_mgr != 0 && arg_mgr == expected_mgr &&
                     IsValidAnyGuestAddr(expected_mgr + kBulletPoolOffset, kBulletSlotCount * kBulletSlotStride) &&
                     IsValidAnyGuestAddr(muzzle_ea, 12u) && IsValidAnyGuestAddr(dir_ea, 12u));

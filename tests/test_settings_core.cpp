@@ -3304,6 +3304,211 @@ bool TestSpecialArsenalRealAssetsAndWebAudioPack() {
     return true;
 }
 
+bool TestMauser1891_FullMeshUvLogicAndEnvAudio() {
+    using namespace game::special_arsenal;
+
+    auto read_all = [](const char* p) -> std::vector<uint8_t> {
+        std::ifstream f(p, std::ios::binary | std::ios::ate);
+        if (!f) return {};
+        auto sz = f.tellg();
+        f.seekg(0);
+        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
+        f.read(reinterpret_cast<char*>(d.data()), sz);
+        return d;
+    };
+
+    // 1. Full un-decimated 35,176-triangle mesh with all 8 parts & D3D V-flipped UVs
+    auto mb = read_all("app/src/main/assets/weapons/mauser_1891_12.bmsh");
+    auto tb = read_all("app/src/main/assets/weapons/mauser_1891_12.btex");
+    EXPECT_TRUE(!mb.empty() && !tb.empty());
+    BmshModel m{};
+    EXPECT_TRUE(ParseBmsh(mb.data(), mb.size(), m));
+    EXPECT_EQ(m.parts.size(), size_t{8});
+    EXPECT_EQ(m.indices.size() / 3u, size_t{35176});
+
+    // Decode Morton-swizzled 1024x1024 BTEX and sample wood-stock UV region (v > 0.88 after 1-v flip)
+    BtexHeader hdr{};
+    EXPECT_TRUE(ParseBtexHeader(tb.data(), tb.size(), hdr));
+    const uint32_t* swizzled = reinterpret_cast<const uint32_t*>(tb.data() + 32u);
+    auto morton_idx = [](uint32_t x, uint32_t y) -> uint32_t {
+        auto spread = [](uint32_t v) -> uint32_t {
+            v = (v | (v << 8)) & 0x00FF00FFu;
+            v = (v | (v << 4)) & 0x0F0F0F0Fu;
+            v = (v | (v << 2)) & 0x33333333u;
+            v = (v | (v << 1)) & 0x55555555u;
+            return v;
+        };
+        return spread(x) | (spread(y) << 1);
+    };
+    double sum_r = 0.0, sum_b = 0.0;
+    uint32_t wood_samples = 0;
+    const BmshPart& body = m.parts[0];
+    for (uint32_t i = 0; i < body.index_count; ++i) {
+        const auto& v = m.vertices[m.indices[body.first_index + i]];
+        if (v.v >= 0.89f && v.v <= 0.98f && v.u >= 0.02f && v.u <= 0.45f) {
+            const uint32_t tx = std::min<uint32_t>(1023u, uint32_t(v.u * 1023.0f));
+            const uint32_t ty = std::min<uint32_t>(1023u, uint32_t(v.v * 1023.0f));
+            const uint32_t px = swizzled[morton_idx(tx, ty)];
+            sum_r += double((px >> 16) & 0xFFu);
+            sum_b += double(px & 0xFFu);
+            ++wood_samples;
+        }
+    }
+    EXPECT_TRUE(wood_samples >= 500u);
+    const double mean_r = sum_r / double(wood_samples);
+    const double mean_b = sum_b / double(wood_samples);
+    EXPECT_TRUE(mean_r > mean_b + 20.0);  // Walnut stock must be warm brown, never grey steel!
+
+    // 2. Logic: Mauser91ChamberClose cue + bolt_stop_deg + rear_sight_deg + clip_eject
+    ArsenalSim sim;
+    sim.ResetAll();
+    sim.SelectWeapon(SpecialWeaponId::Mauser1891);
+    ArsenalInput in{};
+    in.dt = 1.0f / 60.0f;
+    in.equipped = true;
+    in.ads_held = true;
+    for (int i = 0; i < 15; ++i) sim.Step(in);
+    EXPECT_TRUE(sim.GetStatus().pose.rear_sight_deg > 1.5f);
+
+    in.fire_pressed = true;
+    in.fire_held = true;
+    sim.Step(in);
+    in.fire_pressed = false;
+    in.fire_held = false;
+
+    bool saw_chamber_close = false;
+    bool saw_bolt_stop = false;
+    for (int i = 0; i < 65; ++i) {
+        const auto ev = sim.Step(in);
+        const auto st = sim.GetStatus();
+        for (uint8_t c = 0; c < ev.audio_cue_count; ++c) {
+            if (ev.audio_cues[c] == AudioCueKind::Mauser91ChamberClose) saw_chamber_close = true;
+        }
+        if (std::fabs(st.pose.bolt_stop_deg) > 4.0f) saw_bolt_stop = true;
+        if (st.phase == ActionPhase::Idle && i > 20) break;
+    }
+    EXPECT_TRUE(saw_chamber_close);
+    EXPECT_TRUE(saw_bolt_stop);
+
+    in.reload_pressed = true;
+    sim.Step(in);
+    in.reload_pressed = false;
+    bool saw_clip_eject = false;
+    for (int i = 0; i < 120; ++i) {
+        sim.Step(in);
+        if (sim.GetStatus().pose.clip_eject > 0.2f) saw_clip_eject = true;
+        if (!sim.GetStatus().reloading) break;
+    }
+    EXPECT_TRUE(saw_clip_eject);
+
+    // 3. Environmental Acoustic Impact (3D world impact + supersonic crack + indoor/outdoor)
+    EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
+    sound::weapon_audio::StopAll();
+    const auto t0 = sound::weapon_audio::GetTelemetry();
+    const float hit_pos[3] = {12.0f, 1.2f, 24.0f};
+    sound::weapon_audio::TriggerWorldImpact(hit_pos, true, true);
+    const float lp[3] = {0.0f, 1.6f, 0.0f}, lf[3] = {0.0f, 0.0f, 1.0f}, lu[3] = {0.0f, 1.0f, 0.0f};
+    std::vector<float> buf(4800u * 2u, 0.0f);
+    sound::weapon_audio::RenderMix(buf.data(), nullptr, 4800u, 2u, 0u, 1u, false, 0u, 0u, 0u, lp, lf, lu);
+    const auto t1 = sound::weapon_audio::GetTelemetry();
+    EXPECT_TRUE(t1.impacts_enhanced > t0.impacts_enhanced);
+    EXPECT_TRUE(t1.flybys_enhanced > t0.flybys_enhanced);
+    float pk = 0.0f;
+    for (float s : buf) pk = std::max(pk, std::fabs(s));
+    EXPECT_TRUE(pk > 0.01f && pk <= 0.994f);
+    return true;
+}
+
+bool TestMauserC96_FullMeshUvLogicAndAudio() {
+    using namespace game::special_arsenal;
+
+    auto read_all = [](const char* p) -> std::vector<uint8_t> {
+        std::ifstream f(p, std::ios::binary | std::ios::ate);
+        if (!f) return {};
+        auto sz = f.tellg();
+        f.seekg(0);
+        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
+        f.read(reinterpret_cast<char*>(d.data()), sz);
+        return d;
+    };
+
+    // 1. Lossless 38,356-triangle mesh with all 7 parts from new mauser_c96 OBJ pack
+    auto mb = read_all("app/src/main/assets/weapons/mauser_c96.bmsh");
+    auto tb = read_all("app/src/main/assets/weapons/mauser_c96.btex");
+    EXPECT_TRUE(!mb.empty() && !tb.empty());
+    BmshModel m{};
+    EXPECT_TRUE(ParseBmsh(mb.data(), mb.size(), m));
+    EXPECT_EQ(m.parts.size(), size_t{7});
+    EXPECT_EQ(m.indices.size() / 3u, size_t{38356});
+
+    // 2. Verify D3D V-flip on Brass stripper_clip/cartridges (v_d3d in [0.55, 0.95])
+    BtexHeader hdr{};
+    EXPECT_TRUE(ParseBtexHeader(tb.data(), tb.size(), hdr));
+    const uint32_t* swizzled = reinterpret_cast<const uint32_t*>(tb.data() + 32u);
+    auto morton_idx = [](uint32_t x, uint32_t y) -> uint32_t {
+        auto spread = [](uint32_t v) -> uint32_t {
+            v = (v | (v << 8)) & 0x00FF00FFu;
+            v = (v | (v << 4)) & 0x0F0F0F0Fu;
+            v = (v | (v << 2)) & 0x33333333u;
+            v = (v | (v << 1)) & 0x55555555u;
+            return v;
+        };
+        return spread(x) | (spread(y) << 1);
+    };
+    const BmshPart* clip_part = nullptr;
+    for (const auto& pt : m.parts) {
+        if (std::strcmp(pt.name, "stripper_clip") == 0) {
+            clip_part = &pt;
+            break;
+        }
+    }
+    EXPECT_TRUE(clip_part != nullptr);
+    double sum_r = 0.0, sum_b = 0.0;
+    uint32_t brass_samples = 0;
+    for (uint32_t i = 0; i < clip_part->index_count; ++i) {
+        const auto& v = m.vertices[m.indices[clip_part->first_index + i]];
+        if (v.v >= 0.55f && v.v <= 0.95f) {
+            const uint32_t tx = std::min<uint32_t>(1023u, uint32_t(v.u * 1023.0f));
+            const uint32_t ty = std::min<uint32_t>(1023u, uint32_t(v.v * 1023.0f));
+            const uint32_t px = swizzled[morton_idx(tx, ty)];
+            sum_r += double((px >> 16) & 0xFFu);
+            sum_b += double(px & 0xFFu);
+            ++brass_samples;
+        }
+    }
+    EXPECT_TRUE(brass_samples >= 200u);
+    EXPECT_TRUE((sum_r / double(brass_samples)) > (sum_b / double(brass_samples)) + 30.0);
+
+    // 3. C96 logic: safety_lever toggles with select_fire, rear_sight elevates on ADS
+    ArsenalSim sim;
+    sim.ResetAll();
+    sim.SelectWeapon(SpecialWeaponId::MauserC96);
+    ArsenalInput in{};
+    in.dt = 1.0f / 60.0f;
+    in.equipped = true;
+    in.ads_held = true;
+    for (int i = 0; i < 15; ++i) sim.Step(in);
+    EXPECT_TRUE(sim.GetStatus().pose.rear_sight_deg > 2.0f);
+    EXPECT_TRUE(sim.GetStatus().pose.safety_lever > 0.5f);
+    in.select_fire_pressed = true;
+    sim.Step(in);
+    in.select_fire_pressed = false;
+    EXPECT_FALSE(sim.GetStatus().full_auto_mode);
+    EXPECT_TRUE(sim.GetStatus().pose.safety_lever < 0.5f);
+
+    // 4. Audio check
+    EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
+    sound::weapon_audio::StopAll();
+    sound::weapon_audio::OnPlayerFire("C96", false, false);
+    std::vector<float> buf(9600u * 2u, 0.0f);
+    const float lp[3] = {0, 0, 0}, lf[3] = {0, 0, 1}, lu[3] = {0, 1, 0};
+    sound::weapon_audio::RenderMix(buf.data(), nullptr, 9600u, 2u, 0u, 1u, false, 0u, 0u, 0u, lp, lf, lu);
+    float pk = 0.0f;
+    for (float s : buf) pk = std::max(pk, std::fabs(s));
+    EXPECT_TRUE(pk > 0.05f && pk <= 0.994f);
+    return true;
+}
+
 void RunTest(const char* name, bool (*fn)()) {
     std::cout << "[RUN ] " << name << "\n";
     if (fn()) {
@@ -3370,6 +3575,8 @@ int main() {
     RunTest("50_MauserC96_M712_ShortRecoilAndBoltHoldOpen", TestMauserC96_M712_ShortRecoilAndBoltHoldOpen);
     RunTest("51_MaximM1910_WheelsCoolingAndBeltFeed", TestMaximM1910_WheelsCoolingAndBeltFeed);
     RunTest("52_SpecialArsenalRealAssetsAndWebAudioPack", TestSpecialArsenalRealAssetsAndWebAudioPack);
+    RunTest("53_Mauser1891_FullMeshUvLogicAndEnvAudio", TestMauser1891_FullMeshUvLogicAndEnvAudio);
+    RunTest("54_MauserC96_FullMeshUvLogicAndAudio", TestMauserC96_FullMeshUvLogicAndAudio);
 
     std::cout << "\nSummary: " << g_passed << " passed, " << g_failed << " failed.\n";
     return g_failed == 0 ? 0 : 1;

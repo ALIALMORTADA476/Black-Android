@@ -1,0 +1,35 @@
+{
+  "weapon": "kar_98",
+  "muzzle_position_m": [
+    0.85,
+    0.039,
+    0.0
+  ],
+  "ejection_port_m": [
+    0.34,
+    0.045,
+    0.01
+  ],
+  "muzzle_flash": {
+    "texture": "vfx/muzzle_flash_sheet.png",
+    "grid": [
+      2,
+      2
+    ],
+    "duration_ms": 55,
+    "scale_m": 0.22
+  },
+  "smoke_trail": {
+    "texture": "vfx/smoke_trail_sheet.png",
+    "grid": [
+      2,
+      2
+    ],
+    "duration_ms": 1100,
+    "opacity": 0.45
+  },
+  "tracer": {
+    "texture": "vfx/tracer_streak.png",
+    "speed_m_s": 760
+  }
+}

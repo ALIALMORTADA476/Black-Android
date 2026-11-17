@@ -1,0 +1,139 @@
+{
+  "weapon_slug": "maxim_m1910",
+  "display_name": "PM M1910 Maxim Heavy Machine Gun (Sokolov Mount)",
+  "type": "water_cooled_heavy_machine_gun",
+  "units": "centimeters",
+  "forward_axis": "+X",
+  "up_axis": "+Y",
+  "right_axis": "+Z",
+  "triangles_final": 36968,
+  "vertices_final": 23497,
+  "triangles_highpoly": 147872,
+  "group_count": 8,
+  "material_count": 6,
+  "bbox_min": [
+    -0.20000000298023224,
+    -33.79999923706055,
+    -26.200000762939453
+  ],
+  "bbox_max": [
+    106.5,
+    24.899999618530273,
+    26.200000762939453
+  ],
+  "muzzle_tip": [
+    106.5,
+    4.2,
+    0.0
+  ],
+  "ejection_port": [
+    37.5,
+    2.1,
+    0.0
+  ],
+  "sight_line_height": [
+    14.0,
+    17.5,
+    0.0
+  ],
+  "grip_center": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "magazine_well": [
+    33.5,
+    5.2,
+    5.8
+  ],
+  "triangles_per_group": {
+    "Receiver_Body": 24024,
+    "FeedCover_COVER": 1280,
+    "CrankHandle_CHARGE": 1320,
+    "BeltBox_MAG": 2928,
+    "ThumbTrigger_TRIGGER": 1040,
+    "RearSight_SIGHT": 1096,
+    "CarriageWheels_WHEEL": 3936,
+    "LockBlock_BOLT": 1344
+  },
+  "reload_time_ms": 2800,
+  "pivots": [
+    {
+      "part": "FeedCover_COVER",
+      "axis": "Z",
+      "pivot": [
+        38.0,
+        10.2,
+        0.0
+      ],
+      "min": -46.0,
+      "max": 0.0
+    },
+    {
+      "part": "CrankHandle_CHARGE",
+      "axis": "Z",
+      "pivot": [
+        14.5,
+        4.2,
+        5.6
+      ],
+      "min": 0.0,
+      "max": 62.0
+    },
+    {
+      "part": "BeltBox_MAG",
+      "axis": "Z",
+      "pivot": [
+        33.5,
+        -6.5,
+        13.5
+      ],
+      "min": -8.5,
+      "max": 6.5
+    },
+    {
+      "part": "ThumbTrigger_TRIGGER",
+      "axis": "Z",
+      "pivot": [
+        1.2,
+        3.8,
+        0.0
+      ],
+      "min": 0.0,
+      "max": 14.0
+    },
+    {
+      "part": "RearSight_SIGHT",
+      "axis": "Z",
+      "pivot": [
+        14.0,
+        11.0,
+        0.0
+      ],
+      "min": -90.0,
+      "max": 0.0
+    },
+    {
+      "part": "CarriageWheels_WHEEL",
+      "axis": "Z",
+      "pivot": [
+        44.5,
+        -18.5,
+        0.0
+      ],
+      "min": -360.0,
+      "max": 360.0
+    },
+    {
+      "part": "LockBlock_BOLT",
+      "axis": "X",
+      "pivot": [
+        20.0,
+        6.2,
+        0.0
+      ],
+      "min": -6.4,
+      "max": 0.0
+    }
+  ]
+}

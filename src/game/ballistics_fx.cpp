@@ -55,8 +55,8 @@ constexpr int kPoolBCount = 16;
 
 constexpr size_t kMaxTracers = 96;
 constexpr size_t kMaxSmokeNodes = 192;
-constexpr size_t kMaxBloodNodes = 256;
-constexpr size_t kMaxWoundStreams = 48;
+constexpr size_t kMaxBloodNodes = 896;
+constexpr size_t kMaxWoundStreams = 64;
 constexpr size_t kMaxBloodPools = 512;
 constexpr size_t kMaxMuzzleFlashes = 16;
 constexpr size_t kMaxImpactNodes = 160;
@@ -202,8 +202,9 @@ struct ExplosiveTracker {
 
 struct BloodNode {
   bool active = false;
-  bool is_mist = false; // true: soft arterial mist; false: gravity-driven
-                        // liquid stream/droplet
+  bool is_mist = false; // true: atomized arterial aerosol; false: liquid spurt/clot
+  uint8_t kind = 0;     // 0=aerosol mist (tile 8), 1=arterial spurt (tile 9),
+                        // 2=venous clot/gobbet (tile 11), 3=ballistic micro-spray
   float pos[3] = {};
   float prev_pos[3] = {};
   float vel[3] = {};
@@ -212,9 +213,11 @@ struct BloodNode {
   float ttl = 0.75f;
   float radius = 0.03f;
   float opacity = 0.94f;
-  float r = 0.048f;
-  float g = 0.0005f;
-  float b = 0.0012f;
+  float rot = 0.0f;
+  float stretch = 1.0f;
+  float r = 0.022f;
+  float g = 0.0003f;
+  float b = 0.0006f;
 };
 
 struct WoundBleedStream {
@@ -224,6 +227,7 @@ struct WoundBleedStream {
   float dir[3] = {0.0f, 0.0f, 1.0f};
   float ground_y = 0.0f;
   float remaining = 0.0f;
+  float elapsed = 0.0f;
   float emit_accum = 0.0f;
   uint32_t mult = 2;
   bool is_headshot = false;
@@ -231,13 +235,16 @@ struct WoundBleedStream {
 
 struct BloodPoolNode {
   bool active = false;
+  bool is_spatter = false; // true: sharp ballistic directional spatter; false: coagulating pool
+  uint8_t tile = 10;
   float pos[3] = {};
   float age = 0.0f;
   float ttl = 22.0f;
-  float radius = 0.16f;
-  float target_radius = 0.42f;
+  float radius = 0.08f;
+  float target_radius = 0.34f;
   float seed = 0.0f;
-  float opacity = 0.86f;
+  float aspect = 1.0f;
+  float opacity = 0.92f;
 };
 
 struct MuzzleFlashNode {
@@ -508,6 +515,32 @@ void Emit3DRibbon(std::vector<d3d::WorldVertex> &out, const float p0[3],
   out.push_back(v1a);
 }
 
+// Emits a supple 3-segment quadratic Bezier liquid ligament with Rayleigh-Plateau
+// necking (tapered tail -> pinched capillary waist -> bulbous teardrop head).
+void EmitCurvedBloodLigament(std::vector<d3d::WorldVertex> &out,
+                             const float tail[3], const float mid_ctrl[3],
+                             const float head[3], float base_rad,
+                             float pinch_factor, uint32_t col_tail,
+                             uint32_t col_mid, uint32_t col_head,
+                             const CameraState &cam) {
+  float pts[4][3];
+  for (int s = 0; s <= 3; ++s) {
+    const float t = float(s) / 3.0f;
+    const float omt = 1.0f - t;
+    for (int k = 0; k < 3; ++k) {
+      pts[s][k] = omt * omt * tail[k] + 2.0f * omt * t * mid_ctrl[k] +
+                  t * t * head[k];
+    }
+  }
+  const float w0 = base_rad * 0.16f;
+  const float w1 = base_rad * (0.48f * pinch_factor);
+  const float w2 = base_rad * (0.36f * pinch_factor);
+  const float w3 = base_rad * 0.78f;
+  Emit3DRibbon(out, pts[0], pts[1], w0, w1, col_tail, col_mid, cam);
+  Emit3DRibbon(out, pts[1], pts[2], w1, w2, col_mid, col_mid, cam);
+  Emit3DRibbon(out, pts[2], pts[3], w2, w3, col_mid, col_head, cam);
+}
+
 // Emits a 10-slice two-ring radial disc (smooth Gaussian-like falloff without
 // polygon edges)
 void Emit3DSoftDisc(std::vector<d3d::WorldVertex> &out, const float center[3],
@@ -561,10 +594,10 @@ void Emit3DGroundPool(std::vector<d3d::WorldVertex> &out, const float center[3],
   if (radius <= 0.01f || alpha <= 0.01f)
     return;
   const uint32_t col_core =
-      d3d::PackColorBgra(0.048f, 0.0004f, 0.0010f, alpha * 0.97f);
+      d3d::PackColorBgra(0.014f, 0.0002f, 0.0004f, alpha * 0.97f);
   const uint32_t col_mid =
-      d3d::PackColorBgra(0.032f, 0.0003f, 0.0008f, alpha * 0.86f);
-  const uint32_t col_edge = d3d::PackColorBgra(0.020f, 0.0002f, 0.0006f, 0.0f);
+      d3d::PackColorBgra(0.022f, 0.0003f, 0.0006f, alpha * 0.90f);
+  const uint32_t col_edge = d3d::PackColorBgra(0.010f, 0.0001f, 0.0003f, 0.0f);
   const d3d::WorldVertex vc{center[0], center[1], center[2], col_core};
 
   constexpr int kSlices = 10;
@@ -715,6 +748,19 @@ void EmitTexturedGroundTile(std::vector<d3d::TexturedWorldVertex> &out,
   const float s = std::sin(rot_rad) * radius;
   const float half_u[3] = {c, 0.0f, s};
   const float half_v[3] = {-s, 0.0f, c};
+  EmitOrientedTexturedQuad(out, center, half_u, half_v, tile_idx, bgra);
+}
+
+void EmitAnisotropicGroundTile(std::vector<d3d::TexturedWorldVertex> &out,
+                               const float center[3], float radius_u,
+                               float radius_v, float rot_rad, int tile_idx,
+                               uint32_t bgra) {
+  if (radius_u <= 0.008f || radius_v <= 0.008f)
+    return;
+  const float c = std::cos(rot_rad);
+  const float s = std::sin(rot_rad);
+  const float half_u[3] = {c * radius_u, 0.0f, s * radius_u};
+  const float half_v[3] = {-s * radius_v, 0.0f, c * radius_v};
   EmitOrientedTexturedQuad(out, center, half_u, half_v, tile_idx, bgra);
 }
 
@@ -1064,9 +1110,14 @@ void NotifyMuzzleMatrix(uint32_t owner_ptr, const float mat4x4[16]) {
   slot.seq = g_muzzle_seq;
 }
 
+static bool g_suppress_physical_spawn_fx = false;
+void SetSuppressPhysicalSpawnFx(bool suppress) { g_suppress_physical_spawn_fx = suppress; }
+
 void OnPhysicalBulletSpawn(uint32_t slot_ea, uint32_t fire_pkt,
                            const float origin[3], const float dir[3],
                            float speed, float /*range*/, uint8_t /*flags*/) {
+  if (g_suppress_physical_spawn_fx)
+    return;
   if (!origin || !dir || !IsFiniteVec3(origin) || !IsFiniteVec3(dir))
     return;
 
@@ -1534,6 +1585,22 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
     }
   }
 
+  // Construct orthonormal tangent basis perpendicular to shot vector for cone dispersion
+  float perp_a[3] = {-dir[2], 0.0f, dir[0]};
+  float pa_len = std::sqrt(perp_a[0] * perp_a[0] + perp_a[2] * perp_a[2]);
+  if (pa_len > 1e-4f) {
+    perp_a[0] /= pa_len;
+    perp_a[2] /= pa_len;
+  } else {
+    perp_a[0] = 1.0f;
+    perp_a[2] = 0.0f;
+  }
+  const float perp_b[3] = {
+      dir[1] * perp_a[2] - dir[2] * perp_a[1],
+      dir[2] * perp_a[0] - dir[0] * perp_a[2],
+      dir[0] * perp_a[1] - dir[1] * perp_a[0],
+  };
+
   std::lock_guard<std::mutex> lock(g_mutex);
   auto next_rand = [&]() -> float {
     g_fx_rng ^= g_fx_rng << 13;
@@ -1541,9 +1608,9 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
     g_fx_rng ^= g_fx_rng << 5;
     return float(g_fx_rng & 0xFFFFu) / 65535.0f;
   };
-  auto push_blood = [&](bool is_mist, const float pos[3], const float vel[3],
-                        float ttl, float rad, float op, float r, float g,
-                        float b) {
+  auto push_blood = [&](uint8_t kind, const float pos[3], const float vel[3],
+                        float ttl, float rad, float op, float stretch, float r,
+                        float g, float b) {
     size_t chosen = kMaxBloodNodes;
     for (size_t i = 0; i < kMaxBloodNodes; i++) {
       size_t idx = (g_blood_cursor + i) % kMaxBloodNodes;
@@ -1557,7 +1624,8 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
     g_blood_cursor = (chosen + 1) % kMaxBloodNodes;
     BloodNode &bn = g_blood[chosen];
     bn.active = true;
-    bn.is_mist = is_mist;
+    bn.is_mist = (kind == 0u);
+    bn.kind = kind;
     std::memcpy(bn.pos, pos, sizeof(bn.pos));
     std::memcpy(bn.prev_pos, pos, sizeof(bn.prev_pos));
     std::memcpy(bn.vel, vel, sizeof(bn.vel));
@@ -1566,63 +1634,138 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
     bn.ttl = ttl;
     bn.radius = rad;
     bn.opacity = op;
+    bn.rot = next_rand() * 6.28318f;
+    bn.stretch = stretch;
     bn.r = r;
     bn.g = g;
     bn.b = b;
   };
 
   const float force_scale =
-      std::clamp(0.85f + impact_force * 0.25f, 0.85f, 1.85f);
-  const int mist_count = 1 + (mult >= 3u ? 1 : 0) + (is_headshot ? 1 : 0);
-  const int drop_count =
-      int(10 + mult * 7) + (is_headshot ? 10 : 0) + (is_lethal ? 8 : 0);
+      std::clamp(0.88f + impact_force * 0.28f, 0.88f, 1.95f);
+  const int mist_count =
+      3 + int(mult) + (is_headshot ? 3 : 0) + (is_lethal ? 2 : 0);
+  const int spurt_count =
+      10 + int(mult) * 5 + (is_headshot ? 10 : 0) + (is_lethal ? 6 : 0);
+  const int spray_count =
+      14 + int(mult) * 6 + (is_headshot ? 12 : 0);
+  const int clot_count =
+      12 + int(mult) * 6 + (is_headshot ? 10 : 0) + (is_lethal ? 8 : 0);
 
-  // Layer 1: Brief, crisp dark venous splash puff (dissipates quickly, never
-  // hovers in layers)
+  // Layer 1: High-pressure atomized arterial aerosol burst (Tile 8).
+  // Ejects fast from both exit cavity (+dir) and entry cavitation shock (-dir),
+  // braking rapidly in air into a fine crimson droplet mist.
   for (int i = 0; i < mist_count; i++) {
     const bool exit_side = (i % 3 != 0);
-    const float side_sign = exit_side ? 1.0f : -0.55f;
-    float pos[3] = {hit_pos[0] + dir[0] * (exit_side ? 0.12f : -0.08f) +
-                        (next_rand() - 0.5f) * 0.06f,
-                    hit_pos[1] + (next_rand() - 0.45f) * 0.07f,
-                    hit_pos[2] + dir[2] * (exit_side ? 0.12f : -0.08f) +
-                        (next_rand() - 0.5f) * 0.06f};
-    float spd = (0.85f + next_rand() * 1.15f) * force_scale;
+    const float side_sign = exit_side ? 1.0f : -0.50f;
+    const float cone_ang = next_rand() * 6.28318f;
+    const float cone_rad = (0.18f + next_rand() * 0.45f) * (is_headshot ? 1.35f : 1.0f);
+    const float ca = std::cos(cone_ang) * cone_rad;
+    const float sa = std::sin(cone_ang) * cone_rad;
+    float pos[3] = {
+        hit_pos[0] + dir[0] * (exit_side ? 0.08f : -0.05f) +
+            (next_rand() - 0.5f) * 0.05f,
+        hit_pos[1] + (next_rand() - 0.45f) * 0.06f,
+        hit_pos[2] + dir[2] * (exit_side ? 0.08f : -0.05f) +
+            (next_rand() - 0.5f) * 0.05f};
+    const float spd = (1.65f + next_rand() * 2.25f) * force_scale;
     float vel[3] = {
-        (dir[0] * side_sign + (next_rand() - 0.5f) * 0.75f) * spd,
-        (-0.15f + next_rand() * 0.35f + (is_headshot ? 0.20f : 0.0f)) * spd,
-        (dir[2] * side_sign + (next_rand() - 0.5f) * 0.75f) * spd};
-    float crimson = 0.044f + next_rand() * 0.022f;
-    push_blood(true, pos, vel, 0.14f + next_rand() * 0.12f,
-               (0.055f + next_rand() * 0.045f) * (is_headshot ? 1.25f : 1.0f),
-               0.72f + next_rand() * 0.18f, crimson, 0.0005f, 0.0012f);
+        (dir[0] * side_sign + perp_a[0] * ca + perp_b[0] * sa) * spd,
+        (dir[1] * side_sign + perp_a[1] * ca + perp_b[1] * sa +
+         0.18f + (is_headshot ? 0.22f : 0.0f)) *
+            spd,
+        (dir[2] * side_sign + perp_a[2] * ca + perp_b[2] * sa) * spd};
+    const float art_r = 0.020f + next_rand() * 0.012f;
+    const float art_g = 0.0002f + next_rand() * 0.0002f;
+    const float art_b = 0.0005f + next_rand() * 0.0003f;
+    push_blood(0u, pos, vel, 0.20f + next_rand() * 0.16f,
+               (0.080f + next_rand() * 0.065f) * (is_headshot ? 1.28f : 1.0f),
+               0.64f + next_rand() * 0.16f, 1.0f, art_r, art_g, art_b);
   }
 
-  // Layer 2: Thick dark venous liquid jets & clots (arc under gravity onto the
-  // floor)
-  for (int i = 0; i < drop_count; i++) {
+  // Layer 1b: High-velocity directional arterial spurts & liquid ligaments (Tile 9).
+  // Stretched along trajectory to form torn liquid filaments exiting the wound.
+  for (int i = 0; i < spurt_count; i++) {
+    const bool exit_jet = (i % 5 != 0);
+    const float dir_sign = exit_jet ? 1.0f : -0.55f;
+    const float cone_ang = next_rand() * 6.28318f;
+    const float cone_spread = exit_jet ? (0.12f + next_rand() * 0.42f)
+                                       : (0.20f + next_rand() * 0.50f);
+    const float ca = std::cos(cone_ang) * cone_spread;
+    const float sa = std::sin(cone_ang) * cone_spread;
+    float pos[3] = {
+        hit_pos[0] + dir[0] * (exit_jet ? 0.10f : -0.06f) +
+            (next_rand() - 0.5f) * 0.05f,
+        hit_pos[1] + (next_rand() - 0.5f) * 0.06f,
+        hit_pos[2] + dir[2] * (exit_jet ? 0.10f : -0.06f) +
+            (next_rand() - 0.5f) * 0.05f};
+    const float spd =
+        (exit_jet ? (3.2f + next_rand() * 4.8f) : (1.8f + next_rand() * 2.6f)) *
+        force_scale;
+    float vel[3] = {
+        (dir[0] * dir_sign + perp_a[0] * ca + perp_b[0] * sa) * spd,
+        (dir[1] * dir_sign + perp_a[1] * ca + perp_b[1] * sa +
+         0.12f + next_rand() * 0.28f + (is_headshot ? 0.20f : 0.0f)) *
+            spd * 0.65f,
+        (dir[2] * dir_sign + perp_a[2] * ca + perp_b[2] * sa) * spd};
+    const float spurt_r = 0.018f + next_rand() * 0.012f;
+    const float spurt_g = 0.0002f + next_rand() * 0.0002f;
+    const float spurt_b = 0.0005f + next_rand() * 0.0003f;
+    push_blood(1u, pos, vel, 0.34f + next_rand() * 0.32f,
+               (0.032f + next_rand() * 0.036f) * (is_headshot ? 1.25f : 1.0f),
+               0.92f + next_rand() * 0.07f, 1.65f + next_rand() * 1.15f,
+               spurt_r, spurt_g, spurt_b);
+  }
+
+  // Layer 1c: Fine high-speed ballistic micro-droplet cone (kind=3).
+  // Fast atomized streaks that sell the supersonic hydraulic shock of bullet impact.
+  for (int i = 0; i < spray_count; i++) {
+    const float cone_ang = next_rand() * 6.28318f;
+    const float cone_spread = 0.22f + next_rand() * 0.68f;
+    const float ca = std::cos(cone_ang) * cone_spread;
+    const float sa = std::sin(cone_ang) * cone_spread;
+    float pos[3] = {hit_pos[0] + dir[0] * 0.12f + (next_rand() - 0.5f) * 0.07f,
+                    hit_pos[1] + (next_rand() - 0.5f) * 0.08f,
+                    hit_pos[2] + dir[2] * 0.12f + (next_rand() - 0.5f) * 0.07f};
+    const float spd = (4.2f + next_rand() * 5.8f) * force_scale;
+    float vel[3] = {(dir[0] + perp_a[0] * ca + perp_b[0] * sa) * spd,
+                    (dir[1] + perp_a[1] * ca + perp_b[1] * sa +
+                     (next_rand() - 0.25f) * 0.45f) *
+                        spd * 0.58f,
+                    (dir[2] + perp_a[2] * ca + perp_b[2] * sa) * spd};
+    const float cr = 0.018f + next_rand() * 0.010f;
+    push_blood(3u, pos, vel, 0.22f + next_rand() * 0.24f,
+               0.014f + next_rand() * 0.015f, 0.86f,
+               1.80f + next_rand() * 1.20f, cr, 0.0002f, 0.0005f);
+  }
+
+  // Layer 2: Heavy dark venous gobbets & clots (Tile 11) arcing under gravity
+  // onto the floor to form spatters and feed coagulating pools.
+  for (int i = 0; i < clot_count; i++) {
     const bool exit_spray = (i % 4 != 0);
     const float dir_sign = exit_spray ? 1.0f : -0.60f;
-    float pos[3] = {hit_pos[0] + dir[0] * (exit_spray ? 0.10f : -0.07f) +
+    float pos[3] = {hit_pos[0] + dir[0] * (exit_spray ? 0.09f : -0.06f) +
                         (next_rand() - 0.5f) * 0.05f,
                     hit_pos[1] + (next_rand() - 0.5f) * 0.07f,
-                    hit_pos[2] + dir[2] * (exit_spray ? 0.10f : -0.07f) +
+                    hit_pos[2] + dir[2] * (exit_spray ? 0.09f : -0.06f) +
                         (next_rand() - 0.5f) * 0.05f};
-    float spd = (exit_spray ? (2.0f + next_rand() * 3.4f)
-                            : (1.0f + next_rand() * 2.0f)) *
-                force_scale;
+    const float spd = (exit_spray ? (2.1f + next_rand() * 3.6f)
+                                  : (1.1f + next_rand() * 2.1f)) *
+                      force_scale;
     float vel[3] = {
-        (dir[0] * dir_sign + (next_rand() - 0.5f) * 0.85f) * spd,
-        (-0.10f + next_rand() * 0.45f + (is_headshot ? 0.28f : 0.0f)) * spd *
-            0.48f,
-        (dir[2] * dir_sign + (next_rand() - 0.5f) * 0.85f) * spd};
-    float dark_red = 0.036f + next_rand() * 0.024f;
-    push_blood(false, pos, vel, 0.55f + next_rand() * 0.40f,
-               0.018f + next_rand() * 0.016f, 0.94f + next_rand() * 0.05f,
-               dark_red, 0.0004f, 0.0010f);
+        (dir[0] * dir_sign + (next_rand() - 0.5f) * 0.78f) * spd,
+        (0.05f + next_rand() * 0.52f + (is_headshot ? 0.26f : 0.0f)) * spd *
+            0.52f,
+        (dir[2] * dir_sign + (next_rand() - 0.5f) * 0.78f) * spd};
+    const float venous_r = 0.012f + next_rand() * 0.010f;
+    const float venous_g = 0.0001f + next_rand() * 0.0002f;
+    const float venous_b = 0.0004f + next_rand() * 0.0003f;
+    push_blood(2u, pos, vel, 0.68f + next_rand() * 0.50f,
+               0.026f + next_rand() * 0.028f, 0.95f,
+               1.25f + next_rand() * 0.65f, venous_r, venous_g, venous_b);
   }
 
-  // Layer 3: Register/refresh continuous pouring wound stream on this soldier
+  // Layer 3: Register/refresh systolic pulsing wound stream on this soldier
   if (victim_ea != 0) {
     size_t slot = kMaxWoundStreams;
     for (size_t i = 0; i < kMaxWoundStreams; i++) {
@@ -1651,31 +1794,32 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
     ws.y_offset = is_lethal ? std::min(wound_y_offset, 0.55f) : wound_y_offset;
     std::memcpy(ws.dir, dir, sizeof(ws.dir));
     ws.ground_y = ground_y;
-    ws.remaining = is_lethal ? 3.2f : 1.6f;
-    ws.emit_accum = 0.03f;
+    ws.remaining = is_lethal ? 3.6f : 1.8f;
+    ws.elapsed = 0.0f;
+    ws.emit_accum = 0.025f;
     ws.mult = mult;
     ws.is_headshot = is_headshot;
   }
 
-  // Layer 4: Immediate ground splatter beneath the wounded soldier
+  // Layer 4: Ground blood pool beneath victim + anisotropic ballistic exit spatters
   {
     const float pool_ttl =
         blood_decals::ComputePoolLifetimeSec(enh.persistent_blood_decals);
     const size_t pool_cap = std::min<size_t>(
         blood_decals::ResolveMaxBloodPools(perf ? 256u : 512u),
         kMaxBloodPools);
-    float p_pos[3] = {hit_pos[0] + dir[0] * (0.18f + next_rand() * 0.25f),
+    float p_pos[3] = {hit_pos[0] + dir[0] * (0.12f + next_rand() * 0.18f),
                       ground_y,
-                      hit_pos[2] + dir[2] * (0.18f + next_rand() * 0.25f)};
+                      hit_pos[2] + dir[2] * (0.12f + next_rand() * 0.18f)};
     size_t chosen = kMaxBloodPools;
     for (size_t i = 0; i < pool_cap; i++) {
-      if (g_blood_pools[i].active &&
-          VecDistSq(g_blood_pools[i].pos, p_pos) < 0.28f * 0.28f) {
+      if (g_blood_pools[i].active && !g_blood_pools[i].is_spatter &&
+          VecDistSq(g_blood_pools[i].pos, p_pos) < 0.30f * 0.30f) {
         chosen = i;
         g_blood_pools[i].target_radius =
-            std::min(0.95f, g_blood_pools[i].target_radius +
-                                (is_lethal ? 0.18f : 0.09f));
-        g_blood_pools[i].age = std::min(g_blood_pools[i].age, 0.35f);
+            std::min(0.62f, g_blood_pools[i].target_radius +
+                                (is_lethal ? 0.14f : 0.07f));
+        g_blood_pools[i].age = std::min(g_blood_pools[i].age, 0.45f);
         g_blood_pools[i].ttl = pool_ttl;
         break;
       }
@@ -1684,13 +1828,49 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
       chosen = AllocateBloodPoolSlotLocked(pool_cap, g_cam);
       BloodPoolNode &pl = g_blood_pools[chosen];
       pl.active = true;
+      pl.is_spatter = false;
+      pl.tile = 10u;
       std::memcpy(pl.pos, p_pos, sizeof(pl.pos));
       pl.age = 0.0f;
       pl.ttl = pool_ttl;
-      pl.radius = 0.11f;
-      pl.target_radius = (is_lethal ? 0.56f : 0.30f) + float(mult) * 0.05f;
-      pl.seed = next_rand() * 6.28f;
-      pl.opacity = 0.94f;
+      pl.radius = is_lethal ? 0.09f : 0.06f;
+      pl.target_radius =
+          (is_lethal ? 0.42f : 0.24f) + float(mult) * 0.035f;
+      pl.seed = next_rand() * 6.28318f;
+      pl.aspect = 1.0f + (next_rand() - 0.5f) * 0.22f;
+      pl.opacity = 0.95f;
+    }
+
+    // Layer 4b: Directional ballistic exit spatter fan thrown along +dir
+    const int spatter = (is_lethal ? 4 : 2) + (is_headshot ? 2 : 0);
+    const float shot_yaw = std::atan2(dir[2], dir[0]);
+    for (int i = 0; i < spatter; i++) {
+      const float fan_ang = shot_yaw + (next_rand() - 0.5f) * 0.95f;
+      const float dist = 0.28f + next_rand() * 0.72f;
+      float s_pos[3] = {hit_pos[0] + std::cos(fan_ang) * dist, ground_y,
+                        hit_pos[2] + std::sin(fan_ang) * dist};
+      size_t sidx = kMaxBloodPools;
+      for (size_t j = 0; j < pool_cap; j++) {
+        if (!g_blood_pools[j].active) {
+          sidx = j;
+          break;
+        }
+      }
+      if (sidx == kMaxBloodPools)
+        sidx = AllocateBloodPoolSlotLocked(pool_cap, g_cam);
+      BloodPoolNode &sp = g_blood_pools[sidx];
+      sp.active = true;
+      sp.is_spatter = true;
+      sp.tile = (i % 2 == 0) ? 11u : 9u;
+      std::memcpy(sp.pos, s_pos, sizeof(sp.pos));
+      sp.age = 0.0f;
+      sp.ttl = (pool_ttl > 0.0f) ? (pool_ttl * 0.85f) : 0.0f;
+      const float r_target = 0.085f + next_rand() * 0.115f;
+      sp.radius = r_target * 0.78f;
+      sp.target_radius = r_target;
+      sp.seed = fan_ang;
+      sp.aspect = 1.30f + next_rand() * 0.55f;
+      sp.opacity = 0.92f;
     }
   }
 }
@@ -1827,18 +2007,27 @@ void OnExplosionDetonate(const float pos[3], float radius, float force) {
                (0.78f + next_rand() * 0.26f) * glow_mul);
   }
 
-  // 2. Radial ground shockwave & dust blast rings
-  for (int i = 0; i < 2; i++) {
+  // 2. Ground shockwave: three banks of dust peeling off the floor, then two
+  // spherical shells expanding through the air
+  for (int i = 0; i < 3; i++) {
     const float p[3] = {pos[0], pos[1] - 0.10f, pos[2]};
     const float v[3] = {0.0f, 0.05f, 0.0f};
-    push_flame(true, p, v, 0.30f + float(i) * 0.12f, 0.75f * rad_scale,
-               (4.4f + float(i) * 1.4f) * rad_scale, 14 + (i & 1),
-               0.85f * glow_mul);
+    push_flame(true, p, v, 0.30f + float(i) * 0.16f, 0.75f * rad_scale,
+               (4.4f + float(i) * 1.5f) * rad_scale, 14 + (i & 1),
+               (0.85f - float(i) * 0.16f) * glow_mul);
+  }
+  for (int i = 0; i < 2; i++) {
+    const float p[3] = {pos[0], pos[1] + 0.20f + float(i) * 0.35f * rad_scale,
+                        pos[2]};
+    const float v[3] = {0.0f, 0.25f, 0.0f};
+    push_flame(false, p, v, 0.22f + float(i) * 0.14f, 0.85f * rad_scale,
+               (5.0f + float(i) * 2.2f) * rad_scale, 14 + (i & 1),
+               0.62f * glow_mul, true);
   }
 
   // 3. Flying incandescent sparks & hot glowing embers (arcing &
   // floor-bouncing)
-  const int ember_count = perf ? 20 : 38;
+  const int ember_count = perf ? 30 : 56;
   for (int i = 0; i < ember_count; i++) {
     size_t chosen = kMaxExplosionEmbers;
     for (size_t k = 0; k < kMaxExplosionEmbers; k++) {
@@ -1867,36 +2056,38 @@ void OnExplosionDetonate(const float pos[3], float radius, float force) {
     em.vel[2] = std::sin(az) * ce * spd;
     em.ground_y = pos[1] - 0.35f;
     em.age = 0.0f;
-    em.ttl = 0.55f + next_rand() * 0.95f;
-    em.radius = 0.016f + next_rand() * 0.018f;
+    em.ttl = 0.62f + next_rand() * 1.15f;
+    em.radius = 0.014f + next_rand() * 0.036f;
     em.temp = 0.78f + next_rand() * 0.42f;
   }
 
   // 4. Heavy billowing dark soot & warm-underlit smoke column
-  const size_t plume_cap = std::max<size_t>(smoke_cap, 48u);
-  const int plume_count = perf ? 10 : 18;
+  const size_t plume_cap = std::max<size_t>(smoke_cap, 64u);
+  const int plume_count = perf ? 14 : 24;
+  const int plume_fast = plume_count / 3;
   const float base_smoke_op =
       smoke_enabled
           ? std::clamp(0.62f * std::max(smoke_density, 0.85f), 0.48f, 0.82f)
           : 0.56f;
   const float base_smoke_ttl =
-      smoke_enabled ? std::clamp(smoke_ttl * 1.85f, 2.2f, 4.6f) : 2.8f;
+      smoke_enabled ? std::clamp(smoke_ttl * 1.85f, 3.0f, 6.2f) : 3.4f;
   for (int i = 0; i < plume_count; i++) {
     const float ang = next_rand() * 6.28318f;
     const float off_r = (0.20f + next_rand() * 0.85f) * rad_scale;
     const float p[3] = {pos[0] + std::cos(ang) * off_r,
                         pos[1] + 0.15f + next_rand() * 0.75f * rad_scale,
                         pos[2] + std::sin(ang) * off_r};
-    const float out_spd =
-        (i < 6) ? (2.2f + next_rand() * 2.8f) : (0.7f + next_rand() * 1.9f);
+    const float out_spd = (i < plume_fast)
+                              ? (2.2f + next_rand() * 2.8f)
+                              : (0.7f + next_rand() * 1.9f);
     const float v[3] = {std::cos(ang) * out_spd,
-                        (i < 6) ? (0.45f + next_rand() * 1.15f)
-                                : (1.85f + next_rand() * 2.95f),
+                        (i < plume_fast) ? (0.45f + next_rand() * 1.15f)
+                                         : (1.85f + next_rand() * 2.95f),
                         std::sin(ang) * out_spd};
-    const float dark_tint = 0.16f + next_rand() * 0.18f;
+    const float dark_tint = 0.12f + next_rand() * 0.16f;
     PushSmokeNodeLocked(p, pos, false, v,
                         base_smoke_ttl * (0.72f + next_rand() * 0.55f),
-                        (0.28f + next_rand() * 0.26f) * rad_scale,
+                        (0.34f + next_rand() * 0.32f) * rad_scale,
                         base_smoke_op * (0.80f + next_rand() * 0.25f), true, 0u,
                         plume_cap, false, dark_tint);
   }
@@ -1915,6 +2106,21 @@ void OnExplosionDetonate(const float pos[3], float radius, float force) {
     PushHazeMoteLocked(hp, hv, 2.8f + next_rand() * 1.5f,
                        (0.52f + next_rand() * 0.42f) * std::min(rad_scale, 1.5f),
                        0.072f, true, perf ? 28u : kMaxHazeMotes);
+  }
+
+  // 6. Screen-space refraction lens: the frame is bent by the blast wave for a
+  // few tenths of a second (see RenderWorldScene block 2a)
+  {
+    BlastLensNode &lens = g_blast_lenses[g_blast_lens_cursor % kMaxBlastLenses];
+    g_blast_lens_cursor = (g_blast_lens_cursor + 1) % kMaxBlastLenses;
+    lens.active = true;
+    lens.pos[0] = pos[0];
+    lens.pos[1] = pos[1];
+    lens.pos[2] = pos[2];
+    lens.radius = std::clamp(radius * 0.85f, 2.2f, 9.0f);
+    lens.age = 0.0f;
+    lens.ttl = 0.55f + 0.12f * rad_scale;
+    lens.strength = 0.85f + 0.25f * std::min(rad_scale, 1.6f);
   }
   lock.unlock();
   game::haptics::DispatchExplosionHaptic(pos);
@@ -2275,21 +2481,24 @@ void EmitWoundDrip(const float pos[3], float ground_y) {
   BloodNode &bn = g_blood[chosen];
   bn.active = true;
   bn.is_mist = false;
+  bn.kind = 2u;
   bn.pos[0] = pos[0] + (next_rand() - 0.5f) * 0.10f;
   bn.pos[1] = pos[1];
   bn.pos[2] = pos[2] + (next_rand() - 0.5f) * 0.10f;
   std::memcpy(bn.prev_pos, bn.pos, sizeof(bn.prev_pos));
-  bn.vel[0] = (next_rand() - 0.5f) * 0.32f;
-  bn.vel[1] = -0.45f - next_rand() * 0.40f;
-  bn.vel[2] = (next_rand() - 0.5f) * 0.32f;
+  bn.vel[0] = (next_rand() - 0.5f) * 0.42f;
+  bn.vel[1] = -0.55f - next_rand() * 0.50f;
+  bn.vel[2] = (next_rand() - 0.5f) * 0.42f;
   bn.ground_y = ground_y;
   bn.age = 0.0f;
-  bn.ttl = 0.72f + next_rand() * 0.25f;
-  bn.radius = 0.022f + next_rand() * 0.014f;
+  bn.ttl = 0.72f + next_rand() * 0.28f;
+  bn.radius = 0.026f + next_rand() * 0.018f;
   bn.opacity = 0.95f;
-  bn.r = 0.044f + next_rand() * 0.024f;
-  bn.g = 0.0005f;
-  bn.b = 0.0012f;
+  bn.rot = next_rand() * 6.28318f;
+  bn.stretch = 1.35f;
+  bn.r = 0.015f + next_rand() * 0.010f;
+  bn.g = 0.0002f;
+  bn.b = 0.0005f;
 }
 
 void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3],
@@ -2402,6 +2611,70 @@ void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3]
     PushSmokeNodeLocked(hit_end, hit_end, false, dv, 0.85f + next_rand() * 0.4f,
                         0.09f * cs, 0.22f, false, g_next_group_id,
                         perf ? 64u : kMaxSmokeNodes, false, 0.72f);
+  }
+}
+
+void EmitMauserMuzzleShockwave(const float muzzle_pos[3], const float dir[3],
+                               float ground_y, float intensity) {
+  if (!muzzle_pos || !dir || !IsFiniteVec3(muzzle_pos) || !IsFiniteVec3(dir))
+    return;
+  const float scale = std::clamp(intensity, 0.2f, 1.5f);
+  const bool perf = IsPerformancePresetActive();
+  std::lock_guard<std::mutex> lock(g_mutex);
+  auto next_rand = [&]() -> float {
+    g_fx_rng ^= g_fx_rng << 13;
+    g_fx_rng ^= g_fx_rng >> 17;
+    g_fx_rng ^= g_fx_rng << 5;
+    return float(g_fx_rng & 0xFFFFu) / 65535.0f;
+  };
+
+  // 1. Supersonic Mauser muzzle overpressure air-bend just ahead of the crown
+  {
+    BlastLensNode &lens = g_blast_lenses[g_blast_lens_cursor % kMaxBlastLenses];
+    g_blast_lens_cursor = (g_blast_lens_cursor + 1) % kMaxBlastLenses;
+    lens.active = true;
+    lens.pos[0] = muzzle_pos[0] + dir[0] * (0.22f + 0.13f * scale);
+    lens.pos[1] = muzzle_pos[1] + dir[1] * (0.22f + 0.13f * scale);
+    lens.pos[2] = muzzle_pos[2] + dir[2] * (0.22f + 0.13f * scale);
+    lens.radius = 0.72f * (0.55f + 0.45f * scale);
+    lens.age = 0.0f;
+    lens.ttl = 0.16f * (0.65f + 0.35f * scale);
+    lens.strength = 0.42f * scale;
+  }
+
+  // 2. Concussive ground dust kick-up beneath muzzle when firing low/near ground
+  if (std::isfinite(ground_y) && (muzzle_pos[1] - ground_y) < 2.4f) {
+    const int base_dust = perf ? 3 : 5;
+    const int dust_n = std::max(1, int(std::lround(float(base_dust) * scale)));
+    const size_t cap = perf ? 64u : kMaxSmokeNodes;
+    for (int i = 0; i < dust_n; ++i) {
+      const float ang = next_rand() * 6.28318f;
+      const float r0 = (0.25f + next_rand() * 0.55f) * (0.6f + 0.4f * scale);
+      const float dp[3] = {
+          muzzle_pos[0] + dir[0] * 0.65f + std::cos(ang) * r0,
+          ground_y + 0.07f,
+          muzzle_pos[2] + dir[2] * 0.65f + std::sin(ang) * r0,
+      };
+      const float spd = (1.6f + next_rand() * 2.1f) * (0.6f + 0.4f * scale);
+      const float dv[3] = {
+          std::cos(ang) * spd + dir[0] * 0.9f * scale,
+          (0.35f + next_rand() * 0.55f) * (0.6f + 0.4f * scale),
+          std::sin(ang) * spd + dir[2] * 0.9f * scale,
+      };
+      PushSmokeNodeLocked(dp, dp, false, dv, 0.95f + next_rand() * 0.55f,
+                          (0.11f + next_rand() * 0.08f) * (0.65f + 0.35f * scale),
+                          0.16f * (0.65f + 0.35f * scale), false,
+                          g_next_group_id, cap, false, 0.62f * scale);
+    }
+  }
+
+  // 3. Lingering cordite haze mote drifting from muzzle
+  {
+    const float hv[3] = {dir[0] * 0.45f * scale, 0.18f + next_rand() * 0.18f, dir[2] * 0.45f * scale};
+    PushHazeMoteLocked(muzzle_pos, hv, 1.8f + next_rand() * 0.9f,
+                       (0.24f + next_rand() * 0.12f) * (0.65f + 0.35f * scale),
+                       0.058f * (0.6f + 0.4f * scale), false,
+                       perf ? 28u : kMaxHazeMotes);
   }
 }
 
@@ -2584,6 +2857,12 @@ void RenderWorldScene() {
             break;
           }
       if (!any_fx)
+        for (const auto &ws : g_wound_streams)
+          if (ws.active) {
+            any_fx = true;
+            break;
+          }
+      if (!any_fx)
         for (const auto &pl : g_blood_pools)
           if (pl.active) {
             any_fx = true;
@@ -2638,10 +2917,12 @@ void RenderWorldScene() {
   static std::vector<d3d::WorldVertex> tracer_verts;
   static std::vector<d3d::TexturedWorldVertex> smoke_tex_verts;
   static std::vector<d3d::TexturedWorldVertex> fire_tex_verts;
+  static std::vector<d3d::TexturedWorldVertex> warp_verts;
   smoke_verts.clear();
   tracer_verts.clear();
   smoke_tex_verts.clear();
   fire_tex_verts.clear();
+  warp_verts.clear();
 
   float view_copy[16];
   float proj_copy[16];
@@ -3001,6 +3282,119 @@ void RenderWorldScene() {
         }
       }
     }
+    // 2a. Explosion shockwave refraction: bend the already-submitted world
+    // around each fresh blast (drawn before smoke/fire so the fireball itself
+    // is never distorted)
+    {
+      bool any_lens = false;
+      for (size_t i = 0; i < kMaxBlastLenses; i++) {
+        if (g_blast_lenses[i].active) {
+          any_lens = true;
+          break;
+        }
+      }
+      if (any_lens && g_cam.valid) {
+        float m[16];
+        for (int r = 0; r < 4; r++) {
+          for (int c = 0; c < 4; c++) {
+            float s = 0.0f;
+            for (int k = 0; k < 4; k++)
+              s += g_cam.view[r * 4 + k] * g_cam.proj[k * 4 + c];
+            m[r * 4 + c] = s;
+          }
+        }
+        const float aspect =
+            (std::fabs(g_cam.proj[0]) > 1e-4f)
+                ? std::clamp(g_cam.proj[5] / g_cam.proj[0], 0.3f, 4.0f)
+                : 1.6f;
+        const float tan_y = std::max(g_cam.tan_half_fov_y, 0.05f);
+        for (size_t li = 0; li < kMaxBlastLenses; li++) {
+          BlastLensNode &lens = g_blast_lenses[li];
+          if (!lens.active)
+            continue;
+          if (world_dt > 0.0f) {
+            lens.age += world_dt;
+            if (lens.age >= lens.ttl) {
+              lens.active = false;
+              continue;
+            }
+          }
+          const float tt =
+              std::clamp(lens.age / std::max(lens.ttl, 0.01f), 0.0f, 1.0f);
+          const float fade = (1.0f - tt) * (1.0f - tt);
+          if (fade < 0.02f)
+            continue;
+          const float *p = lens.pos;
+          const float cw = p[0] * m[3] + p[1] * m[7] + p[2] * m[11] + m[15];
+          if (cw <= 0.25f)
+            continue;
+          const float nx =
+              (p[0] * m[0] + p[1] * m[4] + p[2] * m[8] + m[12]) / cw;
+          const float ny =
+              (p[0] * m[1] + p[1] * m[5] + p[2] * m[9] + m[13]) / cw;
+          const float ry =
+              std::clamp(lens.radius / (cw * tan_y), 0.06f, 1.45f);
+          const float rx = ry / aspect;
+          if (std::fabs(nx) - rx > 1.25f || std::fabs(ny) - ry > 1.25f)
+            continue;
+          const float amp = std::clamp(0.55f * fade, 0.0f, 0.55f);
+          const float base_a =
+              std::clamp(0.85f * lens.strength * fade, 0.0f, 0.92f);
+          constexpr int kWarpGrid = 16;
+          for (int gy = 0; gy < kWarpGrid; gy++) {
+            for (int gx = 0; gx < kWarpGrid; gx++) {
+              d3d::TexturedWorldVertex q[4];
+              bool any_inside = false;
+              for (int c = 0; c < 4; c++) {
+                const float tx = -1.0f + 2.0f * float(gx + (c & 1)) /
+                                             float(kWarpGrid);
+                const float ty = -1.0f + 2.0f * float(gy + (c >> 1)) /
+                                             float(kWarpGrid);
+                const float ndc_x = nx + tx * rx;
+                const float ndc_y = ny + ty * ry;
+                const float radial = std::sqrt(tx * tx + ty * ty);
+                if (radial < 1.0f)
+                  any_inside = true;
+                float dirx = 0.0f, diry = 0.0f;
+                if (radial > 1e-4f) {
+                  dirx = tx / radial;
+                  diry = ty / radial;
+                }
+                const float fall = std::max(0.0f, 1.0f - radial);
+                const float wobble =
+                    0.62f +
+                    0.38f *
+                        std::sin(6.28318f * (1.7f * std::min(radial, 1.0f) -
+                                             tt * 1.15f));
+                const float disp = amp * std::pow(fall, 1.25f) * wobble;
+                const float u = std::clamp(
+                    0.5f + ndc_x * 0.5f + dirx * disp * rx * 0.5f, 0.001f,
+                    0.999f);
+                const float v = std::clamp(
+                    0.5f - ndc_y * 0.5f - diry * disp * ry * 0.5f, 0.001f,
+                    0.999f);
+                const float a = base_a * std::pow(fall, 1.35f);
+                q[c].x = ndc_x;
+                q[c].y = ndc_y;
+                q[c].z = 0.0f;
+                q[c].u = u;
+                q[c].v = v;
+                q[c].bgra = d3d::PackColorBgra(1.0f, 1.0f, 1.0f, a);
+              }
+              if (!any_inside)
+                continue;
+              warp_verts.push_back(q[0]);
+              warp_verts.push_back(q[1]);
+              warp_verts.push_back(q[3]);
+              warp_verts.push_back(q[0]);
+              warp_verts.push_back(q[3]);
+              warp_verts.push_back(q[2]);
+            }
+          }
+        }
+      }
+    }
+
     // 2b. Explosions: Crimson-Orange Fireballs, Radial Shockwave & Bouncing
     // Glowing Embers
     {
@@ -3048,6 +3442,27 @@ void RenderWorldScene() {
           }
         } else {
           const float cool = std::clamp(1.0f - u, 0.0f, 1.0f);
+          if (f.is_flash) {
+            // Instant white-hot ignition pop
+            const float hot = std::clamp(std::pow(cool, 0.85f) * 0.95f * f.heat,
+                                         0.0f, 1.0f);
+            EmitTexturedBillboard(
+                fire_tex_verts, f.pos, rad, f.rot, f.tile,
+                d3d::PackColorBgra(
+                    1.0f, std::clamp(0.90f + 0.10f * cool, 0.0f, 1.0f),
+                    std::clamp(0.72f + 0.28f * cool * cool, 0.0f, 1.0f), hot),
+                g_cam);
+            continue;
+          }
+          if (f.is_air_ring) {
+            // Vertical blast shell expanding through the air
+            const float shell =
+                std::clamp((1.0f - u) * (1.0f - u), 0.0f, 1.0f);
+            EmitTexturedBillboard(
+                smoke_tex_verts, f.pos, rad, f.rot, f.tile,
+                d3d::PackColorBgra(0.72f, 0.70f, 0.66f, shell * 0.34f), g_cam);
+            continue;
+          }
           if (f.is_burn_fire) {
             // Burning target / lingering torch fire: bright natural orange-gold flame
             // instead of explosion's blood-red crimson char volume.
@@ -3072,11 +3487,11 @@ void RenderWorldScene() {
           } else {
             // Explosion fireball + charred soot cloud
             const float body_r =
-                (u < 0.55f) ? (0.95f - 0.35f * (u / 0.55f))
-                            : std::max(0.18f, 0.60f - 0.92f * (u - 0.55f));
-            const float body_g = (u < 0.25f) ? (0.34f - 0.22f * (u / 0.25f))
-                                             : std::max(0.04f, 0.12f * cool);
-            const float body_b = 0.025f;
+                (u < 0.55f) ? (0.98f - 0.30f * (u / 0.55f))
+                            : std::max(0.16f, 0.68f - 1.00f * (u - 0.55f));
+            const float body_g = (u < 0.25f) ? (0.42f - 0.30f * (u / 0.25f))
+                                             : std::max(0.05f, 0.15f * cool);
+            const float body_b = 0.030f;
             const float body_a =
                 std::clamp(std::pow(cool, 1.15f) * 0.84f, 0.0f, 0.90f);
             EmitTexturedBillboard(
@@ -3088,8 +3503,9 @@ void RenderWorldScene() {
             if (glow_a > 0.02f) {
               EmitTexturedBillboard(
                   fire_tex_verts, f.pos, rad * 0.86f, -f.rot * 0.7f, f.tile,
-                  d3d::PackColorBgra(1.0f, 0.28f + 0.44f * cool * cool, 0.04f,
-                                     glow_a),
+                  d3d::PackColorBgra(
+                      1.0f, 0.40f + 0.42f * cool * cool,
+                      0.05f + 0.06f * cool, glow_a),
                   g_cam);
             }
           }
@@ -3253,19 +3669,24 @@ void RenderWorldScene() {
           blood_decals::ResolveMaxBloodPools(perf_mode ? 256u : 512u),
           kMaxBloodPools);
 
-      // 3a. Emit pouring liquid streams from active wounded soldiers
+      // 3a. Emit systolic pulsing arterial spurts & venous streams from wounded soldiers
       for (size_t i = 0; i < kMaxWoundStreams; i++) {
         WoundBleedStream &ws = g_wound_streams[i];
         if (!ws.active)
           continue;
         if (world_dt > 0.0f) {
           ws.remaining -= world_dt;
+          ws.elapsed += world_dt;
           if (ws.remaining <= 0.0f || !MemMapped(ws.victim_ea, 0x390u)) {
             ws.active = false;
             continue;
           }
-          ws.emit_accum += world_dt;
-          if (ws.emit_accum >= 0.036f) {
+          // Systolic heartbeat pulse (approx 1.65 Hz cardiac cycle) with pressure decay
+          const float wave = std::max(0.0f, std::sin(ws.elapsed * 10.4f));
+          const float systolic = 0.38f + 0.62f * wave * wave;
+          const float pressure = std::exp(-ws.elapsed * 0.35f) * systolic;
+          ws.emit_accum += world_dt * (0.75f + 0.85f * systolic);
+          if (ws.emit_accum >= 0.034f) {
             ws.emit_accum = 0.0f;
             const float fx = G<float>(ws.victim_ea + 0xA0u);
             const float fy = G<float>(ws.victim_ea + 0xA4u);
@@ -3273,9 +3694,12 @@ void RenderWorldScene() {
             if (std::isfinite(fx) && std::isfinite(fy) && std::isfinite(fz)) {
               ws.ground_y = fy + 0.025f;
               const bool dying = (R32(ws.victim_ea + 0x384u) != 0u);
+              const float collapse_t =
+                  dying ? std::clamp(ws.elapsed * 1.35f, 0.0f, 1.0f) : 0.0f;
               const float cur_y_off =
-                  dying ? std::min(ws.y_offset, 0.24f) : ws.y_offset;
-              const int count = 1 + int(ws.mult > 2 ? 2 : 1);
+                  ws.y_offset * (1.0f - 0.78f * collapse_t) + 0.18f * collapse_t;
+              const int count = 1 + int(ws.mult >= 2u ? 1 : 0) +
+                                int(wave > 0.65f ? 1 : 0);
               for (int k = 0; k < count; k++) {
                 size_t chosen = kMaxBloodNodes;
                 for (size_t b = 0; b < kMaxBloodNodes; b++) {
@@ -3291,32 +3715,40 @@ void RenderWorldScene() {
                 BloodNode &bn = g_blood[chosen];
                 bn.active = true;
                 bn.is_mist = false;
+                const bool is_spurt = (k == 0 && wave > 0.45f);
+                bn.kind = is_spurt ? 1u : 2u;
                 bn.pos[0] =
-                    fx + ws.dir[0] * 0.08f + (next_rand() - 0.5f) * 0.08f;
-                bn.pos[1] = fy + cur_y_off + (next_rand() - 0.5f) * 0.05f;
+                    fx + ws.dir[0] * 0.10f + (next_rand() - 0.5f) * 0.09f;
+                bn.pos[1] = fy + cur_y_off + (next_rand() - 0.5f) * 0.06f;
                 bn.pos[2] =
-                    fz + ws.dir[2] * 0.08f + (next_rand() - 0.5f) * 0.08f;
+                    fz + ws.dir[2] * 0.10f + (next_rand() - 0.5f) * 0.09f;
                 std::memcpy(bn.prev_pos, bn.pos, sizeof(bn.prev_pos));
-                const float out_spd = 0.25f + next_rand() * 0.75f;
-                bn.vel[0] = ws.dir[0] * out_spd + (next_rand() - 0.5f) * 0.45f;
-                bn.vel[1] = -0.35f - next_rand() * 0.55f;
-                bn.vel[2] = ws.dir[2] * out_spd + (next_rand() - 0.5f) * 0.45f;
+                const float out_spd =
+                    (is_spurt ? (1.15f + next_rand() * 1.95f)
+                              : (0.35f + next_rand() * 0.85f)) *
+                    (0.55f + 0.65f * pressure);
+                bn.vel[0] = ws.dir[0] * out_spd + (next_rand() - 0.5f) * 0.55f;
+                bn.vel[1] = is_spurt ? (0.15f + next_rand() * 0.45f)
+                                     : (-0.25f - next_rand() * 0.55f);
+                bn.vel[2] = ws.dir[2] * out_spd + (next_rand() - 0.5f) * 0.55f;
                 bn.ground_y = ws.ground_y;
                 bn.age = 0.0f;
-                bn.ttl = 0.65f + next_rand() * 0.35f;
-                bn.radius = 0.024f + next_rand() * 0.018f;
-                bn.opacity = 0.95f;
-                bn.r = 0.038f + next_rand() * 0.024f;
-                bn.g = 0.0004f;
-                bn.b = 0.0010f;
+                bn.ttl = 0.58f + next_rand() * 0.38f;
+                bn.radius = is_spurt ? (0.026f + next_rand() * 0.022f)
+                                     : (0.024f + next_rand() * 0.018f);
+                bn.opacity = 0.94f;
+                bn.rot = next_rand() * 6.28318f;
+                bn.stretch = is_spurt ? (1.60f + next_rand() * 0.85f) : 1.25f;
+                bn.r = (is_spurt ? 0.018f : 0.012f) + next_rand() * 0.010f;
+                bn.g = 0.0002f;
+                bn.b = 0.0005f;
               }
             }
           }
         }
       }
 
-      // 3b. Update & Emit 3D Arterial Mist & Pouring Liquid Streams; splash
-      // onto floor
+      // 3b. Update & Emit 3D Arterial Mist, Supple Bezier Liquid Ligaments & Venous Clots
       for (size_t i = 0; i < kMaxBloodNodes; i++) {
         BloodNode &bn = g_blood[i];
         if (!bn.active)
@@ -3326,37 +3758,91 @@ void RenderWorldScene() {
           bn.active = false;
           continue;
         }
+        const float life = std::clamp(bn.age / bn.ttl, 0.0f, 1.0f);
         if (world_dt > 0.0f) {
           std::memcpy(bn.prev_pos, bn.pos, sizeof(bn.prev_pos));
           bn.pos[0] += bn.vel[0] * world_dt;
           bn.pos[1] += bn.vel[1] * world_dt;
           bn.pos[2] += bn.vel[2] * world_dt;
-          if (bn.is_mist) {
-            const float drag = std::max(0.0f, 1.0f - world_dt * 4.5f);
+          if (bn.is_mist || bn.kind == 0u) {
+            // High surface-area aerosol mist: rapid Stokes aerodynamic deceleration
+            const float drag = std::exp(-7.2f * world_dt);
             bn.vel[0] *= drag;
-            bn.vel[1] = bn.vel[1] * drag - 3.8f * world_dt;
+            bn.vel[1] = bn.vel[1] * drag - 1.45f * world_dt;
             bn.vel[2] *= drag;
             if (bn.pos[1] <= bn.ground_y) {
               bn.active = false;
               continue;
             }
           } else {
-            const float drag = std::max(0.0f, 1.0f - world_dt * 1.1f);
+            // Non-Newtonian shear-thinning rheology (Carreau-Yasuda model):
+            // High-speed shear keeps ligament fluid & supple; low-speed thickens & coagulates.
+            const float spd_cur = std::sqrt(bn.vel[0] * bn.vel[0] +
+                                            bn.vel[1] * bn.vel[1] +
+                                            bn.vel[2] * bn.vel[2]);
+            const float shear_thin =
+                1.0f / (1.0f + 0.35f * spd_cur); // lower drag at high shear
+            const float base_drag =
+                (bn.kind == 3u) ? 3.1f : ((bn.kind == 1u) ? 1.75f : 0.92f);
+            const float drag =
+                std::exp(-base_drag * (0.65f + 0.55f * shear_thin) * world_dt);
+            const float grav = (bn.kind == 3u) ? 9.8f : 13.0f;
             bn.vel[0] *= drag;
-            bn.vel[1] -= 12.5f * world_dt;
+            bn.vel[1] -= grav * world_dt;
             bn.vel[2] *= drag;
+
+            // Rayleigh-Plateau instability: stretched arterial ligaments (kind==1)
+            // neck down and pinch off a satellite droplet mid-flight around life ~ 0.44
+            if (bn.kind == 1u && bn.stretch > 1.75f && life >= 0.42f &&
+                life < 0.42f + world_dt * 2.2f) {
+              bn.stretch *= 0.68f; // ligament snaps back into rounded head drop
+              size_t sat_idx = g_blood_cursor % kMaxBloodNodes;
+              if (!g_blood[sat_idx].active) {
+                g_blood_cursor = (sat_idx + 1) % kMaxBloodNodes;
+                BloodNode &sat = g_blood[sat_idx];
+                sat.active = true;
+                sat.is_mist = false;
+                sat.kind = 2u;
+                sat.pos[0] = bn.pos[0] - bn.vel[0] * 0.035f;
+                sat.pos[1] = bn.pos[1] - bn.vel[1] * 0.035f;
+                sat.pos[2] = bn.pos[2] - bn.vel[2] * 0.035f;
+                std::memcpy(sat.prev_pos, sat.pos, sizeof(sat.prev_pos));
+                sat.vel[0] = bn.vel[0] * 0.72f + (next_rand() - 0.5f) * 0.35f;
+                sat.vel[1] = bn.vel[1] * 0.72f - 0.30f;
+                sat.vel[2] = bn.vel[2] * 0.72f + (next_rand() - 0.5f) * 0.35f;
+                sat.ground_y = bn.ground_y;
+                sat.age = 0.0f;
+                sat.ttl = std::max(0.22f, (bn.ttl - bn.age) * 0.90f);
+                sat.radius = bn.radius * 0.62f;
+                sat.opacity = bn.opacity * 0.92f;
+                sat.rot = next_rand() * 6.28318f;
+                sat.stretch = 1.20f;
+                sat.r = bn.r * 0.82f;
+                sat.g = bn.g;
+                sat.b = bn.b;
+              }
+            }
+
             if (bn.pos[1] <= bn.ground_y) {
-              // Droplet hits the floor: spawn/grow organic blood pool
+              // Droplet hits the floor: spawn directional spatter or grow blood pool
               float hit_floor[3] = {bn.pos[0], bn.ground_y, bn.pos[2]};
+              const float horiz_spd =
+                  std::sqrt(bn.vel[0] * bn.vel[0] + bn.vel[2] * bn.vel[2]);
+              const float impact_vy = std::fabs(bn.vel[1]);
+              const bool make_spatter = (bn.kind == 1u || bn.kind == 3u) &&
+                                        (horiz_spd > 1.85f);
               size_t chosen = kMaxBloodPools;
               for (size_t p = 0; p < pool_cap; p++) {
                 if (g_blood_pools[p].active &&
+                    g_blood_pools[p].is_spatter == make_spatter &&
                     VecDistSq(g_blood_pools[p].pos, hit_floor) <
-                        0.28f * 0.28f) {
+                        (make_spatter ? (0.16f * 0.16f) : (0.30f * 0.30f))) {
                   chosen = p;
+                  const float max_r = make_spatter ? 0.22f : 0.64f;
+                  const float add_r = make_spatter ? 0.018f : 0.028f;
                   g_blood_pools[p].target_radius =
-                      std::min(0.95f, g_blood_pools[p].target_radius + 0.036f);
-                  g_blood_pools[p].age = std::min(g_blood_pools[p].age, 0.4f);
+                      std::min(max_r, g_blood_pools[p].target_radius + add_r);
+                  g_blood_pools[p].age = std::min(g_blood_pools[p].age, 0.45f);
                   g_blood_pools[p].ttl = pool_ttl;
                   break;
                 }
@@ -3365,14 +3851,60 @@ void RenderWorldScene() {
                 chosen = AllocateBloodPoolSlotLocked(pool_cap, g_cam);
                 BloodPoolNode &pl = g_blood_pools[chosen];
                 pl.active = true;
+                pl.is_spatter = make_spatter;
+                pl.tile = make_spatter ? ((i & 1u) ? 9u : 11u) : 10u;
                 std::memcpy(pl.pos, hit_floor, sizeof(pl.pos));
                 pl.age = 0.0f;
                 pl.ttl = pool_ttl;
-                pl.radius = 0.07f;
-                pl.target_radius = 0.16f + next_rand() * 0.16f;
-                pl.seed = next_rand() * 6.28f;
-                pl.opacity = 0.90f;
+                if (make_spatter) {
+                  const float r_sp = 0.065f + next_rand() * 0.085f;
+                  pl.radius = r_sp * 0.82f;
+                  pl.target_radius = r_sp;
+                  pl.seed = std::atan2(bn.vel[2], bn.vel[0]);
+                  pl.aspect = std::clamp(1.20f + horiz_spd * 0.14f, 1.20f, 1.95f);
+                  pl.opacity = 0.90f;
+                } else {
+                  pl.radius = 0.055f;
+                  pl.target_radius = 0.14f + next_rand() * 0.14f;
+                  pl.seed = next_rand() * 6.28318f;
+                  pl.aspect = 1.0f + (next_rand() - 0.5f) * 0.20f;
+                  pl.opacity = 0.93f;
+                }
               }
+
+              // High-Weber-number impact corona micro-splash: heavy droplets striking
+              // the floor eject a tiny secondary splash droplet that hops outward
+              if ((bn.kind == 1u || bn.kind == 2u) && impact_vy > 3.2f &&
+                  bn.radius > 0.020f && (i % 3u == 0u)) {
+                size_t sp_idx = g_blood_cursor % kMaxBloodNodes;
+                if (!g_blood[sp_idx].active) {
+                  g_blood_cursor = (sp_idx + 1) % kMaxBloodNodes;
+                  const float splash_ang = next_rand() * 6.28318f;
+                  const float splash_r = 0.45f + next_rand() * 0.85f;
+                  BloodNode &crn = g_blood[sp_idx];
+                  crn.active = true;
+                  crn.is_mist = false;
+                  crn.kind = 3u;
+                  crn.pos[0] = hit_floor[0];
+                  crn.pos[1] = bn.ground_y + 0.015f;
+                  crn.pos[2] = hit_floor[2];
+                  std::memcpy(crn.prev_pos, crn.pos, sizeof(crn.prev_pos));
+                  crn.vel[0] = bn.vel[0] * 0.25f + std::cos(splash_ang) * splash_r;
+                  crn.vel[1] = std::min(1.35f, impact_vy * 0.22f + 0.35f);
+                  crn.vel[2] = bn.vel[2] * 0.25f + std::sin(splash_ang) * splash_r;
+                  crn.ground_y = bn.ground_y;
+                  crn.age = 0.0f;
+                  crn.ttl = 0.16f + next_rand() * 0.10f;
+                  crn.radius = bn.radius * 0.45f;
+                  crn.opacity = 0.84f;
+                  crn.rot = splash_ang;
+                  crn.stretch = 1.35f;
+                  crn.r = bn.r * 0.90f;
+                  crn.g = bn.g;
+                  crn.b = bn.b;
+                }
+              }
+
               bn.active = false;
               continue;
             }
@@ -3384,38 +3916,80 @@ void RenderWorldScene() {
         if (dz <= 0.12f)
           continue;
 
-        const float life = std::clamp(bn.age / bn.ttl, 0.0f, 1.0f);
-        if (bn.is_mist) {
+        if (bn.is_mist || bn.kind == 0u) {
+          // Atomized arterial aerosol cloud + micro-droplets (Tile 8)
           const float fade =
-              std::min(1.0f, bn.age * 28.0f) * std::pow(1.0f - life, 1.85f);
+              std::min(1.0f, bn.age * 32.0f) * std::pow(1.0f - life, 1.45f);
           const float alpha = bn.opacity * fade;
           if (alpha > 0.01f) {
-            const float r = bn.radius * (0.80f + life * 0.85f);
+            const float r = bn.radius * (0.72f + 1.15f * std::sqrt(life));
             EmitTexturedBillboard(
-                smoke_tex_verts, bn.pos, r, bn.age * 1.1f + float(i) * 1.1f,
-                8 + (int(i) & 3),
-                d3d::PackColorBgra(bn.r, bn.g, bn.b, alpha * 0.85f), g_cam);
+                smoke_tex_verts, bn.pos, r, bn.rot + bn.age * 0.65f, 8,
+                d3d::PackColorBgra(bn.r, bn.g, bn.b, alpha * 0.92f), g_cam);
           }
         } else {
-          const float fade = std::pow(1.0f - life, 0.85f);
+          const float fade = std::pow(1.0f - life, 0.72f);
           const float alpha = bn.opacity * fade;
           if (alpha > 0.02f) {
-            float tail_p[3] = {bn.pos[0] - bn.vel[0] * 0.055f,
-                               bn.pos[1] - bn.vel[1] * 0.055f,
-                               bn.pos[2] - bn.vel[2] * 0.055f};
-            const uint32_t c_tail =
-                d3d::PackColorBgra(bn.r * 0.65f, bn.g, bn.b, alpha * 0.35f);
-            const uint32_t c_head =
-                d3d::PackColorBgra(bn.r, bn.g, bn.b, alpha * 0.96f);
-            Emit3DRibbon(smoke_verts, tail_p, bn.pos, bn.radius * 0.30f,
-                         bn.radius * 0.85f, c_tail, c_head, g_cam);
-            Emit3DSoftDisc(smoke_verts, bn.pos, bn.radius * 0.80f,
-                           Color3{bn.r, bn.g, bn.b}, alpha * 0.90f, g_cam);
+            const float spd_sq = bn.vel[0] * bn.vel[0] +
+                                 bn.vel[1] * bn.vel[1] +
+                                 bn.vel[2] * bn.vel[2];
+            const float spd = std::sqrt(spd_sq);
+            float v_dir[3] = {0.0f, -1.0f, 0.0f};
+            if (spd > 1e-3f) {
+              v_dir[0] = bn.vel[0] / spd;
+              v_dir[1] = bn.vel[1] / spd;
+              v_dir[2] = bn.vel[2] / spd;
+            }
+            const int tile =
+                (bn.kind == 1u) ? 9 : ((bn.kind == 3u) ? ((i & 1u) ? 8 : 11) : 11);
+            // Capillary surface-tension oscillation & Rayleigh-Plateau elongation
+            const float rp_wave =
+                1.0f + 0.14f * std::sin(bn.age * 38.0f + bn.rot);
+            const float eff_stretch = std::clamp(
+                bn.stretch * (0.92f + spd * 0.17f) * rp_wave, 1.15f, 3.35f);
+            // Volume-conserving cross-sectional radius (r ~ 1 / sqrt(stretch))
+            const float vol_rad =
+                bn.radius / std::sqrt(std::max(1.0f, eff_stretch * 0.65f));
+            const float bill_r =
+                vol_rad * ((bn.kind == 3u) ? 1.75f : 2.10f);
+            EmitStretchedBillboard(
+                smoke_tex_verts, bn.pos, v_dir, bill_r, eff_stretch, bn.rot,
+                tile, d3d::PackColorBgra(bn.r, bn.g, bn.b, alpha * 0.95f),
+                g_cam);
+
+            // Supple 3-segment quadratic Bezier liquid ligament with gravity sag
+            // and Rayleigh-Plateau waist necking
+            const float streak_dt =
+                (bn.kind == 1u || bn.kind == 3u) ? 0.048f : 0.034f;
+            float tail_p[3] = {bn.pos[0] - bn.vel[0] * streak_dt,
+                               bn.pos[1] - bn.vel[1] * streak_dt +
+                                   0.5f * 12.5f * streak_dt * streak_dt,
+                               bn.pos[2] - bn.vel[2] * streak_dt};
+            const float whip_sway =
+                0.012f * std::sin(bn.age * 28.0f + float(i) * 1.7f);
+            float mid_ctrl[3] = {
+                0.5f * (tail_p[0] + bn.pos[0]) + g_cam.right[0] * whip_sway,
+                0.5f * (tail_p[1] + bn.pos[1]) +
+                    0.18f * 12.5f * streak_dt * streak_dt,
+                0.5f * (tail_p[2] + bn.pos[2]) + g_cam.right[2] * whip_sway};
+            const float pinch =
+                std::clamp(1.0f - 0.38f * life, 0.52f, 1.0f);
+            const uint32_t c_tail = d3d::PackColorBgra(
+                bn.r * 0.42f, bn.g * 0.40f, bn.b * 0.40f, alpha * 0.34f);
+            const uint32_t c_mid = d3d::PackColorBgra(
+                bn.r * 0.64f, bn.g * 0.55f, bn.b * 0.55f, alpha * 0.78f);
+            const uint32_t c_head = d3d::PackColorBgra(
+                bn.r * 0.78f, bn.g * 0.70f, bn.b * 0.70f, alpha * 0.94f);
+            EmitCurvedBloodLigament(smoke_verts, tail_p, mid_ctrl, bn.pos,
+                                    bn.radius, pinch, c_tail, c_mid, c_head,
+                                    g_cam);
           }
         }
       }
 
-      // 3c. Update & Emit Horizontal Ground Blood Pools (permanent coagulation when enabled)
+      // 3c. Update & Emit Ground Blood Pools (Non-Newtonian Carreau-Yasuda creep +
+      // Beer-Lambert 3-zone coagulation depth) & Anisotropic Ballistic Spatters
       for (size_t i = 0; i < kMaxBloodPools; i++) {
         BloodPoolNode &pl = g_blood_pools[i];
         if (!pl.active)
@@ -3426,7 +4000,18 @@ void RenderWorldScene() {
           continue;
         }
         if (world_dt > 0.0f && pl.radius < pl.target_radius) {
-          pl.radius = std::min(pl.target_radius, pl.radius + world_dt * 0.42f);
+          // Non-Newtonian yield-stress spreading: fast initial shear-thinning flow
+          // (0..0.4s) followed by thick rouleaux gelation creep that halts at target_radius.
+          const float rem_frac = std::clamp(
+              (pl.target_radius - pl.radius) / std::max(pl.target_radius, 0.05f),
+              0.0f, 1.0f);
+          const float grow_rate =
+              pl.is_spatter
+                  ? 1.65f
+                  : ((0.42f * std::exp(-pl.age * 1.15f) + 0.05f) *
+                     std::pow(rem_frac, 0.65f));
+          pl.radius =
+              std::min(pl.target_radius, pl.radius + world_dt * grow_rate);
         }
         float dz = (pl.pos[0] - g_cam.eye[0]) * g_cam.forward[0] +
                    (pl.pos[1] - g_cam.eye[1]) * g_cam.forward[1] +
@@ -3441,16 +4026,38 @@ void RenderWorldScene() {
                                : 1.0f;
         const auto coag =
             blood_decals::EvaluatePoolCoagulation(pl.age, pl.opacity * fade);
-        const float pool_r = pl.radius * 1.25f * coag.spread_scale;
-        EmitTexturedGroundTile(smoke_tex_verts, pl.pos, pool_r, pl.seed,
-                               8 + (int(pl.seed * 10.0f) & 3),
-                               d3d::PackColorBgra(coag.r, coag.g, coag.b, coag.a));
-        if (coag.specular_sheen > 0.04f) {
+        // Attenuate blood_decals coagulation curves (0.260 fresh -> 0.125 dried)
+        // for Black's post-process tone-mapper so pools render as deep dark crimson
+        // (0.024 fresh -> 0.011 coagulated) instead of bright light-red paint.
+        const float body_r = std::clamp(coag.r * 0.092f, 0.008f, 0.028f);
+        const float body_g = std::clamp(coag.g * 0.025f, 0.0001f, 0.0006f);
+        const float body_b = std::clamp(coag.b * 0.030f, 0.0002f, 0.0008f);
+
+        if (pl.is_spatter) {
+          const float sp_r = pl.radius * 1.12f;
+          EmitAnisotropicGroundTile(
+              smoke_tex_verts, pl.pos, sp_r * pl.aspect, sp_r, pl.seed,
+              int(pl.tile),
+              d3d::PackColorBgra(body_r * 0.88f, body_g, body_b, coag.a * 0.94f));
+        } else {
+          const float pool_r = pl.radius * 1.15f * coag.spread_scale;
+          // Zone 1: Outer crimson pool with Marangoni surface-tension meniscus rim (Tile 10)
+          EmitAnisotropicGroundTile(
+              smoke_tex_verts, pl.pos, pool_r * pl.aspect, pool_r, pl.seed, 10,
+              d3d::PackColorBgra(body_r, body_g, body_b, coag.a * 0.95f));
+          // Zone 2: Inner thick dark coagulated venous clot core (Beer-Lambert deep absorption)
+          const float core_r = pool_r * 0.66f;
           EmitTexturedGroundTile(
-              smoke_tex_verts, pl.pos, pool_r * 0.62f, pl.seed + 1.1f,
-              8 + ((int(pl.seed * 10.0f) + 1) & 3),
-              d3d::PackColorBgra(coag.r * 1.45f, coag.g * 1.35f, coag.b * 1.35f,
-                                 coag.a * coag.specular_sheen * 0.58f));
+              smoke_tex_verts, pl.pos, core_r, pl.seed + 1.57f, 10,
+              d3d::PackColorBgra(body_r * 0.38f, body_g * 0.30f, body_b * 0.30f,
+                                 coag.a * 0.94f));
+          // Zone 3: Subtle wet plasma/specular sheen on fresh pools that vanishes as fibrin clots
+          if (coag.specular_sheen > 0.08f) {
+            EmitTexturedGroundTile(
+                smoke_tex_verts, pl.pos, pool_r * 0.48f, pl.seed + 0.85f, 9,
+                d3d::PackColorBgra(body_r * 1.12f, body_g * 1.15f, body_b * 1.15f,
+                                   coag.a * coag.specular_sheen * 0.32f));
+          }
         }
       }
     }
@@ -3626,6 +4233,9 @@ void RenderWorldScene() {
                                            pending_clinks[c].shotgun);
   }
 
+  if (!warp_verts.empty()) {
+    d3d::DrawScreenWarp(warp_verts.data(), uint32_t(warp_verts.size()));
+  }
   if (!smoke_verts.empty()) {
     d3d::DrawWorldOverlay(smoke_verts.data(), uint32_t(smoke_verts.size()),
                           view_copy, proj_copy, false);

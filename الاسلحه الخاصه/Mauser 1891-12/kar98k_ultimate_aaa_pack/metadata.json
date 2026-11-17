@@ -1,0 +1,39 @@
+{
+  "weapon": "kar_98_ultimate_aaa",
+  "license_notice": "Base 3D mesh by DuduOliveira (CC-BY-4.0)",
+  "lods": {
+    "lod0_glb": {
+      "path": "model/kar_98_lod0.glb",
+      "triangles": 60000,
+      "embedded_animations": 12
+    },
+    "lod1_glb": {
+      "path": "model/kar_98_lod1.glb",
+      "triangles": 20024,
+      "embedded_animations": 12
+    },
+    "lod2_glb": {
+      "path": "model/kar_98_lod2.glb",
+      "triangles": 8104,
+      "embedded_animations": 0
+    },
+    "collision_obj": "model/kar_98_collision.obj"
+  },
+  "sockets_m": {
+    "Socket_Muzzle": [
+      0.85,
+      0.039,
+      0.0
+    ],
+    "Socket_EjectionPort": [
+      0.34,
+      0.045,
+      0.01
+    ],
+    "Socket_ScopeAim": [
+      0.47,
+      0.071,
+      0.0
+    ]
+  }
+}

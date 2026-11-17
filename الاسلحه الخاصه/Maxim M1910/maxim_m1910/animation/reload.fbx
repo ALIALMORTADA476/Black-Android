@@ -1,0 +1,116 @@
+; FBX 7.4.0 project file
+; Maxim M1910 Reload Animation (30 fps, 84 frames, returns to rest pose at frame 84)
+FBXHeaderExtension:  {
+    FBXHeaderVersion: 1003
+    FBXVersion: 7400
+    Creator: "Hard-Surface Technical Asset Producer"
+}
+GlobalSettings:  {
+    Version: 1000
+    Properties70:  {
+        P: "UpAxis", "int", "Integer", "",1
+        P: "UpAxisSign", "int", "Integer", "",1
+        P: "FrontAxis", "int", "Integer", "",0
+        P: "FrontAxisSign", "int", "Integer", "",1
+        P: "CoordAxis", "int", "Integer", "",2
+        P: "CoordAxisSign", "int", "Integer", "",1
+        P: "UnitScaleFactor", "double", "Number", "",1
+        P: "TimeMode", "enum", "", "",6
+    }
+}
+Objects:  {
+    Model: 1001, "Model::Receiver_Body", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1002, "Model::FeedCover_COVER", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",38.00,10.20,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1003, "Model::CrankHandle_CHARGE", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",14.50,4.20,5.60
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1004, "Model::BeltBox_MAG", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",33.50,-6.50,13.50
+            P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+        }
+    }
+    Model: 1005, "Model::ThumbTrigger_TRIGGER", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",1.20,3.80,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1006, "Model::RearSight_SIGHT", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",14.00,11.00,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1007, "Model::CarriageWheels_WHEEL", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",44.50,-18.50,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1008, "Model::LockBlock_BOLT", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",20.00,6.20,0.00
+            P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+        }
+    }
+    AnimationStack: 2001, "AnimStack::Reload", "" {
+        Properties70:  {
+            P: "LocalStop", "KTime", "Time", "",129178828800
+        }
+    }
+    AnimationLayer: 2002, "AnimLayer::BaseLayer", "" {
+    }
+    AnimationCurveNode: 3001, "AnimCurveNode::R_Cover", "" {
+        Properties70:  {
+            P: "d|X", "Number", "", "A",0
+            P: "d|Y", "Number", "", "A",0
+            P: "d|Z", "Number", "", "A",0
+        }
+    }
+    AnimationCurve: 4001, "AnimCurve::Cover_Z", "" {
+        Default: 0
+        KeyVer: 4008
+        KeyTime: *5 {
+            a: 0,18454118400,73816473600,89194905600,129178828800
+        }
+        KeyValueFloat: *5 {
+            a: 0,-46,-46,0,0
+        }
+    }
+}
+Connections:  {
+    OO "Model::Receiver_Body",0
+    OO "Model::FeedCover_COVER",1001
+    OO "Model::CrankHandle_CHARGE",1001
+    OO "Model::BeltBox_MAG",1001
+    OO "Model::ThumbTrigger_TRIGGER",1001
+    OO "Model::RearSight_SIGHT",1001
+    OO "Model::CarriageWheels_WHEEL",1001
+    OO "Model::LockBlock_BOLT",1001
+    OO "AnimLayer::BaseLayer",2001
+    OO "AnimCurveNode::R_Cover",2002
+    OP "AnimCurveNode::R_Cover",1002,"Lcl Rotation"
+    OP "AnimCurve::Cover_Z",3001,"d|Z"
+}

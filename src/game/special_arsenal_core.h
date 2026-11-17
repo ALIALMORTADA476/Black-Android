@@ -88,6 +88,7 @@ enum class AudioCueKind : uint8_t {
     Mauser91BoltCycle,
     Mauser91StripperClip,
     Mauser91DryFire,
+    Mauser91ChamberClose,
     C96Shot,
     C96BreechClack,
     C96ClipReload,
@@ -120,9 +121,12 @@ struct PartAnimPose {
     float tank_tilt_rad = 0.0f;     // reload tilt
 
     // Mauser 1891-12
-    float bolt_lift_deg = 0.0f;     // 0..72 deg
-    float bolt_retract_m = 0.0f;    // 0..0.095 m
+    float bolt_lift_deg = 0.0f;     // 0..68 deg (bolt handle only)
+    float bolt_retract_m = 0.0f;    // 0..0.096 m
+    float bolt_stop_deg = 0.0f;     // 0..-14 deg latch pivot
+    float rear_sight_deg = 0.0f;    // 0..4.5 deg tangent sight leaf elevation on ADS
     float clip_insert = 0.0f;       // 0..1 stripper clip downward insertion
+    float clip_eject = 0.0f;        // 0..1 empty stripper clip ejection arc
     float clip_rounds_left = 0.0f;  // 0..5
 
     // Mauser C96 / M712
@@ -215,11 +219,13 @@ private:
 
     int m91_mag_ = 5;
     int m91_reserve_ = 65;
+    bool m91_reload_close_cue_sent_ = false;
 
     int c96_mag_ = 20;
     int c96_reserve_ = 120;
     bool c96_full_auto_ = true;
     bool c96_bolt_locked_open_ = false;
+    bool c96_reload_close_cue_sent_ = false;
 
     int maxim_mag_ = 250;
     int maxim_reserve_ = 500;

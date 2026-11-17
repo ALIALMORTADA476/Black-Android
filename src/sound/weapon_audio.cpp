@@ -64,7 +64,7 @@ constexpr int32_t kSlotC96Fire = 136, kSlotC96Breech = 137, kSlotC96Clip = 138, 
 constexpr int32_t kSlotMxmFire = 141, kSlotMxmReload = 142, kSlotMxmBoil = 143, kSlotMxmSteam = 144;
 constexpr int32_t kSlotTailM91Outdoor = 145, kSlotTailMxmHeavy = 146;
 constexpr int32_t kSlotFlmPilotHum = 147, kSlotFlmFoamSplash = 148, kSlotM91ChamberClose = 149;
-constexpr int32_t kSlotMxmWheelRoll = 150, kSlotMxmBeltAdvance = 151;
+constexpr int32_t kSlotMxmWheelRoll = 150, kSlotMxmBeltAdvance = 151, kSlotTailC96Outdoor = 152;
 
 struct ClipRec {
     uint32_t slot_id = 0;
@@ -241,7 +241,8 @@ StemCategory StemForSlot(uint32_t slot_id) {
     if (slot_id == uint32_t(kSlotAiTail) ||
         (slot_id >= uint32_t(kSlotTailPistolOutdoor) && slot_id <= uint32_t(kSlotTailHeavyMattak)) ||
         slot_id == uint32_t(kSlotTailShotgunOutdoor) || slot_id == uint32_t(kSlotTailSuppressedCrack) ||
-        slot_id == uint32_t(kSlotTailM91Outdoor) || slot_id == uint32_t(kSlotTailMxmHeavy)) {
+        slot_id == uint32_t(kSlotTailM91Outdoor) || slot_id == uint32_t(kSlotTailMxmHeavy) ||
+        slot_id == uint32_t(kSlotTailC96Outdoor)) {
         return StemCategory::GunshotTail;
     }
     if (slot_id == uint32_t(kSlotEnvTail) || slot_id == uint32_t(kSlotTailIndoorEcho)) {
@@ -370,7 +371,7 @@ int32_t SlotForPlayerFire(std::string_view code_raw, bool suppressed, bool alt_f
 uint32_t TailSlotForPlayerSlot(uint32_t fire_slot) {
     if (fire_slot == uint32_t(kSlotFlameIgnite)) return uint32_t(kSlotFireLoop);
     if (fire_slot == uint32_t(kSlotM91Fire)) return uint32_t(kSlotTailM91Outdoor);
-    if (fire_slot == uint32_t(kSlotC96Fire)) return uint32_t(kSlotTailPistolOutdoor);
+    if (fire_slot == uint32_t(kSlotC96Fire)) return uint32_t(kSlotTailC96Outdoor);
     if (fire_slot == uint32_t(kSlotMxmFire)) return uint32_t(kSlotTailMxmHeavy);
     if (IsSuppressedFireSlot(fire_slot)) return uint32_t(kSlotTailSuppressedCrack);
     if (fire_slot <= uint32_t(kSlotGk1Fire)) return uint32_t(kSlotTailPistolOutdoor);
@@ -488,24 +489,36 @@ void TriggerPlayerWeaponLayersLocked(uint32_t fire_slot, uint32_t owner_voice_ob
     }
 
     // Layer B: Rolling Outdoor Gunshot Tail ("Mattak" valley/open-area roll; owner=0 so never clipped short!)
+    const bool rev_on = g_state.env_reverb_active.load(std::memory_order_relaxed);
+    const float rev_late = g_state.env_reverb_late.load(std::memory_order_relaxed);
+    const bool is_mauser91 = (fire_slot == uint32_t(kSlotM91Fire));
+    const bool is_c96 = (fire_slot == uint32_t(kSlotC96Fire));
     if (enh.audio_tail_intensity > 0) {
         const uint32_t tail_slot = TailSlotForPlayerSlot(fire_slot);
         const uint32_t delay = suppressed ? 640u :
-            ((fire_slot <= uint32_t(kSlotGk1Fire) || (fire_slot >= uint32_t(kSlotSmgFire) && fire_slot <= uint32_t(kSlotP90Fire))) ? 960u : 1200u);
-        const float tail_gain = suppressed ? 0.40f : 0.78f;
-        const float tail_rev = suppressed ? 0.12f : 0.34f;
+            (is_c96 ? 820u :
+            ((fire_slot <= uint32_t(kSlotGk1Fire) || (fire_slot >= uint32_t(kSlotSmgFire) && fire_slot <= uint32_t(kSlotP90Fire))) ? 960u : 1200u));
+        float tail_gain = suppressed ? 0.40f : 0.78f;
+        if (is_mauser91) {
+            tail_gain = rev_on ? 0.62f : 0.94f;
+        } else if (is_c96) {
+            tail_gain = rev_on ? 0.54f : 0.84f;
+        }
+        const float tail_rev = suppressed ? 0.12f : (is_mauser91 ? 0.40f : (is_c96 ? 0.36f : 0.34f));
         SpawnClipForSlotLocked(tail_slot, 0, false, 0, nullptr, 2.0f, 120.0f,
                                tail_gain, delay, tail_rev);
     }
 
     // Layer C: Authentic Indoor/Corridor Environmental Reflections (adapts dynamically to active I3DL2 room zone)
     if (enh.audio_echo_intensity > 0) {
-        const bool rev_on = g_state.env_reverb_active.load(std::memory_order_relaxed);
-        const float rev_late = g_state.env_reverb_late.load(std::memory_order_relaxed);
-        const float room_factor = rev_on ? std::clamp(0.68f + rev_late * 1.45f, 0.68f, 1.35f) : 0.44f;
-        const float echo_gain = (suppressed ? 0.28f : 0.72f) * room_factor;
+        const float base_room = is_mauser91 ? 0.85f : (is_c96 ? 0.76f : 0.68f);
+        const float open_room = is_mauser91 ? 0.36f : (is_c96 ? 0.40f : 0.44f);
+        const float room_factor = rev_on
+            ? std::clamp(base_room + rev_late * 1.45f, 0.68f, 1.45f)
+            : open_room;
+        const float echo_gain = (suppressed ? 0.28f : (is_mauser91 ? 0.82f : (is_c96 ? 0.76f : 0.72f))) * room_factor;
         SpawnClipForSlotLocked(uint32_t(kSlotTailIndoorEcho), 0, false, 0, nullptr, 2.0f, 120.0f,
-                               echo_gain, 720u, 0.44f);
+                               echo_gain, 720u, is_mauser91 ? 0.48f : (is_c96 ? 0.46f : 0.44f));
     }
 }
 
@@ -1048,6 +1061,25 @@ void TriggerSpecialSlot(int32_t slot_id, float gain, bool is_loop) {
     std::lock_guard<std::mutex> lock(g_state.mix_mutex);
     SpawnClipForSlotLocked(uint32_t(slot_id), 0u, false, 0, nullptr, 2.0f, 120.0f,
                            std::clamp(gain, 0.05f, 1.45f), 0u, 0.18f, is_loop);
+}
+
+void TriggerWorldImpact(const float pos[3], bool ricochet, bool supersonic_crack) {
+    if (!pos) return;
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    if (!enh.mod_audio_pack_enabled || !EnsureLoaded()) return;
+    std::lock_guard<std::mutex> lock(g_state.mix_mutex);
+    if (enh.environmental_audio_volume > 0) {
+        SpawnClipForSlotLocked(uint32_t(kSlotImpConcrete), 0u, true, 0u, pos,
+                               4.0f, 140.0f, 0.78f, 0u, 0.36f, false);
+    }
+    if (ricochet && enh.audio_bullet_flyby > 0) {
+        SpawnClipForSlotLocked(uint32_t(kSlotImpRicochet), 0u, true, 0u, pos,
+                               4.0f, 140.0f, 0.68f, 192u, 0.32f, false);
+    }
+    if (supersonic_crack && enh.audio_bullet_flyby > 0) {
+        SpawnClipForSlotLocked(uint32_t(kSlotEnvSupersonicCrack), 0u, true, 0u, pos,
+                               5.0f, 160.0f, 0.76f, 0u, 0.24f, false);
+    }
 }
 
 void RenderMix(float* out, float* send, uint32_t frames,

@@ -1,0 +1,222 @@
+{
+  "fps": 30,
+  "duration_frames": 78,
+  "loop": false,
+  "rest_pose_is_frame_0": true,
+  "events": [
+    {
+      "frame": 0,
+      "event": "reload_start"
+    },
+    {
+      "frame": 6,
+      "event": "safety_engaged"
+    },
+    {
+      "frame": 12,
+      "event": "valve_closed_depressurize"
+    },
+    {
+      "frame": 18,
+      "event": "tank_latch_release"
+    },
+    {
+      "frame": 26,
+      "event": "tank_pack_out"
+    },
+    {
+      "frame": 48,
+      "event": "tank_pack_in_seated"
+    },
+    {
+      "frame": 54,
+      "event": "tank_latch_locked"
+    },
+    {
+      "frame": 62,
+      "event": "valve_opened_pressurize"
+    },
+    {
+      "frame": 70,
+      "event": "igniter_charging_handle_cycled"
+    },
+    {
+      "frame": 78,
+      "event": "reload_end"
+    }
+  ],
+  "tracks": [
+    {
+      "part": "SafetyLever_SAFETY",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": 0,
+      "to": -28,
+      "start_frame": 0,
+      "end_frame": 6,
+      "easing": "ease_out"
+    },
+    {
+      "part": "RegulatorValve_VALVE",
+      "motion": "rotate",
+      "axis": "X",
+      "from": 0,
+      "to": -90,
+      "start_frame": 6,
+      "end_frame": 12,
+      "easing": "ease_in_out"
+    },
+    {
+      "part": "PressureGauge_GAUGE",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": 0,
+      "to": -85,
+      "start_frame": 8,
+      "end_frame": 16,
+      "easing": "ease_out"
+    },
+    {
+      "part": "TankLatch_LATCH",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": 0,
+      "to": 32,
+      "start_frame": 14,
+      "end_frame": 18,
+      "easing": "ease_out"
+    },
+    {
+      "part": "FuelTankPack_TANK",
+      "motion": "slide",
+      "axis": "Y",
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        0,
+        -14.5,
+        0
+      ],
+      "start_frame": 18,
+      "end_frame": 28,
+      "easing": "ease_in"
+    },
+    {
+      "part": "FuelTankPack_TANK",
+      "motion": "slide",
+      "axis": "Y",
+      "from": [
+        0,
+        -14.5,
+        0
+      ],
+      "to": [
+        0,
+        0,
+        0
+      ],
+      "start_frame": 34,
+      "end_frame": 48,
+      "easing": "ease_in_out"
+    },
+    {
+      "part": "TankLatch_LATCH",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": 32,
+      "to": 0,
+      "start_frame": 48,
+      "end_frame": 54,
+      "easing": "ease_in"
+    },
+    {
+      "part": "RegulatorValve_VALVE",
+      "motion": "rotate",
+      "axis": "X",
+      "from": -90,
+      "to": 0,
+      "start_frame": 54,
+      "end_frame": 62,
+      "easing": "ease_in_out"
+    },
+    {
+      "part": "PressureGauge_GAUGE",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": -85,
+      "to": 0,
+      "start_frame": 56,
+      "end_frame": 64,
+      "easing": "ease_out"
+    },
+    {
+      "part": "ChargingHandle_CHARGE",
+      "motion": "slide",
+      "axis": "X",
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        -7.5,
+        0,
+        0
+      ],
+      "start_frame": 62,
+      "end_frame": 68,
+      "easing": "ease_out"
+    },
+    {
+      "part": "ChargingHandle_CHARGE",
+      "motion": "slide",
+      "axis": "X",
+      "from": [
+        -7.5,
+        0,
+        0
+      ],
+      "to": [
+        0,
+        0,
+        0
+      ],
+      "start_frame": 68,
+      "end_frame": 73,
+      "easing": "ease_in"
+    },
+    {
+      "part": "SafetyLever_SAFETY",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": -28,
+      "to": 0,
+      "start_frame": 72,
+      "end_frame": 76,
+      "easing": "ease_in_out"
+    },
+    {
+      "part": "Trigger_TRIGGER",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": 0,
+      "to": -12,
+      "start_frame": 73,
+      "end_frame": 75,
+      "easing": "ease_out"
+    },
+    {
+      "part": "Trigger_TRIGGER",
+      "motion": "rotate",
+      "axis": "Z",
+      "from": -12,
+      "to": 0,
+      "start_frame": 75,
+      "end_frame": 78,
+      "easing": "ease_in"
+    }
+  ]
+}

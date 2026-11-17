@@ -231,11 +231,13 @@ void ArsenalSim::ResetAll() {
 
     m91_mag_ = 5;
     m91_reserve_ = 65;
+    m91_reload_close_cue_sent_ = false;
 
     c96_mag_ = 20;
     c96_reserve_ = 120;
     c96_full_auto_ = true;
     c96_bolt_locked_open_ = false;
+    c96_reload_close_cue_sent_ = false;
 
     maxim_mag_ = 250;
     maxim_reserve_ = 500;
@@ -336,6 +338,20 @@ ArsenalStepEvents ArsenalSim::Step(const ArsenalInput& in) {
     // Handle reload completion first
     if (phase_ == ActionPhase::Reloading) {
         reload_timer_ -= dt;
+        if (active_ == SpecialWeaponId::Mauser1891 && !m91_reload_close_cue_sent_) {
+            const float rt = 1.0f - std::clamp(reload_timer_ / 1.75f, 0.0f, 1.0f);
+            if (rt >= 0.80f) {
+                m91_reload_close_cue_sent_ = true;
+                ev.PushAudio(AudioCueKind::Mauser91ChamberClose);
+            }
+        }
+        if (active_ == SpecialWeaponId::MauserC96 && !c96_reload_close_cue_sent_) {
+            const float rt = 1.0f - std::clamp(reload_timer_ / 1.55f, 0.0f, 1.0f);
+            if (rt >= 0.80f) {
+                c96_reload_close_cue_sent_ = true;
+                ev.PushAudio(AudioCueKind::C96BreechClack);
+            }
+        }
         if (active_ == SpecialWeaponId::Maxim1910) {
             maxim_water_temp_c_ = std::max(38.0f, maxim_water_temp_c_ - 45.0f * dt);
             maxim_water_level_l_ = std::min(4.5f, maxim_water_level_l_ + 2.5f * dt);
@@ -381,13 +397,16 @@ ArsenalStepEvents ArsenalSim::Step(const ArsenalInput& in) {
         }
         if (active_ == SpecialWeaponId::Mauser1891 && m91_mag_ < 5 && m91_reserve_ > 0) {
             phase_ = ActionPhase::Reloading;
-            reload_timer_ = 1.50f;
+            reload_timer_ = 1.75f;
+            m91_reload_close_cue_sent_ = false;
+            ev.PushAudio(AudioCueKind::Mauser91BoltCycle);
             ev.PushAudio(AudioCueKind::Mauser91StripperClip);
             return ev;
         }
         if (active_ == SpecialWeaponId::MauserC96 && c96_mag_ < 20 && c96_reserve_ > 0) {
             phase_ = ActionPhase::Reloading;
-            reload_timer_ = 1.35f;
+            reload_timer_ = 1.55f;
+            c96_reload_close_cue_sent_ = false;
             ev.PushAudio(AudioCueKind::C96ClipReload);
             return ev;
         }
@@ -480,6 +499,7 @@ ArsenalStepEvents ArsenalSim::Step(const ArsenalInput& in) {
                 if (phase_timer_ <= 0.0f) {
                     phase_ = ActionPhase::BoltLock;
                     phase_timer_ = 0.09f;
+                    ev.PushAudio(AudioCueKind::Mauser91ChamberClose);
                 }
             } else if (phase_ == ActionPhase::BoltLock) {
                 phase_timer_ -= dt;
@@ -504,7 +524,9 @@ ArsenalStepEvents ArsenalSim::Step(const ArsenalInput& in) {
                     ev.PushAudio(AudioCueKind::Mauser91DryFire);
                     if (m91_reserve_ > 0) {
                         phase_ = ActionPhase::Reloading;
-                        reload_timer_ = 1.50f;
+                        reload_timer_ = 1.75f;
+                        m91_reload_close_cue_sent_ = false;
+                        ev.PushAudio(AudioCueKind::Mauser91BoltCycle);
                         ev.PushAudio(AudioCueKind::Mauser91StripperClip);
                     }
                 }
@@ -548,7 +570,8 @@ ArsenalStepEvents ArsenalSim::Step(const ArsenalInput& in) {
                     ev.PushAudio(AudioCueKind::C96DryFire);
                     if (c96_reserve_ > 0) {
                         phase_ = ActionPhase::Reloading;
-                        reload_timer_ = 1.35f;
+                        reload_timer_ = 1.55f;
+                        c96_reload_close_cue_sent_ = false;
                         ev.PushAudio(AudioCueKind::C96ClipReload);
                     }
                 }
@@ -653,27 +676,58 @@ WeaponStatus ArsenalSim::GetStatusFor(SpecialWeaponId id) const noexcept {
             s.max_mag_ammo = 5;
             s.reserve_ammo = m91_reserve_;
             s.ads_fov_scale = 1.0f - 0.46f * s.ads_blend;  // 1.85x precision iron sights
-            s.pose.trigger_pull = (s.phase == ActionPhase::BoltWaitRelease) ? 0.9f : 0.0f;
+            s.pose.trigger_pull = (s.phase == ActionPhase::BoltWaitRelease) ? 0.95f : 0.0f;
+            s.pose.safety_lever = s.reloading ? 0.0f : 1.0f;
+            s.pose.rear_sight_deg = 4.5f * s.ads_blend;
             if (s.phase == ActionPhase::BoltLift) {
                 const float t = 1.0f - std::clamp(phase_timer_ / 0.11f, 0.0f, 1.0f);
-                s.pose.bolt_lift_deg = 72.0f * t;
+                s.pose.bolt_lift_deg = 68.0f * t;
             } else if (s.phase == ActionPhase::BoltBack) {
                 const float t = 1.0f - std::clamp(phase_timer_ / 0.14f, 0.0f, 1.0f);
-                s.pose.bolt_lift_deg = 72.0f;
-                s.pose.bolt_retract_m = 0.095f * t;
+                s.pose.bolt_lift_deg = 68.0f;
+                s.pose.bolt_retract_m = 0.096f * t;
+                s.pose.bolt_stop_deg = -14.0f * t;
             } else if (s.phase == ActionPhase::BoltPushCocking) {
                 const float t = std::clamp(phase_timer_ / 0.18f, 0.0f, 1.0f);
-                s.pose.bolt_lift_deg = 72.0f;
-                s.pose.bolt_retract_m = 0.095f * t;
+                s.pose.bolt_lift_deg = 68.0f;
+                s.pose.bolt_retract_m = 0.096f * t;
+                s.pose.bolt_stop_deg = -14.0f * t;
             } else if (s.phase == ActionPhase::BoltLock) {
                 const float t = std::clamp(phase_timer_ / 0.09f, 0.0f, 1.0f);
-                s.pose.bolt_lift_deg = 72.0f * t;
+                s.pose.bolt_lift_deg = 68.0f * t;
             } else if (s.reloading) {
-                const float rt = 1.0f - std::clamp(reload_timer_ / 1.50f, 0.0f, 1.0f);
-                s.pose.bolt_lift_deg = 72.0f;
-                s.pose.bolt_retract_m = (rt < 0.85f) ? 0.095f : (0.095f * (1.0f - rt) / 0.15f);
-                s.pose.clip_insert = std::sin(std::clamp((rt - 0.15f) / 0.65f, 0.0f, 1.0f) * 3.14159f);
-                s.pose.clip_rounds_left = std::max(0.0f, 5.0f * (1.0f - std::clamp((rt - 0.25f) / 0.5f, 0.0f, 1.0f)));
+                // Normalized 78-frame Mauser 1891-12 stripper-clip reload choreography
+                const float rt = 1.0f - std::clamp(reload_timer_ / 1.75f, 0.0f, 1.0f);
+                auto ramp = [](float a, float b, float x) -> float {
+                    if (x <= a) return 0.0f;
+                    if (x >= b) return 1.0f;
+                    const float u = (x - a) / (b - a);
+                    return 0.5f - 0.5f * std::cos(u * 3.14159265f);
+                };
+                if (rt < 0.13f) {
+                    s.pose.bolt_lift_deg = 68.0f * ramp(0.0f, 0.13f, rt);
+                } else if (rt < 0.85f) {
+                    s.pose.bolt_lift_deg = 68.0f;
+                } else {
+                    s.pose.bolt_lift_deg = 68.0f * (1.0f - ramp(0.85f, 1.0f, rt));
+                }
+                if (rt < 0.13f) {
+                    s.pose.bolt_retract_m = 0.0f;
+                } else if (rt < 0.28f) {
+                    s.pose.bolt_retract_m = 0.096f * ramp(0.13f, 0.28f, rt);
+                } else if (rt < 0.69f) {
+                    s.pose.bolt_retract_m = 0.096f;
+                } else if (rt < 0.85f) {
+                    s.pose.bolt_retract_m = 0.096f * (1.0f - ramp(0.69f, 0.85f, rt));
+                }
+                s.pose.bolt_stop_deg = -14.0f * (s.pose.bolt_retract_m / 0.096f);
+                if (rt >= 0.24f && rt < 0.69f) {
+                    s.pose.clip_insert = std::sin(ramp(0.24f, 0.69f, rt) * 3.14159265f);
+                }
+                if (rt >= 0.69f && rt < 0.94f) {
+                    s.pose.clip_eject = ramp(0.69f, 0.94f, rt);
+                }
+                s.pose.clip_rounds_left = std::max(0.0f, 5.0f * (1.0f - ramp(0.32f, 0.66f, rt)));
             }
             break;
         }
@@ -685,16 +739,43 @@ WeaponStatus ArsenalSim::GetStatusFor(SpecialWeaponId id) const noexcept {
             s.reserve_ammo = c96_reserve_;
             s.full_auto_mode = c96_full_auto_;
             s.bolt_locked_open = c96_bolt_locked_open_;
-            s.ads_fov_scale = 1.0f - 0.20f * s.ads_blend;  // 1.25x sights
-            s.pose.barrel_recoil_m = c96_barrel_kick_ * 0.008f;
-            s.pose.bolt_retract_m = c96_bolt_locked_open_ ? 0.028f : (c96_bolt_kick_ * 0.032f);
+            s.ads_fov_scale = 1.0f - 0.20f * s.ads_blend;  // 1.25x tangent rear-sight aim
+            s.pose.barrel_recoil_m = c96_barrel_kick_ * 0.0085f;
+            s.pose.bolt_retract_m = c96_bolt_locked_open_ ? 0.043f : (c96_bolt_kick_ * 0.043f);
             s.pose.bolt_locked_open = c96_bolt_locked_open_;
             s.pose.hammer_cocked = (hammer_strike_timer_ > 0.0f) ? 0.0f : 1.0f;
             s.pose.trigger_pull = (hammer_strike_timer_ > 0.0f) ? 0.85f : 0.0f;
+            s.pose.safety_lever = c96_full_auto_ ? 1.0f : 0.0f;
+            s.pose.rear_sight_deg = 6.0f * s.ads_blend;
             if (s.reloading) {
-                const float rt = 1.0f - std::clamp(reload_timer_ / 1.35f, 0.0f, 1.0f);
-                s.pose.clip_insert = std::sin(rt * 3.14159f);
-                s.pose.bolt_retract_m = 0.030f;
+                // Normalized 78-frame Mauser C96 M712 stripper-clip & bolt slam choreography
+                const float rt = 1.0f - std::clamp(reload_timer_ / 1.55f, 0.0f, 1.0f);
+                auto ramp = [](float a, float b, float x) -> float {
+                    if (x <= a) return 0.0f;
+                    if (x >= b) return 1.0f;
+                    const float u = (x - a) / (b - a);
+                    return 0.5f - 0.5f * std::cos(u * 3.14159265f);
+                };
+                if (rt < 0.13f) {
+                    s.pose.bolt_retract_m = 0.043f * ramp(0.0f, 0.13f, rt);
+                } else if (rt < 0.78f) {
+                    s.pose.bolt_retract_m = 0.043f;
+                } else if (rt < 0.90f) {
+                    s.pose.bolt_retract_m = 0.043f * (1.0f - ramp(0.78f, 0.90f, rt));
+                } else {
+                    s.pose.bolt_retract_m = 0.0f;
+                }
+                s.pose.bolt_locked_open = (rt >= 0.08f && rt < 0.82f);
+                if (rt >= 0.18f && rt < 0.76f) {
+                    s.pose.clip_insert = std::sin(ramp(0.18f, 0.76f, rt) * 3.14159265f);
+                }
+                if (rt < 0.25f) {
+                    s.pose.hammer_cocked = 1.0f - ramp(0.0f, 0.15f, rt);
+                } else if (rt >= 0.80f) {
+                    s.pose.hammer_cocked = ramp(0.80f, 0.92f, rt);
+                } else {
+                    s.pose.hammer_cocked = 0.0f;
+                }
             }
             break;
         }

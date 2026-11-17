@@ -40,3 +40,7 @@ black.toml
 
 # Raw studio audio packs (>100MB, packed into black_weapon_audio.pak)
 /صوتيات/
+
+# Python bytecode / caches
+__pycache__/
+*.pyc

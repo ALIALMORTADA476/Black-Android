@@ -1712,25 +1712,195 @@ uint32_t EnsureVfxAtlasTexture() {
             };
             const float r2 = ux * ux + uy * uy;
             if (ty == 2u) {
-              // Row 2: Dense organic blood splatters & persistent irregular pooled shapes.
-              const float blob = fbm(ux * 3.1f + float(tx) * 5.3f,
-                                     uy * 3.1f + 2.1f, tile_seed);
-              const float drips = fbm(ux * 7.5f + float(tx) * 2.2f,
-                                      uy * 7.5f - 4.5f, tile_seed + 307u);
-              const float shape =
-                  clamp01(1.0f - r2 * (0.82f + 0.85f * (1.0f - blob)));
-              const float edge_mask =
-                  clamp01((shape + (drips - 0.5f) * 0.42f) * 2.15f);
-              const float rim_fade = clamp01(1.0f - r2 * 1.05f);
-              const float alpha_f =
-                  clamp01(edge_mask * rim_fade * (0.76f + 0.24f * drips));
-              const float thick =
-                  clamp01(0.68f + 0.24f * shape + 0.14f * (1.0f - blob));
-              const uint32_t cr = uint32_t(clamp01(thick) * 255.0f + 0.5f);
-              const uint32_t cg =
-                  uint32_t(clamp01(thick * 0.50f) * 255.0f + 0.5f);
+              // Row 2 (Tiles 8..11): Specialized ballistic blood atlas:
+              //   Tile 8 (tx=0): Atomized arterial aerosol mist + cellular micro-droplets
+              //   Tile 9 (tx=1): High-velocity directional arterial spurt & liquid ligaments
+              //   Tile 10 (tx=2): Coagulating ground pool with crisp surface-tension meniscus
+              //   Tile 11 (tx=3): Ballistic impact spatter with radial crown spines & satellite drops
+              const float rad = std::sqrt(r2 + 1e-6f);
+              const float dir_x = ux / rad;
+              const float dir_y = uy / rad;
+              const float border_guard = clamp01((0.95f - rad) * 9.0f);
+
+              auto droplet_field = [&](float freq, float density,
+                                       float radial_stretch,
+                                       uint32_t d_seed) -> float {
+                const float gx = (ux * 0.866f - uy * 0.500f) * freq;
+                const float gy = (ux * 0.500f + uy * 0.866f) * freq;
+                const int ix = (gx >= 0.0f) ? int(gx) : (int(gx) - 1);
+                const int iy = (gy >= 0.0f) ? int(gy) : (int(gy) - 1);
+                const float fx = gx - float(ix);
+                const float fy = gy - float(iy);
+                const float rx = dir_x * 0.866f - dir_y * 0.500f;
+                const float ry = dir_x * 0.500f + dir_y * 0.866f;
+                float best = 0.0f;
+                for (int dy = -1; dy <= 1; ++dy) {
+                  for (int dx = -1; dx <= 1; ++dx) {
+                    const uint32_t cx = uint32_t(ix + dx) & 255u;
+                    const uint32_t cy = uint32_t(iy + dy) & 255u;
+                    if (hash2(cx, cy, d_seed) >= density)
+                      continue;
+                    const float jx =
+                        float(dx) + 0.18f + 0.64f * hash2(cx, cy, d_seed + 31u) - fx;
+                    const float jy =
+                        float(dy) + 0.18f + 0.64f * hash2(cx, cy, d_seed + 73u) - fy;
+                    const float along = (jx * rx + jy * ry) / radial_stretch;
+                    const float perp = -jx * ry + jy * rx;
+                    const float d2 = along * along + perp * perp;
+                    const float drop_r =
+                        0.14f + 0.28f * hash2(cx, cy, d_seed + 127u);
+                    const float val = clamp01((drop_r * drop_r - d2) * 18.0f);
+                    if (val > best)
+                      best = val;
+                  }
+                }
+                return best;
+              };
+
+              float alpha_f = 0.0f;
+              float thick = 0.70f;
+              float meniscus = 0.0f;
+
+              if (tx == 0u) {
+                const float wx =
+                    ux + (fbm(ux * 3.0f, uy * 3.0f, tile_seed + 11u) - 0.5f) * 0.35f;
+                const float wy =
+                    uy + (fbm(ux * 3.0f + 4.2f, uy * 3.0f - 2.8f, tile_seed + 23u) -
+                          0.5f) *
+                             0.35f;
+                const float cloud =
+                    fbm(wx * 3.6f + 1.7f, wy * 3.6f - 2.3f, tile_seed);
+                const float rays = fbm(dir_x * 4.5f + wx * 2.2f,
+                                       dir_y * 4.5f + wy * 2.2f, tile_seed + 101u);
+                const float core_falloff = clamp01(
+                    1.0f - (wx * wx + wy * wy) * (1.05f + 0.70f * (1.0f - cloud)));
+                const float aerosol = clamp01(
+                    (core_falloff * (0.45f + 0.55f * rays) - 0.10f) * 1.40f);
+                const float drops_med =
+                    droplet_field(7.5f, 0.72f, 1.35f, tile_seed + 211u) *
+                    clamp01(1.0f - r2 * 1.08f);
+                const float drops_fine =
+                    droplet_field(14.0f, 0.65f, 1.15f, tile_seed + 307u) *
+                    clamp01(1.0f - r2 * 0.96f);
+                const float droplets = clamp01(drops_med + drops_fine * 0.85f);
+                alpha_f =
+                    clamp01((aerosol * 0.62f + droplets * 0.96f) * border_guard);
+                meniscus = clamp01(droplets * 0.55f);
+                thick = clamp01(0.58f + 0.38f * droplets - 0.18f * core_falloff);
+              } else if (tx == 1u) {
+                const float warp_x =
+                    ux + (fbm(ux * 3.8f, uy * 3.8f, tile_seed + 41u) - 0.5f) * 0.32f;
+                const float warp_y =
+                    uy + (fbm(ux * 3.8f + 4.1f, uy * 3.8f - 2.7f, tile_seed + 83u) -
+                          0.5f) *
+                             0.24f;
+                const float streak_r2 =
+                    warp_x * warp_x * 2.25f + warp_y * warp_y * 0.86f;
+                const float ligament =
+                    fbm(warp_x * 5.2f, warp_y * 2.5f + 3.4f, tile_seed + 149u);
+                const float ray_spines =
+                    fbm(dir_x * 6.5f + warp_x * 2.4f,
+                        dir_y * 6.5f + warp_y * 1.8f, tile_seed + 251u);
+                const float body_sdf =
+                    1.0f - streak_r2 * (0.85f + 0.92f * (1.0f - ligament)) +
+                    (ray_spines - 0.48f) * 0.46f;
+                const float sharp_body = clamp01((body_sdf - 0.18f) * 8.0f);
+                const float satellites =
+                    droplet_field(9.0f, 0.68f, 1.85f, tile_seed + 379u) *
+                    clamp01(1.0f - r2 * 1.05f) * clamp01(r2 * 2.4f) *
+                    (1.0f - sharp_body * 0.80f);
+                alpha_f = clamp01(
+                    std::max(sharp_body, satellites * 0.95f) * border_guard);
+                meniscus = clamp01(
+                    sharp_body * (1.0f - clamp01((body_sdf - 0.32f) * 5.5f)) *
+                        0.85f +
+                    satellites * 0.55f);
+                thick = clamp01(
+                    0.52f + 0.36f * (1.0f - clamp01((body_sdf - 0.35f) * 2.4f)) +
+                    0.16f * meniscus);
+              } else if (tx == 2u) {
+                const float wx =
+                    ux + (fbm(ux * 2.6f + 1.9f, uy * 2.6f - 1.4f, tile_seed + 29u) -
+                          0.5f) *
+                             0.40f;
+                const float wy =
+                    uy + (fbm(ux * 2.6f - 3.3f, uy * 2.6f + 2.8f, tile_seed + 71u) -
+                          0.5f) *
+                             0.40f;
+                const float wr2 = wx * wx + wy * wy;
+                const float lobe = fbm(dir_x * 2.8f + wx * 1.9f,
+                                       dir_y * 2.8f + wy * 1.9f, tile_seed + 131u);
+                const float micro_edge =
+                    fbm(wx * 6.4f, wy * 6.4f, tile_seed + 223u);
+                const float pool_sdf = 0.74f + 0.34f * (lobe - 0.5f) +
+                                       0.10f * (micro_edge - 0.5f) - wr2;
+                const float sharp_pool = clamp01(pool_sdf * 12.5f);
+                const float inner_depth = clamp01(pool_sdf * 2.5f);
+                meniscus = clamp01(
+                    sharp_pool * (1.0f - clamp01((pool_sdf - 0.075f) * 11.0f)));
+                const float edge_drops =
+                    droplet_field(7.0f, 0.45f, 1.25f, tile_seed + 419u) *
+                    clamp01(1.0f - r2 * 1.04f) * clamp01(r2 * 2.8f) *
+                    (1.0f - sharp_pool * 0.85f);
+                alpha_f = clamp01(
+                    std::max(sharp_pool * (0.94f + 0.06f * meniscus),
+                             edge_drops * 0.92f) *
+                    border_guard);
+                thick = clamp01(0.46f + 0.38f * (1.0f - inner_depth) +
+                                0.16f * meniscus);
+              } else {
+                const float wx =
+                    ux + (fbm(ux * 3.5f - 1.2f, uy * 3.5f + 2.4f, tile_seed + 19u) -
+                          0.5f) *
+                             0.25f;
+                const float wy =
+                    uy + (fbm(ux * 3.5f + 3.1f, uy * 3.5f - 1.7f, tile_seed + 47u) -
+                          0.5f) *
+                             0.25f;
+                const float crown = fbm(dir_x * 7.5f + wx * 1.8f,
+                                        dir_y * 7.5f + wy * 1.8f, tile_seed + 67u);
+                const float blobs =
+                    fbm(wx * 4.2f - 2.1f, wy * 4.2f + 3.7f, tile_seed + 163u);
+                const float spatter_sdf =
+                    1.0f - (wx * wx + wy * wy) * (1.35f + 1.05f * (1.0f - blobs)) +
+                    (crown - 0.45f) * 0.66f * clamp01(rad * 1.8f);
+                const float main_splat = clamp01((spatter_sdf - 0.22f) * 9.5f);
+                const float radial_drops =
+                    (droplet_field(8.5f, 0.75f, 1.75f, tile_seed + 281u) +
+                     droplet_field(14.5f, 0.65f, 1.45f, tile_seed + 409u) *
+                         0.85f) *
+                    clamp01(1.0f - r2 * 1.04f) * (1.0f - main_splat * 0.85f);
+                alpha_f = clamp01(
+                    std::max(main_splat, clamp01(radial_drops) * 0.96f) *
+                    border_guard);
+                meniscus = clamp01(
+                    main_splat *
+                        (1.0f - clamp01((spatter_sdf - 0.34f) * 6.5f)) * 0.80f +
+                    clamp01(radial_drops) * 0.45f);
+                thick = clamp01(
+                    0.50f +
+                    0.36f * (1.0f - clamp01((spatter_sdf - 0.30f) * 2.2f)) +
+                    0.16f * meniscus);
+              }
+
+              // Modified Beer-Lambert exponential hemoglobin absorption law:
+              // Optical depth d is highest in the thick coagulated core (1.0 - thick)
+              // and lowest along the thin translucent ruby meniscus rim.
+              const float opt_depth = clamp01(1.12f - 0.88f * thick);
+              const float beer_r = std::exp(-1.55f * opt_depth);
+              const float beer_g = std::exp(-5.60f * opt_depth);
+              const float beer_b = std::exp(-6.20f * opt_depth);
+              const float fresnel_glint = meniscus * meniscus * 0.085f;
+              const uint32_t cr = uint32_t(
+                  clamp01(0.18f + 0.58f * beer_r + fresnel_glint) * 255.0f + 0.5f);
+              const uint32_t cg = uint32_t(
+                  clamp01(0.006f + 0.045f * beer_g + fresnel_glint * 0.45f) * 255.0f +
+                  0.5f);
+              const uint32_t cb = uint32_t(
+                  clamp01(0.008f + 0.050f * beer_b + fresnel_glint * 0.50f) * 255.0f +
+                  0.5f);
               bgra = (uint32_t(alpha_f * 255.0f + 0.5f) << 24) | (cr << 16) |
-                     (cg << 8) | cg;
+                     (cg << 8) | cb;
             } else {
               // Row 3: Tiles 12-13 glowing spark/ember cores; Tiles 14-15 radial shockwave & dust rings.
               const float rim_fade = clamp01(1.0f - r2 * 1.06f);
@@ -1943,6 +2113,237 @@ void DrawTexturedWorldOverlay(const TexturedWorldVertex *verts,
   g_state.tss[0] = saved_tss0;
   g_state.tss[1][gpu::kTssColorOp] = saved_tss1_cop;
   g_state.tss[1][gpu::kTssAlphaOp] = saved_tss1_aop;
+}
+
+namespace {
+
+// Screen-space refraction used by the explosion shockwave: the colour target
+// is copied into a scratch surface and then re-drawn back through a warped
+// grid, so the world behind a fresh blast visibly bends for a moment.
+uint32_t g_warp_surface = 0;
+uint32_t g_warp_w = 0;
+uint32_t g_warp_h = 0;
+int g_warp_state = 0; // 0 = untested, 1 = usable, -1 = unsupported here
+int g_warp_tries = 0;
+uint64_t g_warp_frame = ~0ull;
+
+bool WarpSnapshotHasPixels() {
+  if (!g_warp_surface)
+    return false;
+  const uint32_t data =
+      mem::VirtualFromPhysical(R32(g_warp_surface + kResData));
+  if (!data)
+    return false;
+  const uint32_t pitch = (g_warp_w * 4u + 63u) & ~63u;
+  if (!pitch)
+    return false;
+  const uint32_t *px = static_cast<const uint32_t *>(HostPtr(data));
+  if (!px)
+    return false;
+  const uint32_t row = pitch >> 2;
+  for (uint32_t gy = 1; gy <= 7; gy++) {
+    const uint32_t y = (g_warp_h * gy) / 8u;
+    for (uint32_t gx = 1; gx <= 7; gx++) {
+      const uint32_t x = (g_warp_w * gx) / 8u;
+      if ((px[y * row + x] & 0x00FFFFFFu) != 0)
+        return true;
+    }
+  }
+  return false;
+}
+
+bool CaptureFrameForWarp() {
+  if (!g_backend || g_warp_state < 0 || !g_state.rt.header)
+    return false;
+
+  uint32_t w = 0, h = 0;
+  gpu::SurfaceSize(g_state.rt, w, h);
+  if (w < 8 || h < 8)
+    return false;
+  const uint32_t fmt =
+      (R32(g_state.rt.header + kContainerFormat) >> 8) & 0xFFu;
+
+  if (!g_warp_surface || g_warp_w != w || g_warp_h != h) {
+    g_warp_surface = NewSurface(w, h, fmt, 4);
+    g_warp_w = w;
+    g_warp_h = h;
+    g_warp_state = 0;
+    g_warp_tries = 0;
+    g_warp_frame = ~0ull;
+    if (!g_warp_surface)
+      return false;
+  }
+
+  if (g_warp_frame == g_backend_presents && g_warp_state > 0)
+    return true;
+
+  g_backend->Copy(g_state.rt, SurfaceOf(g_warp_surface), 0, 0, 0);
+  g_warp_frame = g_backend_presents;
+
+  if (g_warp_state == 0) {
+    const uint32_t data =
+        mem::VirtualFromPhysical(R32(g_warp_surface + kResData));
+    if (data)
+      g_backend->Sync(data, 0);
+    if (WarpSnapshotHasPixels()) {
+      g_warp_state = 1;
+    } else if (++g_warp_tries >= 4) {
+      g_warp_state = -1;
+      LOG_FIRST(1, "d3d: screen-warp lens disabled, the backend cannot resolve "
+                   "the colour target");
+      return false;
+    }
+  }
+  return g_warp_state > 0;
+}
+
+} // namespace
+
+bool DrawScreenWarp(const TexturedWorldVertex *verts, uint32_t vertex_count) {
+  if (!g_backend || !verts || vertex_count < 3)
+    return false;
+  const uint32_t tri_verts = vertex_count - (vertex_count % 3u);
+  if (tri_verts < 3)
+    return false;
+
+  std::lock_guard<std::recursive_mutex> lock(g_lock);
+  if (!g_state.rt.header || !g_state.zs.header)
+    return false;
+
+  SyncDeferred();
+  if (!CaptureFrameForWarp())
+    return false;
+
+  const auto saved_stream = g_state.streams[0];
+  const auto saved_textures = g_state.textures;
+  const uint32_t saved_vs_handle = g_state.vs_handle;
+  const auto saved_vs = g_state.vs;
+  const auto saved_ps = g_state.ps;
+  const uint32_t saved_base_vertex = g_state.base_vertex;
+  const uint32_t saved_scissor_count = g_state.scissor_count;
+  const auto saved_view = g_state.transforms[2];
+  const auto saved_proj = g_state.transforms[3];
+  const auto saved_world = g_state.transforms[256];
+
+  const uint32_t saved_zen = g_state.rs[gpu::kRsZEnable];
+  const uint32_t saved_cull = g_state.rs[gpu::kRsCullMode];
+  const uint32_t saved_sten = g_state.rs[gpu::kRsStencilEnable];
+  const uint32_t saved_fill = g_state.rs[gpu::kRsFillMode];
+  const uint32_t saved_light = g_state.rs[gpu::kRsLighting];
+  const uint32_t saved_fog = g_state.rs[gpu::kRsFogEnable];
+  const uint32_t saved_two = g_state.rs[gpu::kRsTwoSidedLighting];
+
+  const uint32_t saved_zwrite = g_state.simple[gpu::kMZWriteEnable >> 2];
+  const uint32_t saved_zfunc = g_state.simple[gpu::kMZFunc >> 2];
+  const uint32_t saved_blend = g_state.simple[gpu::kMBlendEnable >> 2];
+  const uint32_t saved_src = g_state.simple[gpu::kMSrcBlend >> 2];
+  const uint32_t saved_dst = g_state.simple[gpu::kMDestBlend >> 2];
+  const uint32_t saved_op = g_state.simple[gpu::kMBlendOp >> 2];
+  const uint32_t saved_atest = g_state.simple[gpu::kMAlphaTestEnable >> 2];
+  const uint32_t saved_afunc = g_state.simple[gpu::kMAlphaFunc >> 2];
+  const uint32_t saved_cwrite = g_state.simple[gpu::kMColorWriteEnable >> 2];
+  const uint32_t saved_shade = g_state.simple[gpu::kMShadeMode >> 2];
+  const uint32_t saved_solid_off =
+      g_state.simple[gpu::kMSolidOffsetEnable >> 2];
+
+  const ScopedOverlayExtraState extra_state_guard;
+  const auto saved_tss0 = g_state.tss[0];
+  const uint32_t saved_tss1_cop = g_state.tss[1][gpu::kTssColorOp];
+  const uint32_t saved_tss1_aop = g_state.tss[1][gpu::kTssAlphaOp];
+
+  // Clip-space passthrough: the caller already supplies NDC x/y in [-1, 1].
+  g_state.transforms[2] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+  g_state.transforms[3] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+  g_state.transforms[256] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+  g_state.textures.fill(0);
+  g_state.textures[0] = g_warp_surface;
+  g_state.vs_handle = 0x142u;
+  g_state.vs = nullptr;
+  g_state.ps = nullptr;
+  g_state.base_vertex = 0;
+  g_state.scissor_count = 0;
+
+  g_state.rs[gpu::kRsZEnable] = 0;
+  g_state.rs[gpu::kRsCullMode] = 0;
+  g_state.rs[gpu::kRsStencilEnable] = 0;
+  g_state.rs[gpu::kRsFillMode] = 0x1B02u;
+  g_state.rs[gpu::kRsLighting] = 0;
+  g_state.rs[gpu::kRsFogEnable] = 0;
+  g_state.rs[gpu::kRsTwoSidedLighting] = 0;
+
+  g_state.simple[gpu::kMZWriteEnable >> 2] = 0;
+  g_state.simple[gpu::kMZFunc >> 2] = 0x203u;
+  g_state.simple[gpu::kMBlendEnable >> 2] = 1;
+  g_state.simple[gpu::kMSrcBlend >> 2] = 0x302u; // D3DBLEND_SRCALPHA
+  g_state.simple[gpu::kMDestBlend >> 2] = 0x303u;
+  g_state.simple[gpu::kMBlendOp >> 2] = 0x8006u;
+  g_state.simple[gpu::kMAlphaTestEnable >> 2] = 0;
+  g_state.simple[gpu::kMAlphaFunc >> 2] = 0x207u;
+  g_state.simple[gpu::kMColorWriteEnable >> 2] = 0x01010101u;
+  g_state.simple[gpu::kMShadeMode >> 2] = 0x1D01u;
+  g_state.simple[gpu::kMSolidOffsetEnable >> 2] = 0;
+
+  g_state.tss[0][gpu::kTssAddressU] = 3u; // D3DTADDRESS_CLAMP
+  g_state.tss[0][gpu::kTssAddressV] = 3u;
+  g_state.tss[0][gpu::kTssMagFilter] = 2u; // D3DTEXF_LINEAR
+  g_state.tss[0][gpu::kTssMinFilter] = 2u;
+  g_state.tss[0][gpu::kTssTexCoordIndex] = 0u;
+  g_state.tss[0][gpu::kTssAlphaKill] = 0u;
+  g_state.tss[0][gpu::kTssColorOp] = 4u;   // D3DTOP_MODULATE
+  g_state.tss[0][gpu::kTssColorArg1] = 2u; // D3DTA_TEXTURE
+  g_state.tss[0][gpu::kTssColorArg2] = 0u; // D3DTA_DIFFUSE
+  // The captured frame's alpha channel is meaningless for the back buffer, so
+  // take the lens alpha straight from the vertex colour.
+  g_state.tss[0][gpu::kTssAlphaOp] = 2u;   // D3DTOP_SELECTARG1
+  g_state.tss[0][gpu::kTssAlphaArg1] = 0u; // D3DTA_DIFFUSE
+  g_state.tss[0][gpu::kTssAlphaArg2] = 0u;
+  g_state.tss[1][gpu::kTssColorOp] = 1u; // D3DTOP_DISABLE
+  g_state.tss[1][gpu::kTssAlphaOp] = 1u;
+
+  constexpr uint32_t kChunkVerts = 2400u;
+  for (uint32_t off = 0; off < tri_verts; off += kChunkVerts) {
+    const uint32_t chunk = std::min(kChunkVerts, tri_verts - off);
+    const uint32_t hdr =
+        UpVertices(verts + off, chunk * uint32_t(sizeof(TexturedWorldVertex)));
+    g_state.streams[0] = {hdr, uint32_t(sizeof(TexturedWorldVertex))};
+    g_backend->Draw(g_state, 5 /* D3DPT_TRIANGLELIST */, 0, chunk, nullptr);
+  }
+
+  g_state.streams[0] = saved_stream;
+  g_state.textures = saved_textures;
+  g_state.vs_handle = saved_vs_handle;
+  g_state.vs = saved_vs;
+  g_state.ps = saved_ps;
+  g_state.base_vertex = saved_base_vertex;
+  g_state.scissor_count = saved_scissor_count;
+  g_state.transforms[2] = saved_view;
+  g_state.transforms[3] = saved_proj;
+  g_state.transforms[256] = saved_world;
+
+  g_state.rs[gpu::kRsZEnable] = saved_zen;
+  g_state.rs[gpu::kRsCullMode] = saved_cull;
+  g_state.rs[gpu::kRsStencilEnable] = saved_sten;
+  g_state.rs[gpu::kRsFillMode] = saved_fill;
+  g_state.rs[gpu::kRsLighting] = saved_light;
+  g_state.rs[gpu::kRsFogEnable] = saved_fog;
+  g_state.rs[gpu::kRsTwoSidedLighting] = saved_two;
+
+  g_state.simple[gpu::kMZWriteEnable >> 2] = saved_zwrite;
+  g_state.simple[gpu::kMZFunc >> 2] = saved_zfunc;
+  g_state.simple[gpu::kMBlendEnable >> 2] = saved_blend;
+  g_state.simple[gpu::kMSrcBlend >> 2] = saved_src;
+  g_state.simple[gpu::kMDestBlend >> 2] = saved_dst;
+  g_state.simple[gpu::kMBlendOp >> 2] = saved_op;
+  g_state.simple[gpu::kMAlphaTestEnable >> 2] = saved_atest;
+  g_state.simple[gpu::kMAlphaFunc >> 2] = saved_afunc;
+  g_state.simple[gpu::kMColorWriteEnable >> 2] = saved_cwrite;
+  g_state.simple[gpu::kMShadeMode >> 2] = saved_shade;
+  g_state.simple[gpu::kMSolidOffsetEnable >> 2] = saved_solid_off;
+
+  g_state.tss[0] = saved_tss0;
+  g_state.tss[1][gpu::kTssColorOp] = saved_tss1_cop;
+  g_state.tss[1][gpu::kTssAlphaOp] = saved_tss1_aop;
+  return true;
 }
 
 void DrawViewmodelMesh(const ViewmodelVertex *verts, uint32_t vertex_count,

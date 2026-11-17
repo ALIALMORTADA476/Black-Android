@@ -140,6 +140,7 @@ SLOTS = {
     "M91_CHAMBER_CLOSE": 149,
     "MXM_WHEEL_ROLL": 150,
     "MXM_BELT_ADVANCE": 151,
+    "TAIL_C96_OUTDOOR": 152,
 }
 
 # Stem categories: matches StemCategory enum & StemForSlot() in weapon_audio.cpp
@@ -212,10 +213,18 @@ def W(rel):
     return ("web", rel)
 
 
+def G(rel):
+    """Reference a downloaded Sonniss GDC 96 kHz/24-bit WAV inside .local/audio_src/gdc."""
+    return ("gdc", rel)
+
+
 def resolve_ref(ref):
     if isinstance(ref, tuple):
         kind, rel = ref
-        base = SOTIYAT_DIR if kind == "sotiyat" else (WEB_DIR if kind == "web" else FFX_MASTER_DIR)
+        base = (
+            SOTIYAT_DIR if kind == "sotiyat"
+            else (WEB_DIR if kind == "web" else (GDC_DIR if kind == "gdc" else FFX_MASTER_DIR))
+        )
         full = os.path.join(base, rel.replace("/", os.sep))
         label = f"{kind}:{os.path.basename(rel)}"
         return full, label, None
@@ -1277,17 +1286,50 @@ def build_all_clips():
     web_gas_ig    = TW("gas_ignite.wav", 680.0, 38.0, gap=380.0)
     web_flm_bst   = TW("flamethrower_burst.wav", 780.0, 34.0, gap=650.0)
     web_valve     = TW("valve_sizzle.wav", 450.0, 95.0, gap=250.0)
+    # Freesound CC0 hi-quality flamethrower takes (48 kHz/24-bit web masters, 2026-11)
+    #   flm_jet_long.wav   <- "Flamethrower.wav" by sidequesting (68 s true stereo take)
+    #   flm_loop_alt.wav   <- "Flamethrower (loop)" by raphavpires (seamless stereo loop)
+    #   flm_torch_hum.wav  <- "Gas Torch Burn" by SyntaxSeed (pilot-light body)
+    #   flm_burst_short/ long <- "Flamethrower_Weapon_Short_Medium_Bursts" / "_Long_Bursts" by AslakHostaker
+    #   flm_ignite_small/ big <- "Flamethrower" by LilMati / by SamsterBirdies (ignition transients)
+    web_flm_jet_lp   = get_loop_slices(W("flm_jet_long.wav"), dur_ms=2400.0, count=3, xfade_ms=110.0, hpf_hz=34.0)
+    web_flm_loop_alt = get_loop_slices(W("flm_loop_alt.wav"), dur_ms=2100.0, count=3, xfade_ms=95.0, hpf_hz=36.0)
+    web_flm_hum_lp   = get_loop_slices(W("flm_torch_hum.wav"), dur_ms=1600.0, count=3, xfade_ms=75.0, hpf_hz=64.0)
+    web_flm_short    = TW("flm_burst_short.wav", 820.0, 32.0, gap=520.0)
+    web_flm_longb    = TW("flm_burst_long.wav", 900.0, 32.0, gap=560.0)
+    web_flm_ign_sm   = TW("flm_ignite_small.wav", 420.0, 42.0, gap=210.0)
+    web_flm_ign_bg   = TW("flm_ignite_big.wav", 760.0, 34.0, gap=360.0)
+    # Studio 96 kHz/24-bit & Archive.org CC0 48 kHz/24-bit Mauser 1891-12 pools (0 clipped samples!)
+    m91_k98_fire = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mauser Karabiner 98 kurz K98k bolt-action rifle/K98k, Firing, t2, MKH416.wav"), 920.0, 26.0, gap=420.0)
+    m91_gmc_shot = T(G("2017_Gamemaster Audio -  Gun Sound Pack/1623_gun_rifle_sniper_shot_01.wav"), 950.0, 24.0, gap=400.0)
+    m91_fal_crk  = T(1040, 720.0, 42.0, gap=350.0)
+    m91_bar_far  = T(G("2016_Pole Position Production - M1918 Brownin/1065_M1918_Browning_Automatic_Rifle_.30cal_300m_in_front_Double_shots_x_1.wav"), 1500.0, 28.0, gap=420.0)
+    m91_lynx_tail = L(6908, 46.0, 1950.0, 32.0, gap=450.0)
+    m91_mosin_50 = L(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - Mosin Nagant/MN0115 MOSIN-NAGANT 50m distant front left shots.wav"), 42.0, 1600.0, 34.0, gap=450.0)
+    m91_sse_dist = L(W("sse_distant_rifle_reverb.wav"), 46.0, 1800.0, 34.0, gap=350.0)
+    m91_k98_hdl  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mauser Karabiner 98 kurz K98k bolt-action rifle/K98k, Handling, Various, t2, 1m, Right, MKH8060.wav"), 520.0, 50.0, gap=200.0)
+    m91_m38_hdl  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mosin-Nagant M38 bolt-action rifle/M38, Handling, Various, t2, 1m, Above, Right, MKH8060.wav"), 520.0, 50.0, gap=200.0)
+    m91_1903_blt = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Springfield 1903A3 bolt-action rifle/M1903A3, Handling, Cycling Bolt, MKH416.wav"), 560.0, 50.0, gap=180.0)
     web_rfl_hvy   = TW("rifle_heavy_british.wav", 920.0, 28.0, gap=380.0)
     web_rfl_30    = TW("rifle_3030.wav", 900.0, 28.0, gap=380.0)
     web_rfl_ck    = L(W("rifle_fire_cocked.wav"), 42.0, 2100.0, 42.0, gap=380.0) or TW("rifle_fire_cocked.wav", 1200.0, 42.0, gap=380.0)
     web_bolt      = TW("mech_bolt_action.wav", 620.0, 55.0, gap=240.0)
     web_clip      = TW("mech_stripper_clip.wav", 700.0, 55.0, gap=280.0)
     web_rfl_dry   = TW("mech_dry_fire_rifle.wav", 320.0, 90.0, gap=180.0)
-    web_pst_big   = TW("pistol_big_ring.wav", 720.0, 32.0, gap=340.0)
-    web_pst_rap   = TW("pistol_rapid.wav", 560.0, 36.0, gap=95.0)
+    # Studio 192 kHz & 96 kHz/24-bit Mauser C96 M712 (7.63x25mm) pools — zero clipping
+    c96_ppq_crk   = T(F("Walther PPQ/X_29.wav"), 640.0, 28.0, gap=280.0)
+    c96_ppq_whp   = T(F("Walther PPQ/X_43.wav"), 640.0, 28.0, gap=250.0)
+    c96_ppq_sub   = T(F("Walther PPQ/X_47.wav"), 640.0, 26.0, gap=250.0)
+    c96_p38_st    = T(5148, 680.0, 32.0, gap=280.0)
+    c96_vp70_on   = T(1006, 560.0, 34.0, gap=220.0)
+    c96_p38_tl    = L(5148, 35.0, 1450.0, 36.0, gap=280.0)
+    c96_g18_tl    = L(1046, 36.0, 1300.0, 36.0, gap=220.0)
+    c96_tt33_cl   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Tokarev TT-33 semi-automatic pistol/TT33, Handling, Clearing, MK012.wav"), 420.0, 50.0, gap=160.0)
+    c96_p38_mag   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Walther P38 semi automatic pistol/P38, Handling, Removing Magazine, 1m, Right, MKH8060.wav"), 560.0, 50.0, gap=160.0)
+    c96_ppq_m1    = T(F("Walther PPQ/X_3.wav"), 420.0, 55.0, gap=160.0) + T(F("Walther PPQ/X_4.wav"), 420.0, 55.0, gap=160.0)
+    c96_dry_96    = T(4936, 260.0, 85.0, gap=160.0)
     web_pst_brc   = TW("mech_pistol_breech.wav", 420.0, 65.0, gap=200.0)
     web_pst_ham   = TW("mech_pistol_hammer.wav", 360.0, 70.0, gap=180.0)
-    web_pst_dry   = TW("pistol_dry_ext.wav", 280.0, 95.0, gap=160.0)
     web_hmg_brn   = TW("hmg_browning_auto.wav", 680.0, 28.0, gap=95.0)
     web_hmg_lrg   = TW("hmg_large_auto.wav", 700.0, 28.0, gap=100.0)
     web_hmg_tail  = L(W("hmg_bren_tail.wav"), 38.0, 2100.0, 40.0, gap=320.0) or TW("hmg_bren_tail.wav", 1300.0, 40.0, gap=320.0)
@@ -1594,26 +1636,30 @@ def build_all_clips():
         add("MELEE_HIT",       f"Sotiyat Knife + GDC1631/5892 Melee Hit #{i+1}", pick(melee_ht, i), "sotiyat:Knife+1631+5892", eq_bands=[(95, 1.3, 3.2), (2400, 1.4, 2.0)], transient_boost_db=1.6, width_pct=104)
         add("WATER_SPLASH",    f"GDC4430/4432 Water Splash #{i+1}", pick(water_sp, i), "4430+4432", eq_bands=[(180, 1.2, 2.0), (3800, 1.3, 1.6)], transient_boost_db=0.8, fade_out_ms=110.0, width_pct=115)
     for i in range(3):
-        add("FIRE_LOOP",       f"Web CC0 Flame Jet + GDC1493 Gas Burner Loop #{i+1}",
+        add("FIRE_LOOP",       f"Freesound CC0 Flamethrower Jet (sidequesting/raphavpires) + Gas Burner Loop #{i+1}",
             align_mix([
-                (stereoize_web(pick(web_flm_lp, i)), 0.72, 0),
-                (stereoize_web(pick(web_napalm_lp, i)), 0.56, 0),
-                (stereoize_web(pick(web_rumble_lp, i)), 0.44, 0),
-                (pick(gas_loops, i), 0.34, 0),
+                (stereoize_web(pick(web_flm_jet_lp, i)), 0.86, 0),
+                (stereoize_web(pick(web_flm_loop_alt, i)), 0.64, 6),
+                (stereoize_web(pick(web_flm_lp, i)), 0.46, 0),
+                (stereoize_web(pick(web_napalm_lp, i)), 0.44, 0),
+                (stereoize_web(pick(web_rumble_lp, i)), 0.40, 0),
+                (pick(gas_loops, i), 0.30, 0),
             ], 2100.0),
-            "web:flamethrower_burst+napalm_spray_foam+fire_rumble+1493",
+            "web:freesound CC0 jet takes+flamethrower_burst+napalm_spray_foam+fire_rumble+1493",
             eq_bands=[(68, 1.2, 3.8), (520, 1.3, 2.0), (4400, 1.3, 1.6)],
-            transient_boost_db=0.0, comp_ratio=1.7, ceil_db=-2.8, is_loop=True, width_pct=114)
-        add("FLAME_IGNITE",    f"Web CC0 Gas/Flare Ignite + Pressurized Napalm Roar #{i+1}",
+            transient_boost_db=0.0, comp_ratio=1.7, ceil_db=-2.8, is_loop=True, width_pct=118)
+        add("FLAME_IGNITE",    f"Freesound CC0 Flamethrower Ignite (SamsterBirdies/LilMati) + Roar #{i+1}",
             align_mix([
-                (stereoize_web(pick(web_gas_ig, i)), 0.72, 0),
-                (stereoize_web(pick(web_flm_bst, i)), 0.78, 4),
-                (stereoize_web(pick(web_napalm_lp, i)), 0.38, 10),
-                (pick(flamer_c, i + 1), 0.32, 0),
+                (stereoize_web(pick(web_flm_ign_bg, i)), 0.78, 0),
+                (stereoize_web(pick(web_flm_ign_sm, i)), 0.62, 8),
+                (stereoize_web(pick(web_gas_ig, i)), 0.66, 0),
+                (stereoize_web(pick(web_flm_longb, i)), 0.62, 6),
+                (stereoize_web(pick(web_napalm_lp, i)), 0.36, 10),
+                (pick(flamer_c, i + 1), 0.30, 0),
             ], 760),
-            "web:gas_ignite+flamethrower_burst+napalm_spray_foam",
+            "web:freesound CC0 ignite+flm_burst_long+gas_ignite+napalm_spray_foam",
             eq_bands=[(68, 1.2, 4.4), (620, 1.3, 2.2), (4800, 1.3, 1.8)],
-            transient_boost_db=1.8, comp_ratio=2.1, width_pct=114)
+            transient_boost_db=1.8, comp_ratio=2.1, width_pct=118)
     for i in range(3):
         add("PICKUP_AMMO",     f"GDC2510/2522/972 Ammo Pickup #{i+1}", pick(pck_ammo, i), "2510+2522+972", eq_bands=eq_f, transient_boost_db=1.2, width_pct=96)
         add("PICKUP_HEALTH",   f"GDC250/2522 Medkit Pickup #{i+1}",    pick(pck_hlth, i), "250+2522",      eq_bands=eq_f, transient_boost_db=1.0, width_pct=96)
@@ -1635,60 +1681,102 @@ def build_all_clips():
     # 8. SPECIAL ARSENAL CC0 WEB AUDIO SLOTS (BWAR v3 Extended: 129..151)
     # =========================================================================
     for i in range(3):
-        add("FLM_IGNITE_SQUIB", f"Web CC0 M2-2 Electrical Squib Spark #{i+1}",
-            align_mix([(stereoize_web(pick(web_flare, i)), 0.88, 0), (stereoize_web(pick(web_gas_ig, i)), 0.36, 12)], 420),
-            "web:flare_ignite+gas_ignite", eq_bands=[(240, 1.3, 2.0), (4200, 1.4, 3.2)], transient_boost_db=2.0, width_pct=104)
-        add("FLM_VALVE_SHUTOFF", f"Web CC0 M2-2 Dump Valve Shutoff Snap #{i+1}",
-            stereoize_web(pick(web_valve, i)), "web:valve_sizzle",
+        add("FLM_IGNITE_SQUIB", f"Freesound CC0 Squib Spark (LilMati) + Flare + Gas Pop #{i+1}",
+            align_mix([(stereoize_web(pick(web_flm_ign_sm, i)), 0.80, 0), (stereoize_web(pick(web_flare, i)), 0.74, 0), (stereoize_web(pick(web_gas_ig, i)), 0.34, 12)], 420),
+            "web:freesound CC0 ignite+flare_ignite+gas_ignite", eq_bands=[(240, 1.3, 2.0), (4200, 1.4, 3.2)], transient_boost_db=2.0, width_pct=104)
+        add("FLM_VALVE_SHUTOFF", f"Freesound CC0 Dump Valve Hiss Cut (AslakHostaker) #{i+1}",
+            align_mix([(stereoize_web(pick(web_valve, i)), 0.86, 0), (stereoize_web(pick(web_flm_short, i)), 0.40, 30)], 450),
+            "web:freesound CC0 burst_short+valve_sizzle",
             eq_bands=[(180, 1.3, 1.6), (5600, 1.4, 2.8)], transient_boost_db=1.8, width_pct=102)
         add("FLM_TANK_RELOAD", f"Web CC0 M2-2 N2 Tank Swap & Valve Lock #{i+1}",
             align_mix([(stereoize_web(pick(web_mxm_lch, i)), 0.78, 0), (stereoize_web(pick(web_valve, i + 1)), 0.56, 45)], 780),
             "web:maxim_heavy_latch+valve_sizzle", eq_bands=[(140, 1.3, 2.4), (3200, 1.4, 2.0)], transient_boost_db=1.5, width_pct=100)
-        add("FLM_PILOT_HUM", f"Web CC0 Pilot Torch Loop #{i+1}",
-            stereoize_web(pick(web_pilot, i)), "web:pilot_torch",
+        add("FLM_PILOT_HUM", f"Freesound CC0 Gas Torch Pilot Loop #{i+1}",
+            align_mix([(stereoize_web(pick(web_flm_hum_lp, i)), 0.86, 0), (stereoize_web(pick(web_pilot, i)), 0.52, 0)], 1600),
+            "web:freesound CC0 gas_torch+pilot_torch",
             eq_bands=[(120, 1.3, 1.6), (3400, 1.3, 1.2)], transient_boost_db=0.0, ceil_db=-5.0, is_loop=True, width_pct=106)
-        add("FLM_FOAM_SPLASH", f"Web CC0 Napalm Gel Splatter #{i+1}",
-            stereoize_web(pick(web_napalm_lp, i)), "web:napalm_spray_foam",
+        add("FLM_FOAM_SPLASH", f"Freesound CC0 Napalm Gel Splatter (AslakHostaker) #{i+1}",
+            align_mix([(stereoize_web(pick(web_flm_short, i)), 0.78, 0), (stereoize_web(pick(web_napalm_lp, i)), 0.62, 0)], 900),
+            "web:freesound CC0 burst_short+napalm_spray_foam",
             eq_bands=[(140, 1.3, 2.8), (2800, 1.3, 1.6)], transient_boost_db=1.0, fade_out_ms=90.0, width_pct=108)
 
     # Mauser 1891-12 (7.65x53mm Argentine + Cock-on-Close Bolt + 5-rd Stripper Clip)
+    # Mastered from 96 kHz/24-bit studio recordings (Pole Position K98k / M1903A3 / M38 /
+    # Gamemaster 1623 Stereo / Lynx 65m ORTF / BAR 300m / Archive.org SSE_Library_GUNS), 0 clips!
     for i in range(4):
-        add("M91_FIRE", f"Web CC0 Mauser 1891-12 7.65x53mm Rifle Crack #{i+1}",
-            align_mix([(stereoize_web(pick(web_rfl_hvy, i)), 0.86, 0), (stereoize_web(pick(web_rfl_30, i)), 0.56, 3)], 920),
-            "web:rifle_heavy_british+rifle_3030",
-            eq_bands=[(72, 1.2, 4.2), (1650, 1.4, 2.6), (5200, 1.4, 1.8)],
-            in_room_punch=True, ceil_db=-0.95, transient_boost_db=2.2, comp_ratio=2.3, width_pct=106)
+        gmc_body = m91_gmc_shot[1:] if len(m91_gmc_shot) > 1 else m91_gmc_shot
+        add("M91_FIRE", f"96kHz Studio K98k Mauser + Gamemaster Stereo + 1040 Snap + 1065 Body #{i+1}",
+            align_mix([(stereoize_web(pick(m91_k98_fire, i), refl_gain=0.18), 0.78, 0),
+                       (pick(gmc_body, i), 0.70, 0),
+                       (stereoize_web(pick(m91_fal_crk, i), refl_gain=0.16), 0.36, 2),
+                       (pick(m91_bar_far, i), 0.26, 5)], 980),
+            "sotiyat:K98k+GDC1623+1040+1065",
+            eq_bands=[(68, 1.2, 4.4), (1750, 1.4, 2.6), (5600, 1.4, 1.9)],
+            in_room_punch=True, ceil_db=-0.75, transient_boost_db=2.3, comp_ratio=2.3, width_pct=110)
+    for i in range(4):
+        add("M91_BOLT", f"96kHz K98k Mauser Bolt Lift & Pull + M38 Steel Throw #{i+1}",
+            align_mix([(stereoize_web(pick(m91_k98_hdl, i), refl_gain=0.15), 0.84, 0),
+                       (stereoize_web(pick(m91_m38_hdl, i * 2), refl_gain=0.15), 0.48, 65)], 580),
+            "sotiyat:K98k_Handling+M38_Handling", eq_bands=eq_f, transient_boost_db=1.7, width_pct=98)
+        add("M91_CLIP", f"SSE CC0 Stripper Clip Insert + K98k Brass/Steel Lock #{i+1}",
+            align_mix([(stereoize_web(pick(web_clip, i), refl_gain=0.15), 0.88, 0),
+                       (stereoize_web(pick(m91_k98_hdl, i + 3), refl_gain=0.14), 0.36, 110)], 680),
+            "web:SSE_stripper_clip+K98k_Handling", eq_bands=eq_f, transient_boost_db=1.6, width_pct=96)
+        add("M91_CHAMBER_CLOSE", f"96kHz M1903A3 Mauser-Action Cock-on-Close Sear Lock #{i+1}",
+            align_mix([(stereoize_web(pick(m91_1903_blt, i), refl_gain=0.15), 0.86, 0),
+                       (stereoize_web(pick(web_bolt, i), refl_gain=0.14), 0.42, 48)], 560),
+            "sotiyat:M1903A3_Bolt+SSE_bolt", eq_bands=eq_f, transient_boost_db=1.9, width_pct=98)
+        add("TAIL_M91_OUTDOOR", f"96kHz ORTF 65m + Valley 50m + Mosin 50m Rolling Rifle Tail #{i+1}",
+            align_mix([(pick(m91_lynx_tail, i), 0.86, 0),
+                       (pick(t_mattak, i), 0.56, 18),
+                       (stereoize_web(pick(m91_mosin_50, i), refl_gain=0.22), 0.38, 32),
+                       (stereoize_web(pick(m91_sse_dist, i), refl_gain=0.20), 0.24, 55)], 2050),
+            "GDC6908+2783+MN0115+SSE_dist",
+            eq_bands=[(95, 1.2, 2.8), (1500, 1.3, 1.4), (5800, 1.2, -1.8)],
+            transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=170.0, width_pct=122)
     for i in range(3):
-        add("M91_BOLT", f"Web CC0 Mauser Bolt Lift & Throw #{i+1}",
-            stereoize_web(pick(web_bolt, i)), "web:mech_bolt_action", eq_bands=eq_f, transient_boost_db=1.6, width_pct=96)
-        add("M91_CLIP", f"Web CC0 Mauser 5-rd Stripper Clip Load #{i+1}",
-            stereoize_web(pick(web_clip, i)), "web:mech_stripper_clip", eq_bands=eq_f, transient_boost_db=1.6, width_pct=96)
-        add("M91_DRY", f"Web CC0 Mauser Dry Fire Pin #{i+1}",
-            stereoize_web(pick(web_rfl_dry, i)), "web:mech_dry_fire_rifle", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
-        add("M91_CHAMBER_CLOSE", f"Web CC0 Mauser Cock-on-Close Sear Lock #{i+1}",
-            stereoize_web(pick(web_bolt, i + 1)), "web:mech_bolt_action", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
-        add("TAIL_M91_OUTDOOR", f"Web CC0 Rifle Valley Rolling Tail #{i+1}",
-            stereoize_web(pick(web_rfl_ck, i)), "web:rifle_fire_cocked",
-            eq_bands=[(110, 1.2, 2.8), (1800, 1.3, 1.4)], transient_boost_db=0.4, fade_out_ms=120.0, width_pct=116)
+        add("M91_DRY", f"SSE CC0 Rifle Firing-Pin Snap + M38 Sear Click #{i+1}",
+            align_mix([(stereoize_web(pick(web_rfl_dry, i), refl_gain=0.12), 0.88, 0),
+                       (stereoize_web(pick(m91_m38_hdl, i + 8), refl_gain=0.12), 0.28, 14)], 320),
+            "web:SSE_dry_fire+M38_Handling",
+            eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
 
-    # Mauser C96 / M712 (7.63x25mm Bottle-Neck + Short-Recoil + Hold-Open + Clip)
+    # Mauser C96 / M712 (192kHz/96kHz Studio 7.63x25mm Bottle-Neck + Outdoor Slap + Breech + Clip)
     for i in range(4):
-        add("C96_FIRE", f"Web CC0 Mauser C96 7.63x25mm Whip Crack #{i+1}",
-            align_mix([(stereoize_web(pick(web_pst_big, i)), 0.84, 0), (stereoize_web(pick(web_pst_rap, i)), 0.48, 2)], 680),
-            "web:pistol_big_ring+pistol_rapid",
-            eq_bands=[(95, 1.3, 3.0), (2400, 1.5, 2.8), (6400, 1.4, 1.8)],
-            in_room_punch=True, ceil_db=-0.95, transient_boost_db=2.1, comp_ratio=2.3, width_pct=102)
+        add("C96_FIRE", f"192kHz FFX + 96kHz P38/VP70 Mauser C96 7.63x25mm Whip Crack #{i+1}",
+            align_mix([(pick(c96_p38_st, i), 0.78, 0),
+                       (pick(c96_ppq_whp, i), 0.54, 0),
+                       (pick(c96_ppq_sub, i), 0.46, 1),
+                       (pick(c96_vp70_on, i), 0.38, 2),
+                       (pick(c96_ppq_crk, i), 0.32, 3)], 700),
+            "GDC5148+1006+FFX_PPQ_192k",
+            eq_bands=[(88, 1.2, 2.8), (2200, 1.4, 2.4), (6200, 1.4, 1.4)],
+            in_room_punch=True, ceil_db=-0.95, transient_boost_db=2.0, comp_ratio=2.2, width_pct=106)
+        add("TAIL_C96_OUTDOOR", f"96kHz P38 LS5 + Glock18 75m + ORTF 100m C96 Outdoor Roll #{i+1}",
+            align_mix([(pick(c96_p38_tl, i), 0.84, 0),
+                       (pick(c96_g18_tl, i), 0.54, 18),
+                       (pick(t_glk100, i), 0.40, 38)], 1500),
+            "GDC5148+1046+6203",
+            eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=145.0, width_pct=118)
     for i in range(3):
-        add("C96_BREECH", f"Web CC0 C96 Breech & Hammer Cycle #{i+1}",
-            align_mix([(stereoize_web(pick(web_pst_brc, i)), 0.78, 0), (stereoize_web(pick(web_pst_ham, i)), 0.42, 8)], 360),
-            "web:mech_pistol_breech+hammer", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
-        add("C96_CLIP", f"Web CC0 C96 Top Stripper Clip Push #{i+1}",
-            align_mix([(stereoize_web(pick(web_clip, i + 1)), 0.82, 0), (stereoize_web(pick(web_pst_brc, i)), 0.48, 120)], 720),
-            "web:mech_stripper_clip+pistol_breech", eq_bands=eq_f, transient_boost_db=1.6, width_pct=98)
-        add("C96_DRY", f"Web CC0 C96 Dry Fire Click #{i+1}",
-            stereoize_web(pick(web_pst_dry, i)), "web:pistol_dry_ext", eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
-        add("C96_LOCKOPEN", f"Web CC0 C96 Empty Bolt-Hold-Open Catch #{i+1}",
-            stereoize_web(pick(web_pst_brc, i + 1)), "web:mech_pistol_breech", eq_bands=[(400, 1.3, 1.5), (4200, 1.5, 2.8)], transient_boost_db=2.0, width_pct=98)
+        add("C96_BREECH", f"96kHz TT-33 Steel Breech & 192kHz Trigger/Hammer Cycle #{i+1}",
+            align_mix([(pick(c96_tt33_cl, i), 0.82, 0),
+                       (pick(c96_ppq_m1, i), 0.52, 8),
+                       (stereoize_web(pick(web_pst_ham, i), refl_gain=0.12), 0.32, 16)], 420),
+            "sotiyat:TT33_Clear+FFX_PPQ+ham", eq_bands=eq_f, transient_boost_db=1.9, width_pct=98)
+        add("C96_CLIP", f"96kHz P38 Magazine Latch + Stripper Clip Push #{i+1}",
+            align_mix([(stereoize_web(pick(c96_p38_mag, i), refl_gain=0.14), 0.78, 0),
+                       (stereoize_web(pick(web_clip, i + 1), refl_gain=0.12), 0.68, 42),
+                       (pick(c96_tt33_cl, i), 0.42, 140)], 720),
+            "sotiyat:P38_Mag+TT33+clip", eq_bands=eq_f, transient_boost_db=1.7, width_pct=98)
+        add("C96_DRY", f"96kHz MKH416 + 192kHz C96 Hammer Dry-Fire Snap #{i+1}",
+            align_mix([(stereoize_web(pick(c96_dry_96, i), refl_gain=0.10), 0.88, 0),
+                       (pick(c96_ppq_m1, i), 0.38, 6)], 280),
+            "GDC4936+FFX_PPQ", eq_bands=eq_f, transient_boost_db=1.9, width_pct=96)
+        add("C96_LOCKOPEN", f"96kHz Steel Bolt Hold-Open Catch #{i+1}",
+            align_mix([(pick(c96_tt33_cl, i + 1), 0.80, 0),
+                       (stereoize_web(pick(web_pst_brc, i + 1), refl_gain=0.14), 0.46, 12)], 380),
+            "sotiyat:TT33_Clear+breech", eq_bands=[(420, 1.3, 1.5), (4200, 1.5, 2.6)], transient_boost_db=2.0, width_pct=98)
 
     # Maxim PM M1910 (7.62x54R ~550 RPM + Sokolov Wheels + Water Boil/Steam)
     for i in range(4):

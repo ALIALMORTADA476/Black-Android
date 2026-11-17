@@ -107,7 +107,11 @@ void EmitWoundDrip(const float pos[3], float ground_y);
 void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3],
                                    const float hit_end[3], float caliber_scale,
                                    bool spawn_smoke, bool spark_impact);
+void EmitMauserMuzzleShockwave(const float muzzle_pos[3], const float dir[3],
+                               float ground_y, float intensity = 1.0f);
 void EmitMaximSteamPlume(const float jacket_pos[3], float steam_intensity);
+// While true, guest physical bullets spawned by Special Arsenal weapons skip the duplicate tracer/smoke FX.
+void SetSuppressPhysicalSpawnFx(bool suppress);
 void RegisterThermalSlot(uint32_t slot_ea, const float dir[3]);
 bool InThermalImpact();
 bool BeginThermalImpact(uint32_t slot_ea);

@@ -1,0 +1,139 @@
+{
+  "weapon_slug": "flamethrower",
+  "display_name": "Heavy Assault Flamethrower (Twin-Tank Pressurized Incendiary Rifle)",
+  "type": "flamethrower",
+  "units": "centimeters",
+  "forward_axis": "+X",
+  "up_axis": "+Y",
+  "right_axis": "+Z",
+  "triangles_final": 35264,
+  "vertices_final": 17706,
+  "triangles_highpoly": 202806,
+  "group_count": 8,
+  "material_count": 7,
+  "bbox_min": [
+    -26.5,
+    -23.042,
+    -5.534
+  ],
+  "bbox_max": [
+    62.5,
+    9.8,
+    5.194
+  ],
+  "muzzle_tip": [
+    62.5,
+    4.85,
+    0.0
+  ],
+  "ejection_port": [
+    9.5,
+    5.35,
+    2.18
+  ],
+  "sight_line_height": [
+    0.0,
+    8.85,
+    0.0
+  ],
+  "grip_center": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "magazine_well": [
+    8.5,
+    -3.5,
+    0.0
+  ],
+  "triangles_per_group": {
+    "Receiver_Body": 26720,
+    "FuelTankPack_TANK": 3216,
+    "ChargingHandle_CHARGE": 2592,
+    "Trigger_TRIGGER": 480,
+    "SafetyLever_SAFETY": 480,
+    "TankLatch_LATCH": 480,
+    "RegulatorValve_VALVE": 672,
+    "PressureGauge_GAUGE": 624
+  },
+  "reload_time_ms": 2600,
+  "pivots": [
+    {
+      "part": "FuelTankPack_TANK",
+      "axis": "Y",
+      "pivot": [
+        16.0,
+        -5.5,
+        0.0
+      ],
+      "min": -14.5,
+      "max": 0.0
+    },
+    {
+      "part": "TankLatch_LATCH",
+      "axis": "Z",
+      "pivot": [
+        9.9,
+        -4.8,
+        0.0
+      ],
+      "min": 0.0,
+      "max": 32.0
+    },
+    {
+      "part": "RegulatorValve_VALVE",
+      "axis": "X",
+      "pivot": [
+        15.5,
+        -14.0,
+        0.0
+      ],
+      "min": -90.0,
+      "max": 0.0
+    },
+    {
+      "part": "PressureGauge_GAUGE",
+      "axis": "Z",
+      "pivot": [
+        19.7,
+        -3.2,
+        0.0
+      ],
+      "min": -85.0,
+      "max": 0.0
+    },
+    {
+      "part": "ChargingHandle_CHARGE",
+      "axis": "X",
+      "pivot": [
+        8.5,
+        5.35,
+        0.0
+      ],
+      "min": -7.5,
+      "max": 0.0
+    },
+    {
+      "part": "SafetyLever_SAFETY",
+      "axis": "Z",
+      "pivot": [
+        -1.8,
+        4.45,
+        -2.2
+      ],
+      "min": -28.0,
+      "max": 0.0
+    },
+    {
+      "part": "Trigger_TRIGGER",
+      "axis": "Z",
+      "pivot": [
+        -0.4,
+        -0.35,
+        0.0
+      ],
+      "min": -18.0,
+      "max": 0.0
+    }
+  ]
+}

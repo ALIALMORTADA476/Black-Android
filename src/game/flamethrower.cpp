@@ -26,6 +26,7 @@
 #include "game/layout.h"
 #include "game/overdrive.h"
 #include "game/special_arsenal_core.h"
+#include "game/time_stop.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
 #include "sound/weapon_audio.h"
@@ -142,6 +143,7 @@ bool g_prev_swap_up = false;
 bool g_prev_swap_dn = false;
 bool g_prev_fire_trig = false;
 bool g_prev_mode_btn = false;
+bool g_prev_aim_btn = false;
 bool g_swallow_up = false;
 bool g_swallow_dn = false;
 bool g_swallow_mode = false;
@@ -474,30 +476,48 @@ void ApplyWeaponPartKinematics(WeaponAsset& asset, const sa::WeaponStatus& st, f
             }
         } else if (st.id == sa::SpecialWeaponId::Mauser1891) {
             if (std::strcmp(nm, "trigger") == 0) {
-                rx = p.trigger_pull * 0.38f;
-            } else if (std::strcmp(nm, "bolt_handle") == 0 || std::strcmp(nm, "bolt_body") == 0) {
+                rx = p.trigger_pull * 0.28f;
+            } else if (std::strcmp(nm, "bolt_handle") == 0) {
                 rz = p.bolt_lift_deg * kDegToRad;
                 tz = -p.bolt_retract_m;
+            } else if (std::strcmp(nm, "bolt_body") == 0) {
+                tz = -p.bolt_retract_m;
+            } else if (std::strcmp(nm, "bolt_stop") == 0) {
+                ry = p.bolt_stop_deg * kDegToRad;
+            } else if (std::strcmp(nm, "safety_lever") == 0) {
+                rz = -(1.0f - p.safety_lever) * (45.0f * kDegToRad);
+            } else if (std::strcmp(nm, "rear_sight") == 0) {
+                rx = p.rear_sight_deg * kDegToRad;
             } else if (std::strcmp(nm, "stripper_clip") == 0) {
-                visible = st.reloading && (p.clip_insert > 0.01f);
-                ty = (1.0f - p.clip_insert) * 0.072f;
+                visible = st.reloading && (p.clip_insert > 0.01f || p.clip_eject > 0.01f);
+                if (p.clip_eject > 0.01f) {
+                    tx = p.clip_eject * 0.075f;
+                    ty = p.clip_eject * 0.085f;
+                    rz = -p.clip_eject * 1.15f;
+                } else {
+                    ty = (1.0f - p.clip_insert) * 0.055f;
+                }
             } else if (std::strcmp(nm, "clip_rounds") == 0) {
                 visible = st.reloading && (p.clip_insert > 0.01f) && (p.clip_rounds_left > 0.1f);
                 const float fed = 1.0f - (p.clip_rounds_left / 5.0f);
-                ty = (1.0f - p.clip_insert) * 0.072f - fed * 0.056f;
+                ty = (1.0f - p.clip_insert) * 0.055f - fed * 0.056f;
             }
         } else if (st.id == sa::SpecialWeaponId::MauserC96) {
-            if (std::strcmp(nm, "trigger") == 0) {
-                rx = p.trigger_pull * 0.42f;
-            } else if (std::strcmp(nm, "barrel_upper") == 0) {
+            if (std::strcmp(nm, "body_frame") == 0) {
                 tz = -p.barrel_recoil_m;
             } else if (std::strcmp(nm, "bolt") == 0) {
-                tz = -(p.barrel_recoil_m + (p.bolt_locked_open ? 0.058f : 0.0f));
-            } else if (std::strcmp(nm, "hammer") == 0) {
-                rx = (1.0f - p.hammer_cocked) * 1.02f;
+                tz = -(p.barrel_recoil_m + p.bolt_retract_m);
             } else if (std::strcmp(nm, "stripper_clip") == 0) {
                 visible = st.reloading && (p.clip_insert > 0.01f);
-                ty = (1.0f - p.clip_insert) * 0.075f;
+                ty = -p.clip_insert * 0.060f;
+            } else if (std::strcmp(nm, "hammer") == 0) {
+                rx = (1.0f - p.hammer_cocked) * (54.0f * kDegToRad);
+            } else if (std::strcmp(nm, "trigger") == 0) {
+                rx = p.trigger_pull * (18.0f * kDegToRad);
+            } else if (std::strcmp(nm, "safety_lever") == 0) {
+                rx = -(1.0f - p.safety_lever) * (32.0f * kDegToRad);
+            } else if (std::strcmp(nm, "rear_sight") == 0) {
+                rx = p.rear_sight_deg * kDegToRad;
             }
         } else if (st.id == sa::SpecialWeaponId::Maxim1910) {
             if (std::strcmp(nm, "wheel_left") == 0 || std::strcmp(nm, "wheel_right") == 0) {
@@ -544,6 +564,9 @@ void DispatchArsenalAudioCues(const sa::ArsenalStepEvents& ev) {
             case Cue::Mauser91DryFire:
                 sound::weapon_audio::TriggerSpecialSlot(135, 0.85f, false);
                 break;
+            case Cue::Mauser91ChamberClose:
+                sound::weapon_audio::TriggerSpecialSlot(149, 0.90f, false);
+                break;
             case Cue::C96Shot:
                 sound::weapon_audio::OnPlayerFire("C96", false, false);
                 sound::weapon_audio::TriggerSpecialSlot(137, 0.48f, false);
@@ -579,6 +602,36 @@ void DispatchArsenalAudioCues(const sa::ArsenalStepEvents& ev) {
     }
 }
 
+void SpawnWorldBullet(X86Context& ctx, const float origin[3], const float dir[3]) {
+    // A real guest physical bullet (same spawner the game's own guns use) so cars, glass, props,
+    // decals and surface impacts react exactly like normal gunfire. It reuses the last genuine
+    // player fire packet, so it is skipped until the player has fired a stock weapon once.
+    if (game::time_stop::IsFrozen()) return;
+    uint32_t pkt = 0;
+    float range = 0.0f, speed = 0.0f;
+    uint8_t flags = 0;
+    if (!game::time_stop::LastPlayerFirePkt(pkt, range, speed, flags)) return;
+    const uint32_t mgr = R32(0x002D12D0u);
+    if (!mgr || !ValidAddr(mgr + 0x6E0u, 16u * 0x90u)) return;
+
+    static uint32_t s_buf = 0;
+    if (!s_buf) s_buf = mem::AllocSystem(32, 16);
+    if (!s_buf) return;
+    float* m = reinterpret_cast<float*>(HostPtr(s_buf));
+    float* d = reinterpret_cast<float*>(HostPtr(s_buf + 16));
+    m[0] = origin[0]; m[1] = origin[1]; m[2] = origin[2]; m[3] = 1.0f;
+    d[0] = dir[0]; d[1] = dir[1]; d[2] = dir[2]; d[3] = 0.0f;
+
+    const uint32_t saved_ecx = ctx.ecx, saved_edx = ctx.edx;
+    ctx.ecx = s_buf;
+    ctx.edx = mgr;
+    game::ballistics::SetSuppressPhysicalSpawnFx(true);
+    CallGuest(ctx, 0x001DB7B0u, {pkt, s_buf + 16, FBits(range), FBits(speed), uint32_t(flags)});
+    game::ballistics::SetSuppressPhysicalSpawnFx(false);
+    ctx.ecx = saved_ecx;
+    ctx.edx = saved_edx;
+}
+
 void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
                               const sa::WeaponStatus& st, const sa::ArsenalStepEvents& ev,
                               const float eye[3], const float right[3], const float up[3],
@@ -606,75 +659,109 @@ void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
     uint32_t enemies[64]{};
     const size_t n = game::CopyLivingEnemies(enemies, 64);
 
+    auto find_closest_enemy_hit = [&](float min_t, uint32_t skip_who, float& out_t,
+                                      uint32_t& out_who, bool& out_head,
+                                      float out_hit[3], float& out_feet_y) {
+        out_t = 140.0f;
+        out_who = 0;
+        out_head = false;
+        out_feet_y = ground_y;
+        for (size_t i = 0; i < n; ++i) {
+            const uint32_t e = enemies[i];
+            if (!e || e == me || e == skip_who || !ValidAddr(e, 0x390u)) continue;
+            if (R32(e + kCharKind) != kEnemyKind || R32(e + kCharDying) != 0u) continue;
+            const float ep[3] = {G<float>(e + kCharPos), G<float>(e + kCharPos + 4u),
+                                 G<float>(e + kCharPos + 8u)};
+            if (!std::isfinite(ep[0]) || !std::isfinite(ep[1]) || !std::isfinite(ep[2])) continue;
+
+            const float ocx = ep[0] - eye[0];
+            const float ocz = ep[2] - eye[2];
+            const float a_xz = ray[0] * ray[0] + ray[2] * ray[2];
+            const float t = (a_xz > 1e-5f)
+                                ? ((ocx * ray[0] + ocz * ray[2]) / a_xz)
+                                : ((ep[1] + 1.0f - eye[1]) / (std::fabs(ray[1]) > 1e-4f ? ray[1] : 1.0f));
+            if (t <= min_t || t >= out_t) continue;
+
+            const float px = eye[0] + ray[0] * t;
+            const float py = eye[1] + ray[1] * t;
+            const float pz = eye[2] + ray[2] * t;
+            const float dx = px - ep[0];
+            const float dz = pz - ep[2];
+            const float hdist = std::sqrt(dx * dx + dz * dz);
+            const float rel_y = py - ep[1];
+
+            const bool head = (rel_y >= 1.36f && rel_y <= 1.84f && hdist <= 0.28f);
+            const bool body = (!head && rel_y >= 0.04f && rel_y <= 1.78f && hdist <= 0.48f);
+            if (head || body) {
+                out_t = t;
+                out_who = e;
+                out_head = head;
+                out_hit[0] = px; out_hit[1] = py; out_hit[2] = pz;
+                out_feet_y = ep[1];
+            }
+        }
+    };
+
     float best_t = 140.0f;
     uint32_t best_who = 0;
     bool best_head = false;
     float best_hit[3] = {};
     float best_feet_y = ground_y;
-
-    for (size_t i = 0; i < n; ++i) {
-        const uint32_t e = enemies[i];
-        if (!e || e == me || !ValidAddr(e, 0x390u)) continue;
-        if (R32(e + kCharKind) != kEnemyKind || R32(e + kCharDying) != 0u) continue;
-        const float ep[3] = {G<float>(e + kCharPos), G<float>(e + kCharPos + 4u),
-                             G<float>(e + kCharPos + 8u)};
-        if (!std::isfinite(ep[0]) || !std::isfinite(ep[1]) || !std::isfinite(ep[2])) continue;
-
-        const float ocx = ep[0] - eye[0];
-        const float ocz = ep[2] - eye[2];
-        const float a_xz = ray[0] * ray[0] + ray[2] * ray[2];
-        const float t = (a_xz > 1e-5f)
-                            ? ((ocx * ray[0] + ocz * ray[2]) / a_xz)
-                            : ((ep[1] + 1.0f - eye[1]) / (std::fabs(ray[1]) > 1e-4f ? ray[1] : 1.0f));
-        if (t < 0.35f || t >= best_t) continue;
-
-        const float px = eye[0] + ray[0] * t;
-        const float py = eye[1] + ray[1] * t;
-        const float pz = eye[2] + ray[2] * t;
-        const float dx = px - ep[0];
-        const float dz = pz - ep[2];
-        const float hdist = std::sqrt(dx * dx + dz * dz);
-        const float rel_y = py - ep[1];
-
-        const bool head = (rel_y >= 1.36f && rel_y <= 1.84f && hdist <= 0.28f);
-        const bool body = (!head && rel_y >= 0.04f && rel_y <= 1.78f && hdist <= 0.48f);
-        if (head || body) {
-            best_t = t;
-            best_who = e;
-            best_head = head;
-            best_hit[0] = px; best_hit[1] = py; best_hit[2] = pz;
-            best_feet_y = ep[1];
-        }
-    }
+    find_closest_enemy_hit(0.35f, 0u, best_t, best_who, best_head, best_hit, best_feet_y);
 
     const float cal_scale = (st.id == sa::SpecialWeaponId::Mauser1891) ? 1.25f
-                            : (st.id == sa::SpecialWeaponId::Maxim1910 ? 1.15f : 0.72f);
+                            : (st.id == sa::SpecialWeaponId::Maxim1910 ? 1.15f : 0.86f);
 
-    if (best_who) {
-        float& hp = G<float>(best_who + kCharHealth);
-        const float dmg = ev.bullet_damage * (best_head ? 2.2f : 1.0f);
+    if (st.id == sa::SpecialWeaponId::Mauser1891) {
+        game::ballistics::EmitMauserMuzzleShockwave(muzzle, ray, ground_y, 1.0f);
+    } else if (st.id == sa::SpecialWeaponId::MauserC96) {
+        game::ballistics::EmitMauserMuzzleShockwave(muzzle, ray, ground_y, 0.48f);
+    }
+
+    auto apply_enemy_hit = [&](uint32_t who, const float hit_p[3], float feet_y, bool head, float base_dmg) {
+        float& hp = G<float>(who + kCharHealth);
+        const float dmg = base_dmg * (head ? 2.2f : 1.0f);
         const bool will_kill = !std::isfinite(hp) || (hp <= dmg + 0.5f);
-
-        game::ballistics::EmitSpecialShotMuzzleAndTrace(muzzle, ray, best_hit, cal_scale, true, false);
-        game::ballistics::OnEnemyBloodHit(best_who, best_hit, best_feet_y + 0.024f,
-                                          std::clamp(best_hit[1] - best_feet_y, 0.2f, 1.65f),
-                                          ray, dmg, best_head, will_kill);
-        game::combat_feedback::RecordPlayerHit(best_head, will_kill);
-
+        game::ballistics::OnEnemyBloodHit(who, hit_p, feet_y + 0.024f,
+                                          std::clamp(hit_p[1] - feet_y, 0.2f, 1.65f),
+                                          ray, dmg, head, will_kill);
+        game::combat_feedback::RecordPlayerHit(head, will_kill);
         if (!will_kill) {
             hp -= dmg;
-            game::delirium_phys::TriggerExternalAgony(ctx, base, best_who,
-                                                      best_head ? 0x1Fu : 0x1Eu);
+            game::delirium_phys::TriggerExternalAgony(ctx, base, who, head ? 0x1Fu : 0x1Eu);
         } else if (me) {
             hp = 0.001f;
-            ApplyGuestDamage(ctx, base, best_who, me, best_hit, ray,
-                             std::max(120.0f, dmg * 1.4f), best_head ? 0x05u : 0x04u, false);
+            ApplyGuestDamage(ctx, base, who, me, hit_p, ray,
+                             std::max(120.0f, dmg * 1.4f), head ? 0x05u : 0x04u, false);
+        }
+    };
+
+    if (best_who) {
+        game::ballistics::EmitSpecialShotMuzzleAndTrace(muzzle, ray, best_hit, cal_scale, true, false);
+        apply_enemy_hit(best_who, best_hit, best_feet_y, best_head, ev.bullet_damage);
+
+        // 7.65x53mm Mauser spitzer over-penetration: pierces through first enemy to strike behind!
+        if (st.id == sa::SpecialWeaponId::Mauser1891) {
+            float pen_t = 140.0f;
+            uint32_t pen_who = 0;
+            bool pen_head = false;
+            float pen_hit[3] = {};
+            float pen_feet_y = ground_y;
+            find_closest_enemy_hit(best_t + 0.35f, best_who, pen_t, pen_who, pen_head, pen_hit, pen_feet_y);
+            if (pen_who) {
+                game::ballistics::EmitSpecialShotMuzzleAndTrace(best_hit, ray, pen_hit, cal_scale * 0.85f, false, false);
+                apply_enemy_hit(pen_who, pen_hit, pen_feet_y, pen_head, ev.bullet_damage * 0.65f);
+            }
         }
     } else {
         float miss_t = 48.0f;
+        bool hit_ground = false;
         if (ray[1] < -0.01f && eye[1] > ground_y) {
             const float tg = (ground_y - eye[1]) / ray[1];
-            if (tg > 0.4f && tg < miss_t) miss_t = tg;
+            if (tg > 0.4f && tg < 95.0f) {
+                miss_t = tg;
+                hit_ground = true;
+            }
         }
         const float miss_end[3] = {
             eye[0] + ray[0] * miss_t,
@@ -682,7 +769,19 @@ void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
             eye[2] + ray[2] * miss_t,
         };
         game::ballistics::EmitSpecialShotMuzzleAndTrace(muzzle, ray, miss_end, cal_scale, true,
-                                                        miss_t < 47.0f);
+                                                        hit_ground || miss_t < 47.0f);
+        // Real world-interacting bullet (cars, glass, props); throttled on the fast full-auto guns.
+        const bool fast_gun = (st.id == sa::SpecialWeaponId::MauserC96 || st.id == sa::SpecialWeaponId::Maxim1910);
+        if (!fast_gun || (st.mag_ammo & 1) == 0) {
+            const float start[3] = {eye[0] + ray[0] * 0.30f, eye[1] + ray[1] * 0.30f, eye[2] + ray[2] * 0.30f};
+            SpawnWorldBullet(ctx, start, ray);
+        }
+        if (st.id == sa::SpecialWeaponId::Mauser1891) {
+            sound::weapon_audio::TriggerWorldImpact(miss_end, hit_ground && ((g_shot_rng_seq & 1u) == 0u), true);
+        } else if (st.id == sa::SpecialWeaponId::MauserC96) {
+            sound::weapon_audio::TriggerWorldImpact(miss_end, hit_ground && ((g_shot_rng_seq & 3u) == 0u),
+                                                    (st.mag_ammo & 1) == 0);
+        }
     }
 }
 
@@ -693,20 +792,20 @@ void GetBaseOffsets(sa::SpecialWeaponId id, float ads,
     float ax = 0.120f, ay = -0.120f, az = 0.320f, ayaw = -0.030f, apitch = 0.0f;
     switch (id) {
         case sa::SpecialWeaponId::Flamethrower:
-            hx = 0.165f; hy = -0.145f; hz = 0.345f; hyaw = -0.055f;
-            ax = 0.110f; ay = -0.125f; az = 0.315f; ayaw = -0.025f;
+            hx = 0.150f; hy = -0.135f; hz = 0.310f; hyaw = -0.050f;
+            ax = 0.110f; ay = -0.125f; az = 0.300f; ayaw = -0.025f;
             break;
         case sa::SpecialWeaponId::Mauser1891:
-            hx = 0.135f; hy = -0.118f; hz = 0.340f; hyaw = -0.042f;
-            ax = 0.000f; ay = -0.046f; az = 0.285f; ayaw =  0.000f;
+            hx = 0.120f; hy = -0.108f; hz = 0.290f; hyaw = -0.038f;
+            ax = 0.000f; ay = -0.046f; az = 0.275f; ayaw =  0.000f;
             break;
         case sa::SpecialWeaponId::MauserC96:
-            hx = 0.116f; hy = -0.092f; hz = 0.338f; hyaw = -0.048f;
-            ax = 0.000f; ay = -0.074f; az = 0.275f; ayaw =  0.000f;
+            hx = 0.095f; hy = -0.082f; hz = 0.270f; hyaw = -0.042f;
+            ax = 0.000f; ay = -0.0845f; az = 0.255f; ayaw =  0.000f;
             break;
         case sa::SpecialWeaponId::Maxim1910:
-            hx = 0.148f; hy = -0.205f; hz = 0.695f; hyaw = -0.068f;
-            ax = 0.042f; ay = -0.132f; az = 0.585f; ayaw = -0.018f;
+            hx = 0.130f; hy = -0.195f; hz = 0.620f; hyaw = -0.060f;
+            ax = 0.042f; ay = -0.132f; az = 0.560f; ayaw = -0.018f;
             break;
         default: break;
     }
@@ -889,6 +988,7 @@ void FilterGameplayPad(int port, input::Pad& pad) {
         g_trigger_held.store(false, std::memory_order_relaxed);
         g_aim_pad_held.store(false, std::memory_order_relaxed);
         g_prev_fire_trig = false;
+        g_prev_aim_btn = (pad.buttons & (1u << 7)) != 0;
         g_prev_mode_btn = (pad.buttons & (1u << 0)) != 0;
         g_swallow_mode = false;
         return;
@@ -904,7 +1004,12 @@ void FilterGameplayPad(int port, input::Pad& pad) {
     if (rel) g_reload_queued.store(true, std::memory_order_relaxed);
 
     const bool aim_btn = (pad.buttons & (1u << 7)) != 0;
-    g_aim_pad_held.store(aim_btn, std::memory_order_relaxed);
+    const bool aim_edge = aim_btn && !g_prev_aim_btn;
+    g_prev_aim_btn = aim_btn;
+    // Tap-to-toggle ADS: each tap of the aim button flips the aim state (no need to keep holding it)
+    if (aim_edge) {
+        g_aim_pad_held.store(!g_aim_pad_held.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    }
 
     const bool mode_now = (pad.buttons & (1u << 0)) != 0;
     const bool mode_edge = mode_now && !g_prev_mode_btn;
@@ -986,6 +1091,9 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
         in.equip_progress = g_flame_sim.EquipProgress();
         ev = g_arsenal.Step(in);
         st = g_arsenal.GetStatus();
+
+        // Reloading drops the toggled aim so the weapon comes back to the hip like a real reload
+        if (st.reloading) g_aim_pad_held.store(false, std::memory_order_relaxed);
 
         if (inf_ammo) {
             g_arsenal.RefillActive();

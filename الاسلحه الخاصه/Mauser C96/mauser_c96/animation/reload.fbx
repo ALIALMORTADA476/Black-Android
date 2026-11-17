@@ -1,0 +1,108 @@
+; FBX 7.4.0 project file
+; Mauser C96 Reload Animation (30 fps, 78 frames, returns to rest pose at frame 78)
+FBXHeaderExtension:  {
+    FBXHeaderVersion: 1003
+    FBXVersion: 7400
+    Creator: "Hard-Surface Technical Asset Producer"
+}
+GlobalSettings:  {
+    Version: 1000
+    Properties70:  {
+        P: "UpAxis", "int", "Integer", "",1
+        P: "UpAxisSign", "int", "Integer", "",1
+        P: "FrontAxis", "int", "Integer", "",0
+        P: "FrontAxisSign", "int", "Integer", "",1
+        P: "CoordAxis", "int", "Integer", "",2
+        P: "CoordAxisSign", "int", "Integer", "",1
+        P: "UnitScaleFactor", "double", "Number", "",1
+        P: "TimeMode", "enum", "", "",6
+    }
+}
+Objects:  {
+    Model: 1001, "Model::Receiver_Body", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1002, "Model::Bolt_BOLT", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",1.20,5.60,0.00
+            P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+        }
+    }
+    Model: 1003, "Model::StripperClip_MAG", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",7.70,6.70,0.00
+            P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+        }
+    }
+    Model: 1004, "Model::Hammer_HAMMER", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",-0.40,4.56,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1005, "Model::Trigger_TRIGGER", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",5.25,1.30,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1006, "Model::SafetyLever_SAFETY", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",-0.55,3.65,1.15
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    Model: 1007, "Model::RearSight_SIGHT", "Mesh" {
+        Version: 232
+        Properties70:  {
+            P: "RotationPivot", "Vector3D", "Vector", "",6.65,6.95,0.00
+            P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+        }
+    }
+    AnimationStack: 2001, "AnimStack::Reload", "" {
+        Properties70:  {
+            P: "LocalStop", "KTime", "Time", "",119951769600
+        }
+    }
+    AnimationLayer: 2002, "AnimLayer::BaseLayer", "" {
+    }
+    AnimationCurveNode: 3001, "AnimCurveNode::T_Bolt", "" {
+        Properties70:  {
+            P: "d|X", "Number", "", "A",0
+            P: "d|Y", "Number", "", "A",0
+            P: "d|Z", "Number", "", "A",0
+        }
+    }
+    AnimationCurve: 4001, "AnimCurve::Bolt_X", "" {
+        Default: 0
+        KeyVer: 4008
+        KeyTime: *5 {
+            a: 0,15378432000,95346278400,103035494400,119951769600
+        }
+        KeyValueFloat: *5 {
+            a: 0,-3.8,-3.8,0,0
+        }
+    }
+}
+Connections:  {
+    OO "Model::Receiver_Body",0
+    OO "Model::Bolt_BOLT",1001
+    OO "Model::StripperClip_MAG",1001
+    OO "Model::Hammer_HAMMER",1001
+    OO "Model::Trigger_TRIGGER",1001
+    OO "Model::SafetyLever_SAFETY",1001
+    OO "Model::RearSight_SIGHT",1001
+    OO "AnimLayer::BaseLayer",2001
+    OO "AnimCurveNode::T_Bolt",2002
+    OP "AnimCurveNode::T_Bolt",1002,"Lcl Translation"
+    OP "AnimCurve::Bolt_X",3001,"d|X"
+}

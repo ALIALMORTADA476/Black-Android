@@ -87,6 +87,9 @@ void TriggerSpecialAmmoCue(uint8_t ammo_mode);
 // Authentic Special Arsenal BWAR v3 extended cues (slots 129..151: M2-2, Mauser 1891-12, C96, Maxim M1910)
 void TriggerSpecialSlot(int32_t slot_id, float gain = 1.0f, bool is_loop = false);
 
+// Spatialized 3D bullet world impact + ricochet & supersonic crack echo in the environment
+void TriggerWorldImpact(const float pos[3], bool ricochet, bool supersonic_crack);
+
 // Renders active 48 kHz polyphonic layered weapon/tail/echo/distant/flyby stems into `out` and `send`
 // before g_reverb.Run() executes in mixer.cpp. Safe on the audio thread.
 void RenderMix(float* out, float* send, uint32_t frames,
