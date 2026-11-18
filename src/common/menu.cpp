@@ -30,6 +30,7 @@
 #include "game/overdrive.h"
 #include "game/overdrive_rules.h"
 #include "game/physics_lab.h"
+#include "game/scope_overlay.h"
 #include "game/subtitles.h"
 #include "game/time_stop.h"
 #include "game/weapons.h"
@@ -4540,6 +4541,8 @@ void DrawUi(double fps) {
     PollCapture();
     DrawPanel();
   } else {
+    // Scope mask first: every other HUD element must stay readable on top of it.
+    game::scope_overlay::DrawOverlay(io.DisplaySize.x, io.DisplaySize.y);
     game::combat_feedback::DrawOverlay(io.DisplaySize.x, io.DisplaySize.y);
     game::overdrive::DrawHudOverlay(io.DisplaySize.x, io.DisplaySize.y);
     game::flash_arabic::DrawOverlay(io.DisplaySize.x, io.DisplaySize.y);

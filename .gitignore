@@ -37,6 +37,8 @@ black.toml
 .local
 /.tools/
 /tests/build/
+/tests/build_hands/
+/tools/*.db
 
 # Raw studio audio packs (>100MB, packed into black_weapon_audio.pak)
 /صوتيات/

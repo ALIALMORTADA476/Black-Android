@@ -1152,9 +1152,74 @@ HLE_STDCALL(D3DDevice_SetPixelShaderConstant, 3) {
 
 // drawing
 
+// First-person gun-list probe: logs what the title draws for its own viewmodel (gun, arms, flash)
+// so the arm geometry can be told apart by texture / vertex layout.
+namespace d3d {
+namespace {
+std::atomic<int> g_gun_mode{0};
+uint32_t g_probe_seq = 0;
+} // namespace
+
+bool IsBlackArmsDraw(uint32_t prim, uint32_t count) {
+  if (prim != 6u || g_state.streams[0].stride != 36u)
+    return false;
+  if (count < 2850u || count > 2980u)
+    return false;
+  uint32_t th = g_state.textures[0];
+  if (!th || !mem::IsCommitted(th) || !mem::IsCommitted(th + kHeaderBytes - 1))
+    return false;
+  uint32_t fmt = R32(th + kContainerFormat);
+  uint32_t tw = 1u << ((fmt >> 24) & 0xFu);
+  uint32_t th_px = 1u << ((fmt >> 20) & 0xFu);
+  return tw == 512u && th_px == 512u;
+}
+
+void ProbeGunDraw(const char *kind, uint32_t prim, uint32_t count, const uint16_t *indices) {
+  (void)indices;
+  if (g_gun_mode.load(std::memory_order_relaxed) != 1)
+    return;
+  uint32_t th = g_state.textures[0];
+  uint32_t data = 0, fmt = 0, hash = 0;
+  uint32_t tex_va = 0;
+  if (th && mem::IsCommitted(th) && mem::IsCommitted(th + kHeaderBytes - 1)) {
+    data = R32(th + kResData);
+    fmt = R32(th + kContainerFormat);
+    tex_va = mem::VirtualFromPhysical(data);
+    hash = 2166136261u;
+    if (tex_va && mem::IsCommitted(tex_va) && mem::IsCommitted(tex_va + 255)) {
+      for (uint32_t i = 0; i < 256; i += 4) {
+        hash = (hash ^ R32(tex_va + i)) * 16777619u;
+      }
+    }
+  }
+  static uint64_t s_seen[32] = {};
+  static int s_seen_n = 0;
+  uint64_t key = (uint64_t(hash) << 32) | count;
+  for (int i = 0; i < s_seen_n; ++i) {
+    if (s_seen[i] == key) return;
+  }
+  if (s_seen_n < 32) s_seen[s_seen_n++] = key;
+  uint32_t tw = 1u << ((fmt >> 24) & 0xFu);
+  uint32_t th_px = 1u << ((fmt >> 20) & 0xFu);
+  uint32_t tfmt = (fmt >> 8) & 0xFFu;
+  LOGR(
+      "[FPPROBE] #%u %s prim=%u n=%u tex=%ux%u fmt=%02X hash=%08X "
+      "stride=%u vs=%08X p00=%.3f p11=%.3f arms=%d",
+      g_probe_seq++, kind, prim, count, tw, th_px, tfmt, hash,
+      g_state.streams[0].stride, g_state.vs_handle,
+      g_state.transforms[3][0], g_state.transforms[3][5],
+      IsBlackArmsDraw(prim, count) ? 1 : 0);
+}
+void SetGunListMode(int mode) { g_gun_mode.store(mode, std::memory_order_relaxed); }
+int GunListMode() { return g_gun_mode.load(std::memory_order_relaxed); }
+} // namespace d3d
+
 HLE_STDCALL(D3DDevice_DrawVertices, 3) {
   std::lock_guard<std::recursive_mutex> lock(g_lock);
   SyncDeferred();
+  if (d3d::GunListMode() != 0)
+    return 0;
+  d3d::ProbeGunDraw("VTX", a[0], a[2], nullptr);
   if (g_backend)
     g_backend->Draw(g_state, a[0], a[1], a[2], nullptr);
   return 0;
@@ -1163,8 +1228,13 @@ HLE_STDCALL(D3DDevice_DrawVertices, 3) {
 HLE_STDCALL(D3DDevice_DrawIndexedVertices, 3) {
   std::lock_guard<std::recursive_mutex> lock(g_lock);
   SyncDeferred();
-  const uint8_t *indices =
-      a[2] ? static_cast<const uint8_t *>(HostPtr(a[2])) : nullptr;
+  if (d3d::GunListMode() == 1 ||
+      (d3d::GunListMode() == 2 && !d3d::IsBlackArmsDraw(a[0], a[1])))
+    return 0;
+  const uint16_t *idx16 =
+      a[2] ? reinterpret_cast<const uint16_t *>(HostPtr(a[2])) : nullptr;
+  d3d::ProbeGunDraw("IDX", a[0], a[1], idx16);
+  const uint8_t *indices = reinterpret_cast<const uint8_t *>(idx16);
   if (g_backend)
     g_backend->Draw(g_state, a[0], 0, a[1], indices);
   return 0;
@@ -1902,36 +1972,54 @@ uint32_t EnsureVfxAtlasTexture() {
               bgra = (uint32_t(alpha_f * 255.0f + 0.5f) << 24) | (cr << 16) |
                      (cg << 8) | cb;
             } else {
-              // Row 3: Tiles 12-13 glowing spark/ember cores; Tiles 14-15 radial shockwave & dust rings.
-              const float rim_fade = clamp01(1.0f - r2 * 1.06f);
+              // Row 3: Tiles 12-13 incandescent blackbody spark/ember cores with lens diffraction;
+              // Tiles 14-15 supersonic Mach shockwave & Rayleigh-Taylor turbulent dust rings.
+              const float rim_fade = clamp01(1.0f - r2 * 1.08f);
               if (tx < 2u) {
-                const float core = clamp01(1.0f - r2 * 3.2f);
-                const float halo = clamp01(1.0f - r2 * 1.15f);
-                const float star =
-                    clamp01(1.0f - (ux * ux * 28.0f + uy * uy * 2.4f)) * halo +
-                    clamp01(1.0f - (uy * uy * 28.0f + ux * ux * 2.4f)) * halo;
+                const float core = std::exp(-r2 * 6.5f);
+                const float halo = clamp01(1.0f - r2 * 1.12f);
+                const float diag_u = (ux + uy) * 0.70710678f;
+                const float diag_v = (ux - uy) * 0.70710678f;
+                const float star_primary =
+                    clamp01(1.0f - (ux * ux * 34.0f + uy * uy * 2.1f)) * halo +
+                    clamp01(1.0f - (uy * uy * 34.0f + ux * ux * 2.1f)) * halo;
+                const float star_diag =
+                    (tx == 1u)
+                        ? (clamp01(1.0f - (diag_u * diag_u * 48.0f + diag_v * diag_v * 3.0f)) +
+                           clamp01(1.0f - (diag_v * diag_v * 48.0f + diag_u * diag_u * 3.0f))) *
+                              halo * 0.55f
+                        : 0.0f;
+                const float ember_turb =
+                    0.82f + 0.18f * vnoise(ux * 8.5f + float(tx) * 3.1f, uy * 8.5f, tile_seed);
                 const float alpha_f = clamp01(
-                    (halo * halo * 0.72f + core * core * 0.55f + star * 0.35f) *
-                    rim_fade);
+                    (halo * halo * 0.64f + core * 0.72f + (star_primary + star_diag) * 0.38f) *
+                    ember_turb * rim_fade);
+                const float temp = clamp01(core * 0.92f + star_primary * 0.28f + halo * 0.18f);
                 const float r_f = 1.0f;
-                const float g_f = clamp01(0.32f + 0.68f * core * core);
-                const float b_f = clamp01(0.08f + 0.72f * core * core * core);
+                const float g_f = clamp01(0.24f + 0.74f * std::pow(temp, 1.35f));
+                const float b_f = clamp01(0.04f + 0.82f * std::pow(temp, 2.60f));
                 bgra = (uint32_t(alpha_f * 255.0f + 0.5f) << 24) |
                        (uint32_t(r_f * 255.0f + 0.5f) << 16) |
                        (uint32_t(g_f * 255.0f + 0.5f) << 8) |
                        uint32_t(b_f * 255.0f + 0.5f);
               } else {
-                const float n0 = fbm(ux * 4.2f + float(tx) * 2.7f,
-                                     uy * 4.2f - 1.9f, tile_seed);
-                const float delta = r2 - (0.48f + 0.14f * (n0 - 0.5f));
-                const float ring = clamp01(1.0f - delta * delta * 18.0f);
-                const float dust =
-                    clamp01(1.0f - r2 * (0.95f + 0.35f * (1.0f - n0)));
+                const float rad = std::sqrt(r2 + 1e-6f);
+                const float dx = ux / rad;
+                const float dy = uy / rad;
+                const float n0 = fbm(ux * 3.8f + float(tx) * 2.7f,
+                                     uy * 3.8f - 1.9f, tile_seed);
+                const float rt_fingers =
+                    fbm(dx * 5.5f + ux * 2.4f, dy * 5.5f + uy * 2.4f, tile_seed + 79u);
+                const float delta =
+                    r2 - (0.46f + 0.14f * (n0 - 0.5f) + 0.08f * (rt_fingers - 0.5f));
+                const float shock_ring = clamp01(1.0f - delta * delta * 22.0f);
+                const float inner_wake =
+                    clamp01(1.0f - r2 * (0.92f + 0.38f * (1.0f - n0))) * rt_fingers;
                 const float alpha_f = clamp01(
-                    (ring * (0.62f + 0.38f * n0) + dust * dust * 0.25f) *
+                    (shock_ring * (0.66f + 0.34f * rt_fingers) + inner_wake * 0.28f) *
                     rim_fade * rim_fade);
                 const float lum_f =
-                    clamp01(0.58f + 0.32f * ring + 0.14f * n0);
+                    clamp01(0.52f + 0.36f * shock_ring + 0.14f * rt_fingers);
                 const uint32_t ch = uint32_t(lum_f * 255.0f + 0.5f);
                 bgra = (uint32_t(alpha_f * 255.0f + 0.5f) << 24) | (ch << 16) |
                        (ch << 8) | ch;
@@ -2366,11 +2454,15 @@ void DrawViewmodelMesh(const ViewmodelVertex *verts, uint32_t vertex_count,
   if (!s_vm_vb_hdr) {
     s_vm_vb_hdr = mem::AllocSystem(kHeaderBytes);
   }
-  if (s_vm_uploaded_ptr != verts || s_vm_uploaded_count != vertex_count) {
-    if (!s_vm_vb_data || s_vm_uploaded_count < vertex_count) {
-      s_vm_vb_data = mem::AllocContiguous(vbytes, 0, 0xFFFFFFFFu, 0x1000u);
-    }
-    std::memcpy(HostPtr(s_vm_vb_data), verts, vbytes);
+  const bool new_buffer = !s_vm_vb_data || s_vm_uploaded_count < vertex_count;
+  if (new_buffer) {
+    s_vm_vb_data = mem::AllocContiguous(vbytes, 0, 0xFFFFFFFFu, 0x1000u);
+  }
+  // Hands IK rebuilds this mesh every frame from a static buffer: re-upload and
+  // dirty it each frame (the pointer alone does not change), like the textured path.
+  std::memcpy(HostPtr(s_vm_vb_data), verts, vbytes);
+  gpu::MarkDirty(s_vm_vb_data);
+  if (new_buffer || s_vm_uploaded_ptr != verts || s_vm_uploaded_count != vertex_count) {
     std::memset(HostPtr(s_vm_vb_hdr), 0, kHeaderBytes);
     W32(s_vm_vb_hdr + kResCommon, 1u);
     W32(s_vm_vb_hdr + kResData, mem::PhysicalFromVirtual(s_vm_vb_data));
@@ -2644,38 +2736,57 @@ uint32_t EnsureViewmodelBtexTexture(uint64_t cache_key, const uint32_t *swizzled
 
 } // namespace
 
-void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t vertex_count,
-                               const uint16_t *indices, uint32_t index_count,
-                               uint64_t texture_cache_key, const uint32_t *swizzled_bgra_pixels,
-                               uint32_t tex_width, uint32_t tex_height,
-                               const float world[16], const float view[16], const float proj[16],
-                               const float flame_pos_world[3], float flame_intensity) {
-  if (!g_backend || !verts || !indices || vertex_count == 0u ||
-      index_count < 3u || !world || !view || !proj) {
+void DrawViewmodelTexturedBatches(const ViewmodelTexturedVertex *verts, uint32_t vertex_count,
+                                  const ViewmodelTexturedBatch *batches, uint32_t batch_count,
+                                  const float world[16], const float view[16], const float proj[16],
+                                  const float flame_pos_world[3], float flame_intensity) {
+  if (!g_backend || !verts || !batches || vertex_count == 0u || batch_count == 0u ||
+      !world || !view || !proj) {
     return;
   }
 
   std::lock_guard<std::recursive_mutex> lock(g_lock);
 
-  static uint32_t s_tex_vb_hdr = 0u;
-  static uint32_t s_tex_vb_data = 0u;
-  constexpr uint32_t kMaxVertBytes = 65500u * uint32_t(sizeof(ViewmodelTexturedVertex));
-  if (!s_tex_vb_hdr) {
-    s_tex_vb_data = mem::AllocSystem(kMaxVertBytes, 256u);
-    s_tex_vb_hdr = mem::AllocSystem(kHeaderBytes, 16u);
-    if (!s_tex_vb_data || !s_tex_vb_hdr) return;
-    std::memset(HostPtr(s_tex_vb_hdr), 0, kHeaderBytes);
-    W32(s_tex_vb_hdr + kResCommon, 1u);
-    W32(s_tex_vb_hdr + kResData, mem::PhysicalFromVirtual(s_tex_vb_data));
+  // Fence-synchronized 8 MB ring buffer (matches UpVertices pattern) so multiple viewmodel
+  // draws in the same frame never overwrite each other before the Render Thread consumes them.
+  constexpr uint32_t kTexRingBytes = 8u << 20;
+  constexpr uint32_t kTexRingHalf = kTexRingBytes / 2u;
+  static uint32_t s_tex_ring = 0u;
+  static uint32_t s_tex_hdr = 0u;
+  static uint32_t s_tex_pos = 0u;
+  static uint32_t s_tex_fence[2] = {};
+  if (!s_tex_ring) {
+    s_tex_ring = mem::AllocContiguous(kTexRingBytes, 0u, 0xFFFFFFFFu, 0x1000u);
+    s_tex_hdr = mem::AllocSystem(kHeaderBytes, 16u);
+    if (!s_tex_ring || !s_tex_hdr) return;
+    std::memset(HostPtr(s_tex_hdr), 0, kHeaderBytes);
+    W32(s_tex_hdr + kResCommon, 1u);
   }
 
   const uint32_t clamped_vc = std::min<uint32_t>(vertex_count, 65500u);
-  const uint32_t upload_bytes = clamped_vc * uint32_t(sizeof(ViewmodelTexturedVertex));
-  std::memcpy(HostPtr(s_tex_vb_data), verts, upload_bytes);
-  gpu::MarkDirty(s_tex_vb_data);
+  const uint32_t upload_bytes = std::min<uint32_t>(
+      clamped_vc * uint32_t(sizeof(ViewmodelTexturedVertex)), kTexRingHalf);
+  const uint32_t room = (upload_bytes + 63u) & ~63u;
+  const uint32_t pos = (s_tex_pos + room > kTexRingBytes) ? 0u : s_tex_pos;
+  const uint32_t from = s_tex_pos ? (s_tex_pos - 1u) / kTexRingHalf : 1u;
+  const uint32_t to = (pos + room - 1u) / kTexRingHalf;
+  if (to != from) {
+    s_tex_fence[from] = g_backend->Fence();
+    g_backend->WaitFence(s_tex_fence[to]);
+  }
+  std::memcpy(HostPtr(s_tex_ring + pos), verts, upload_bytes);
+  s_tex_pos = pos + room;
+  W32(s_tex_hdr + kResData, mem::PhysicalFromVirtual(s_tex_ring + pos));
+  gpu::MarkDirty(s_tex_ring + pos);
 
-  const uint32_t tex_hdr = EnsureViewmodelBtexTexture(
-      texture_cache_key, swizzled_bgra_pixels, tex_width, tex_height);
+  std::vector<uint32_t> batch_tex(batch_count, 0u);
+  for (uint32_t bi = 0; bi < batch_count; ++bi) {
+    const auto &b = batches[bi];
+    batch_tex[bi] = EnsureViewmodelBtexTexture(
+        b.texture_cache_key, b.swizzled_bgra_pixels, b.tex_width, b.tex_height);
+  }
+  const uint32_t first_tex_hdr = batch_tex[0];
+  const uint32_t tex_hdr = first_tex_hdr;
 
   const auto saved_stream = g_state.streams[0];
   const auto saved_viewport = g_state.viewport;
@@ -2786,11 +2897,11 @@ void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t ve
   }
 
   const float mat[17] = {
-      0.84f, 0.84f, 0.84f, 1.0f, // Diffuse (tempered so light steel keeps brushed texture contrast)
-      0.42f, 0.42f, 0.46f, 1.0f, // Ambient
-      0.14f, 0.14f, 0.16f, 1.0f, // Specular (crisp machined steel glint without chalky blowout)
+      0.92f, 0.92f, 0.92f, 1.0f, // Diffuse (tempered so steel/walnut grain stays crisp)
+      0.44f, 0.44f, 0.48f, 1.0f, // Ambient
+      0.32f, 0.33f, 0.36f, 1.0f, // Specular (machined gunmetal edge glint without blowout)
       0.0f, 0.0f, 0.0f, 0.0f,    // Emissive (strictly zero!)
-      54.0f                      // Power (tight metallic highlight)
+      38.0f                      // Power (tight metallic highlight)
   };
   std::memcpy(g_state.material.data(), mat, sizeof(mat));
 
@@ -2822,16 +2933,16 @@ void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t ve
   };
 
   const float z3[3] = {0.0f, 0.0f, 0.0f};
-  const float k0_dir[3] = {-0.58f, -0.48f, 0.66f};
-  const float k0_diff[4] = {0.66f, 0.64f, 0.60f, 1.0f};
-  const float k0_spec[4] = {0.22f, 0.22f, 0.24f, 1.0f};
-  const float k0_amb[4] = {0.12f, 0.12f, 0.14f, 1.0f};
+  const float k0_dir[3] = {-0.55f, -0.52f, 0.65f};
+  const float k0_diff[4] = {0.74f, 0.72f, 0.68f, 1.0f};
+  const float k0_spec[4] = {0.36f, 0.36f, 0.38f, 1.0f};
+  const float k0_amb[4] = {0.13f, 0.13f, 0.15f, 1.0f};
   write_light(g_state.lights[0], 3u, k0_diff, k0_spec, k0_amb, z3, k0_dir, 1000.0f, 1.0f, 0.0f, 0.0f);
 
-  const float k1_dir[3] = {0.62f, 0.55f, -0.56f};
-  const float k1_diff[4] = {0.22f, 0.25f, 0.32f, 1.0f};
-  const float k1_spec[4] = {0.06f, 0.08f, 0.10f, 1.0f};
-  const float k1_amb[4] = {0.04f, 0.04f, 0.05f, 1.0f};
+  const float k1_dir[3] = {0.64f, 0.52f, -0.56f};
+  const float k1_diff[4] = {0.28f, 0.32f, 0.42f, 1.0f};
+  const float k1_spec[4] = {0.18f, 0.22f, 0.28f, 1.0f};
+  const float k1_amb[4] = {0.05f, 0.05f, 0.06f, 1.0f};
   write_light(g_state.lights[1], 3u, k1_diff, k1_spec, k1_amb, z3, k1_dir, 1000.0f, 1.0f, 0.0f, 0.0f);
 
   const float fi = std::clamp(flame_intensity, 0.0f, 1.0f);
@@ -2844,9 +2955,21 @@ void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t ve
   write_light(g_state.lights[2], 1u, k2_diff, k2_spec, k2_amb, fpos, k0_dir, 3.8f, 0.7f, 1.2f, 0.9f);
   g_state.light_enable = (fi > 0.01f) ? 0x7u : 0x3u;
 
-  g_state.streams[0] = {s_tex_vb_hdr, uint32_t(sizeof(ViewmodelTexturedVertex))};
-  g_backend->Draw(g_state, 5 /* D3DPT_TRIANGLELIST */, 0, index_count,
-                  reinterpret_cast<const uint8_t *>(indices));
+  g_state.streams[0] = {s_tex_hdr, uint32_t(sizeof(ViewmodelTexturedVertex))};
+  for (uint32_t bi = 0; bi < batch_count; ++bi) {
+    const auto &b = batches[bi];
+    if (!b.indices || b.index_count < 3u) continue;
+    g_state.textures[0] = batch_tex[bi];
+    if (!batch_tex[bi]) {
+      g_state.tss[0][gpu::kTssColorOp] = 2u;
+      g_state.tss[0][gpu::kTssColorArg1] = 0u;
+    } else {
+      g_state.tss[0][gpu::kTssColorOp] = 4u;
+      g_state.tss[0][gpu::kTssColorArg1] = 2u;
+    }
+    g_backend->Draw(g_state, 5 /* D3DPT_TRIANGLELIST */, 0, b.index_count,
+                    reinterpret_cast<const uint8_t *>(b.indices));
+  }
 
   g_state.streams[0] = saved_stream;
   g_state.textures = saved_textures;
@@ -2889,6 +3012,18 @@ void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t ve
   g_state.simple[gpu::kMColorWriteEnable >> 2] = saved_cw;
   g_state.simple[gpu::kMShadeMode >> 2] = saved_sm;
   g_state.simple[gpu::kMSolidOffsetEnable >> 2] = saved_so;
+}
+
+void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex *verts, uint32_t vertex_count,
+                               const uint16_t *indices, uint32_t index_count,
+                               uint64_t texture_cache_key, const uint32_t *swizzled_bgra_pixels,
+                               uint32_t tex_width, uint32_t tex_height,
+                               const float world[16], const float view[16], const float proj[16],
+                               const float flame_pos_world[3], float flame_intensity) {
+  const ViewmodelTexturedBatch batch{
+      indices, index_count, texture_cache_key, swizzled_bgra_pixels, tex_width, tex_height};
+  DrawViewmodelTexturedBatches(verts, vertex_count, &batch, 1u, world, view, proj,
+                               flame_pos_world, flame_intensity);
 }
 
 } // namespace d3d

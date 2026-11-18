@@ -65,8 +65,17 @@ void DrawViewmodelMesh(const ViewmodelVertex* verts, uint32_t vertex_count,
                        const float world[16], const float view[16], const float proj[16],
                        const float flame_pos_world[3], float flame_intensity);
 
+struct ViewmodelTexturedBatch {
+    const uint16_t* indices = nullptr;
+    uint32_t index_count = 0;
+    uint64_t texture_cache_key = 0;
+    const uint32_t* swizzled_bgra_pixels = nullptr;
+    uint32_t tex_width = 0;
+    uint32_t tex_height = 0;
+};
+
 // Draws a textured PBR-shaded 3D viewmodel mesh (FVF 0x152: XYZ|NORMAL|DIFFUSE|TEX1)
-// using a cached 1024x1024 Morton-swizzled A8R8G8B8 texture, explicitly resetting
+// using a cached Morton-swizzled A8R8G8B8 texture, explicitly resetting
 // all fixed-function texture stages [1..3] and material sources to prevent scene blowout.
 void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex* verts, uint32_t vertex_count,
                                const uint16_t* indices, uint32_t index_count,
@@ -74,5 +83,16 @@ void DrawViewmodelTexturedMesh(const ViewmodelTexturedVertex* verts, uint32_t ve
                                uint32_t tex_width, uint32_t tex_height,
                                const float world[16], const float view[16], const float proj[16],
                                const float flame_pos_world[3], float flame_intensity);
+
+// Uploads the shared vertex array once into the fence-synchronized ring buffer and draws
+// multiple material index ranges without same-frame buffer overwrite hazards.
+void DrawViewmodelTexturedBatches(const ViewmodelTexturedVertex* verts, uint32_t vertex_count,
+                                  const ViewmodelTexturedBatch* batches, uint32_t batch_count,
+                                  const float world[16], const float view[16], const float proj[16],
+                                  const float flame_pos_world[3], float flame_intensity);
+
+// First-person gun-list draw capture/filter mode (0 off, 1 probe log, 2 arms-only filter).
+void SetGunListMode(int mode);
+int GunListMode();
 
 }  // namespace d3d

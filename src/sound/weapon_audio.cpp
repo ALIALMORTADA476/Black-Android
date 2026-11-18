@@ -65,6 +65,7 @@ constexpr int32_t kSlotMxmFire = 141, kSlotMxmReload = 142, kSlotMxmBoil = 143, 
 constexpr int32_t kSlotTailM91Outdoor = 145, kSlotTailMxmHeavy = 146;
 constexpr int32_t kSlotFlmPilotHum = 147, kSlotFlmFoamSplash = 148, kSlotM91ChamberClose = 149;
 constexpr int32_t kSlotMxmWheelRoll = 150, kSlotMxmBeltAdvance = 151, kSlotTailC96Outdoor = 152;
+constexpr int32_t kSlotM91Equip = 153, kSlotM91Supp = 154;
 
 struct ClipRec {
     uint32_t slot_id = 0;
@@ -232,6 +233,7 @@ StemCategory StemForSlot(uint32_t slot_id) {
     if (slot_id <= uint32_t(kSlotGrlFire) || IsSuppressedFireSlot(slot_id) ||
         slot_id == uint32_t(kSlotBnsM203) || slot_id == uint32_t(kSlotFlameIgnite) ||
         slot_id == uint32_t(kSlotFlmIgniteSquib) || slot_id == uint32_t(kSlotM91Fire) ||
+        slot_id == uint32_t(kSlotM91Supp) ||
         slot_id == uint32_t(kSlotC96Fire) || slot_id == uint32_t(kSlotMxmFire)) {
         return StemCategory::Weapon;
     }
@@ -261,6 +263,7 @@ StemCategory StemForSlot(uint32_t slot_id) {
     }
     if (slot_id == uint32_t(kSlotFlmValveShutoff) || slot_id == uint32_t(kSlotM91Bolt) ||
         slot_id == uint32_t(kSlotM91Dry) || slot_id == uint32_t(kSlotM91ChamberClose) ||
+        slot_id == uint32_t(kSlotM91Equip) ||
         slot_id == uint32_t(kSlotC96Breech) || slot_id == uint32_t(kSlotC96Dry) ||
         slot_id == uint32_t(kSlotC96LockOpen) || slot_id == uint32_t(kSlotMxmBeltAdvance)) {
         return StemCategory::Mechanical;
@@ -766,8 +769,8 @@ int32_t FindSignature(uint64_t fnv64, uint32_t orig_bytes, uint16_t* out_flags) 
     return -1;
 }
 
-void OnPlayerFire(std::string_view weapon_code, bool suppressed, bool alt_fire) {
-    if (!modsettings::Registry().GetEnhanced().mod_audio_pack_enabled) return;
+void OnPlayerFire(std::string_view weapon_code, bool suppressed, bool alt_fire, bool force_pack) {
+    if (!force_pack && !modsettings::Registry().GetEnhanced().mod_audio_pack_enabled) return;
     if (!EnsureLoaded()) return;
     const int32_t slot = SlotForPlayerFire(weapon_code, suppressed, alt_fire);
     if (slot < 0) return;
@@ -1055,8 +1058,9 @@ void TriggerSpecialAmmoCue(uint8_t ammo_mode) {
     g_state.synth_overdrive_cues.fetch_add(1, std::memory_order_relaxed);
 }
 
-void TriggerSpecialSlot(int32_t slot_id, float gain, bool is_loop) {
-    if (slot_id < 0 || !modsettings::Registry().GetEnhanced().mod_audio_pack_enabled) return;
+void TriggerSpecialSlot(int32_t slot_id, float gain, bool is_loop, bool force_pack) {
+    if (slot_id < 0) return;
+    if (!force_pack && !modsettings::Registry().GetEnhanced().mod_audio_pack_enabled) return;
     if (!EnsureLoaded()) return;
     std::lock_guard<std::mutex> lock(g_state.mix_mutex);
     SpawnClipForSlotLocked(uint32_t(slot_id), 0u, false, 0, nullptr, 2.0f, 120.0f,

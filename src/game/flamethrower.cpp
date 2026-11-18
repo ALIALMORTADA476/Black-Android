@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <mutex>
@@ -27,13 +28,21 @@
 #include "game/overdrive.h"
 #include "game/special_arsenal_core.h"
 #include "game/time_stop.h"
+#include "game/weapon_hands_skinner.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
 #include "sound/weapon_audio.h"
 #include "xdk/hle.h"
 
-namespace game::flamethrower {
+// Release builds only persist Report/Error lines, so diagnostics that must appear in black.log use
+// LOGR rather than LOGI. This variant also keeps a call site to its first few hits.
+#define ARSENAL_LOG_FIRST(n, ...)                                                          \
+    do {                                                                                   \
+        static std::atomic<int> _arsenal_log_c{0};                                         \
+        if (_arsenal_log_c.fetch_add(1, std::memory_order_relaxed) < (n)) LOGR(__VA_ARGS__); \
+    } while (0)
 
+namespace game::flamethrower {
 using namespace kernel;
 namespace sa = game::special_arsenal;
 
@@ -44,6 +53,9 @@ constexpr uint32_t kWorldState = 0x5AE0u;
 constexpr uint32_t kStatePlaying = 0x1Cu;
 constexpr uint32_t kWorldPlayer = ::layout::kWorldPlayer;
 constexpr uint32_t kPlayerInventory = 0x278u;
+constexpr uint32_t kInvSlots = 0x20u;   // the weapon objects, one a slot
+constexpr uint32_t kInvHeld = 0x24u;    // the weapon in hand
+constexpr uint32_t kWeaponOwner = 0xF0u;  // a weapon's owner (the player object when it is ours)
 constexpr uint32_t kInvRequest = 0x38u;
 constexpr uint32_t kInvSlotCount = 0x42u;
 constexpr uint32_t kInvSlotHeld = 0x43u;
@@ -88,7 +100,36 @@ struct WeaponAsset {
     std::vector<std::vector<uint16_t>> part_unique_verts;
 };
 
+struct MatTexSlot {
+    bool ready = false;
+    sa::BtexHeader hdr{};
+    std::vector<uint8_t> bytes;
+    const uint32_t* swizzled_bgra = nullptr;
+};
+
+struct M91HdBundle {
+    bool ready = false;
+    std::vector<sa::MmatBatch> batches;
+    std::array<MatTexSlot, 4> mats{};
+};
+
+struct M91HandsBundle {
+    bool attempted = false;
+    bool ready = false;
+    game::hands_skinner::SkinnedHandsAsset skinner;
+    MatTexSlot tex;
+    std::vector<d3d::ViewmodelTexturedVertex> work_verts;
+    uint8_t prev_clip = 0;
+    float prev_time = 0.0f;
+    uint8_t cur_clip = 0;
+    float blend = 1.0f;
+};
+
 std::array<WeaponAsset, sa::kWeaponCount> g_assets{};
+M91HdBundle g_m91_hd{};
+M91HandsBundle g_m91_hands{};
+std::atomic<bool> g_m91_hands_ready{false};
+
 sa::ArsenalSim g_arsenal;
 CoreSim g_flame_sim;
 std::mutex g_state_mutex;
@@ -99,6 +140,7 @@ std::atomic<bool> g_fire_pressed_q{false};
 std::atomic<bool> g_reload_queued{false};
 std::atomic<bool> g_refill_queued{false};
 std::atomic<bool> g_select_fire_q{false};
+std::atomic<bool> g_zoom_cycle_q{false};
 std::atomic<bool> g_aim_pad_held{false};
 std::atomic<bool> g_aim_touch_held{false};
 std::atomic<uint32_t> g_burning_count_frame{0};
@@ -121,6 +163,9 @@ std::atomic<bool> g_hud_full_auto{false};
 std::atomic<bool> g_hud_bolt_open{false};
 std::atomic<float> g_hud_ads_blend{0.0f};
 std::atomic<float> g_hud_fov_scale{1.0f};
+std::atomic<float> g_hud_scope_zoom_x{4.0f};
+std::atomic<float> g_hud_scope_zero_m{200.0f};
+std::atomic<bool> g_hud_scoped_out{false};
 
 // Guest-thread combat & view state
 float g_nozzle_world[3] = {};
@@ -193,12 +238,7 @@ bool LoadFileBytes(const char* rel_path, const char* fallback_path, std::vector<
     return false;
 }
 
-void LoadSingleAssetLocked(size_t idx) {
-    WeaponAsset& a = g_assets[idx];
-    if (a.attempted) return;
-    a.attempted = true;
-
-    const AssetSpec& spec = kAssetSpecs[idx];
+void LoadAssetFromSpecLocked(WeaponAsset& a, const AssetSpec& spec) {
     std::vector<uint8_t> bmsh_bytes;
     if (!LoadFileBytes(spec.bmsh_rel, spec.bmsh_fb, bmsh_bytes) ||
         !sa::ParseBmsh(bmsh_bytes.data(), bmsh_bytes.size(), a.model)) {
@@ -267,6 +307,98 @@ void LoadSingleAssetLocked(size_t idx) {
     a.ready = true;
     LOGR("[ARSENAL] loaded %s (%zu verts, %zu parts, avg_lum=%.1f)",
          spec.code, vc, a.model.parts.size(), avg_lum);
+}
+
+bool LoadBtexSlot(const char* rel_path, const char* fb_path, MatTexSlot& slot) {
+    if (!LoadFileBytes(rel_path, fb_path, slot.bytes) ||
+        !sa::ParseBtexHeader(slot.bytes.data(), slot.bytes.size(), slot.hdr) ||
+        slot.hdr.width < 256u || slot.hdr.width != slot.hdr.height ||
+        slot.hdr.d3d_format != kBtexD3DFormat) {
+        return false;
+    }
+    slot.swizzled_bgra = reinterpret_cast<const uint32_t*>(slot.bytes.data() + 32u);
+    slot.ready = true;
+    return true;
+}
+
+void LoadM91ExtrasLocked(WeaponAsset& m91_asset) {
+    // Prefer full-resolution per-material HD mesh + 4 dedicated hardware-wrapped BTEX maps.
+    std::vector<uint8_t> hd_bmsh, hd_mmat;
+    if (LoadFileBytes("weapons/mauser_1891_12_hd.bmsh", "app/src/main/assets/weapons/mauser_1891_12_hd.bmsh", hd_bmsh) &&
+        LoadFileBytes("weapons/mauser_1891_12_hd.mmat", "app/src/main/assets/weapons/mauser_1891_12_hd.mmat", hd_mmat)) {
+        sa::BmshModel hd_model{};
+        std::vector<sa::MmatBatch> batches;
+        if (sa::ParseBmsh(hd_bmsh.data(), hd_bmsh.size(), hd_model) &&
+            sa::ParseMmat(hd_mmat.data(), hd_mmat.size(), batches)) {
+            bool all_tex = true;
+            std::array<MatTexSlot, 4> texs{};
+            for (int mi = 0; mi < 4; ++mi) {
+                char rel[96], fb[128];
+                std::snprintf(rel, sizeof(rel), "weapons/mauser_1891_12_m%d.btex", mi);
+                std::snprintf(fb, sizeof(fb), "app/src/main/assets/weapons/mauser_1891_12_m%d.btex", mi);
+                if (!LoadBtexSlot(rel, fb, texs[mi])) {
+                    all_tex = false;
+                    break;
+                }
+            }
+            if (all_tex) {
+                m91_asset.model = std::move(hd_model);
+                m91_asset.base_verts.resize(m91_asset.model.vertices.size());
+                for (size_t i = 0; i < m91_asset.model.vertices.size(); ++i) {
+                    const auto& s = m91_asset.model.vertices[i];
+                    m91_asset.base_verts[i] = {s.x, s.y, s.z, s.nx, s.ny, s.nz, s.bgra, s.u, s.v};
+                }
+                m91_asset.work_verts = m91_asset.base_verts;
+                const size_t vc = m91_asset.base_verts.size();
+                std::vector<uint8_t> seen(vc, 0u);
+                m91_asset.part_unique_verts.assign(m91_asset.model.parts.size(), {});
+                for (size_t p = 0; p < m91_asset.model.parts.size(); ++p) {
+                    const sa::BmshPart& pt = m91_asset.model.parts[p];
+                    auto& dst = m91_asset.part_unique_verts[p];
+                    dst.reserve(pt.index_count / 2u + 8u);
+                    for (uint32_t k = 0; k < pt.index_count; ++k) {
+                        const uint16_t vi = m91_asset.model.indices[pt.first_index + k];
+                        if (vi < vc && !seen[vi]) {
+                            seen[vi] = 1u;
+                            dst.push_back(vi);
+                        }
+                    }
+                }
+                g_m91_hd.batches = std::move(batches);
+                g_m91_hd.mats = std::move(texs);
+                g_m91_hd.ready = true;
+                LOGR("[ARSENAL] M91 HD multi-material active (%zu batches, %zu verts)",
+                     g_m91_hd.batches.size(), vc);
+            }
+        }
+    }
+
+    if (!g_m91_hands.attempted) {
+        g_m91_hands.attempted = true;
+        std::vector<uint8_t> hskn_bytes;
+        if (LoadFileBytes("weapons/mauser_1891_12_hands.hskn",
+                          "app/src/main/assets/weapons/mauser_1891_12_hands.hskn", hskn_bytes) &&
+            g_m91_hands.skinner.Parse(hskn_bytes.data(), hskn_bytes.size()) &&
+            LoadBtexSlot("weapons/mauser_1891_12_hands.btex",
+                         "app/src/main/assets/weapons/mauser_1891_12_hands.btex", g_m91_hands.tex)) {
+            g_m91_hands.ready = true;
+            g_m91_hands_ready.store(true, std::memory_order_release);
+            LOGR("[ARSENAL] loaded M91 40-bone rigged hands (%u verts, %u clips)",
+                 g_m91_hands.skinner.VertexCount(), g_m91_hands.skinner.ClipCount());
+        } else {
+            LOGR("[ARSENAL] M91 rigged hands unavailable; using BLACK arms fallback");
+        }
+    }
+}
+
+void LoadSingleAssetLocked(size_t idx) {
+    WeaponAsset& a = g_assets[idx];
+    if (a.attempted) return;
+    a.attempted = true;
+    LoadAssetFromSpecLocked(a, kAssetSpecs[idx]);
+    if (idx == size_t(sa::SpecialWeaponId::Mauser1891) && a.ready) {
+        LoadM91ExtrasLocked(a);
+    }
 }
 
 void BuildPerspectiveD3D8LH(float fov_y_rad, float aspect, float zn, float zf, float out[16]) {
@@ -348,6 +480,11 @@ void PublishHudLocked(const sa::WeaponStatus& st, float flame_pressure) {
     g_hud_bolt_open.store(st.bolt_locked_open, std::memory_order_relaxed);
     g_hud_ads_blend.store(st.ads_blend, std::memory_order_relaxed);
     g_hud_fov_scale.store(st.ads_fov_scale, std::memory_order_relaxed);
+    g_hud_scope_zoom_x.store(st.scope_zoom_x, std::memory_order_relaxed);
+    g_hud_scope_zero_m.store(st.scope_zero_m, std::memory_order_relaxed);
+    g_hud_scoped_out.store(g_want_active.load(std::memory_order_relaxed) &&
+                               st.id == sa::SpecialWeaponId::Mauser1891 && st.ads_blend >= 0.86f,
+                           std::memory_order_relaxed);
 }
 
 inline float SmoothStep(float a, float b, float x) noexcept {
@@ -540,61 +677,73 @@ void ApplyWeaponPartKinematics(WeaponAsset& asset, const sa::WeaponStatus& st, f
 
 void DispatchArsenalAudioCues(const sa::ArsenalStepEvents& ev) {
     using Cue = sa::AudioCueKind;
+    // Every cue below belongs to a MOD-ONLY special weapon (M2 / Mauser 1891-12 / C96 /
+    // Maxim M1910). Those weapons do not exist in the original ISO audio bank, so the
+    // BWAR pak is their ONLY audio source. We therefore force the pack on here: the
+    // "WEAPON AUDIO MODE: ORIGINAL" toggle (mod_audio_pack_enabled) must never be able to
+    // silence them. Original-weapon gunfire keeps honouring the flag via hooks.cpp.
+    constexpr bool kForce = true;
     for (uint8_t i = 0; i < ev.audio_cue_count; ++i) {
         switch (ev.audio_cues[i]) {
             case Cue::FlameIgniteSquib:
-                sound::weapon_audio::TriggerSpecialSlot(129, 0.96f, false);
-                sound::weapon_audio::OnPlayerFire("FLM", false, false);
+                sound::weapon_audio::TriggerSpecialSlot(129, 0.96f, false, kForce);
+                sound::weapon_audio::OnPlayerFire("FLM", false, false, kForce);
                 break;
             case Cue::FlameValveShutoff:
-                sound::weapon_audio::TriggerSpecialSlot(130, 0.85f, false);
+                sound::weapon_audio::TriggerSpecialSlot(130, 0.85f, false, kForce);
                 break;
             case Cue::FlameTankReload:
-                sound::weapon_audio::TriggerSpecialSlot(131, 0.92f, false);
+                sound::weapon_audio::TriggerSpecialSlot(131, 0.92f, false, kForce);
                 break;
             case Cue::Mauser91Shot:
-                sound::weapon_audio::OnPlayerFire("M91", false, false);
+                sound::weapon_audio::OnPlayerFire("M91", false, false, kForce);
                 break;
             case Cue::Mauser91BoltCycle:
-                sound::weapon_audio::TriggerSpecialSlot(133, 0.92f, false);
+                sound::weapon_audio::TriggerSpecialSlot(133, 0.92f, false, kForce);
                 break;
             case Cue::Mauser91StripperClip:
-                sound::weapon_audio::TriggerSpecialSlot(134, 0.92f, false);
+                sound::weapon_audio::TriggerSpecialSlot(134, 0.92f, false, kForce);
                 break;
             case Cue::Mauser91DryFire:
-                sound::weapon_audio::TriggerSpecialSlot(135, 0.85f, false);
+                sound::weapon_audio::TriggerSpecialSlot(135, 0.85f, false, kForce);
                 break;
             case Cue::Mauser91ChamberClose:
-                sound::weapon_audio::TriggerSpecialSlot(149, 0.90f, false);
+                sound::weapon_audio::TriggerSpecialSlot(149, 0.90f, false, kForce);
+                break;
+            case Cue::Mauser91Equip:
+                sound::weapon_audio::TriggerSpecialSlot(153, 0.88f, false, kForce);
+                break;
+            case Cue::Mauser91ScopeZoom:
+                sound::weapon_audio::TriggerSpecialSlot(135, 0.56f, false, kForce);
                 break;
             case Cue::C96Shot:
-                sound::weapon_audio::OnPlayerFire("C96", false, false);
-                sound::weapon_audio::TriggerSpecialSlot(137, 0.48f, false);
+                sound::weapon_audio::OnPlayerFire("C96", false, false, kForce);
+                sound::weapon_audio::TriggerSpecialSlot(137, 0.48f, false, kForce);
                 break;
             case Cue::C96BreechClack:
-                sound::weapon_audio::TriggerSpecialSlot(137, 0.78f, false);
+                sound::weapon_audio::TriggerSpecialSlot(137, 0.78f, false, kForce);
                 break;
             case Cue::C96ClipReload:
-                sound::weapon_audio::TriggerSpecialSlot(138, 0.92f, false);
+                sound::weapon_audio::TriggerSpecialSlot(138, 0.92f, false, kForce);
                 break;
             case Cue::C96DryFire:
-                sound::weapon_audio::TriggerSpecialSlot(139, 0.85f, false);
+                sound::weapon_audio::TriggerSpecialSlot(139, 0.85f, false, kForce);
                 break;
             case Cue::C96BoltLockOpen:
-                sound::weapon_audio::TriggerSpecialSlot(140, 0.90f, false);
+                sound::weapon_audio::TriggerSpecialSlot(140, 0.90f, false, kForce);
                 break;
             case Cue::MaximShot:
-                sound::weapon_audio::OnPlayerFire("MXM", false, false);
-                sound::weapon_audio::TriggerSpecialSlot(151, 0.65f, false);
+                sound::weapon_audio::OnPlayerFire("MXM", false, false, kForce);
+                sound::weapon_audio::TriggerSpecialSlot(151, 0.65f, false, kForce);
                 break;
             case Cue::MaximTopCoverReload:
-                sound::weapon_audio::TriggerSpecialSlot(142, 0.94f, false);
+                sound::weapon_audio::TriggerSpecialSlot(142, 0.94f, false, kForce);
                 break;
             case Cue::MaximWaterBoil:
-                sound::weapon_audio::TriggerSpecialSlot(143, 0.76f, false);
+                sound::weapon_audio::TriggerSpecialSlot(143, 0.76f, false, kForce);
                 break;
             case Cue::MaximSteamHiss:
-                sound::weapon_audio::TriggerSpecialSlot(144, 0.86f, false);
+                sound::weapon_audio::TriggerSpecialSlot(144, 0.86f, false, kForce);
                 break;
             default:
                 break;
@@ -602,17 +751,160 @@ void DispatchArsenalAudioCues(const sa::ArsenalStepEvents& ev) {
     }
 }
 
-void SpawnWorldBullet(X86Context& ctx, const float origin[3], const float dir[3]) {
-    // A real guest physical bullet (same spawner the game's own guns use) so cars, glass, props,
-    // decals and surface impacts react exactly like normal gunfire. It reuses the last genuine
-    // player fire packet, so it is skipped until the player has fired a stock weapon once.
-    if (game::time_stop::IsFrozen()) return;
-    uint32_t pkt = 0;
+// Our own copy of a genuine player fire packet. The one the guest builds for a stock shot only
+// lives as long as that shot (and the level), so passing its address around is what made the
+// arsenal's bullets stop reaching the world: once the pointer went stale every shot returned early
+// and no physical bullet was ever spawned -- which is exactly why windows, cars and walls ignored
+// the special weapons. We therefore mirror the packet into memory we own, refresh the mirror every
+// time a real player shot is observed, and hand that stable copy to the spawner.
+uint32_t g_guest_fire_pkt = 0;  // 32 bytes we allocated: player fire packet for the physical bullet
+uint32_t g_guest_fire_pkt_src = 0;
+
+// Writes a packet naming this weapon. Only the weapon pointer is ever read from a fire packet
+// (0x001DB7B0 and every observer of it read exactly +4), so a zeroed packet plus that pointer is a
+// faithful stand-in and keeps the spawner off memory the guest may have freed.
+bool BuildFirePacket(uint32_t weapon) {
+    if (!weapon) return false;
+    if (!g_guest_fire_pkt) g_guest_fire_pkt = mem::AllocSystem(32, 16);
+    if (!g_guest_fire_pkt || !HostPtr(g_guest_fire_pkt)) return false;
+    uint8_t* dst = reinterpret_cast<uint8_t*>(HostPtr(g_guest_fire_pkt));
+    std::memset(dst, 0, 32);
+    std::memcpy(dst + 4, &weapon, sizeof(weapon));
+    return true;
+}
+
+// The weapon the player is really holding. Lets the arsenal fire a world bullet even on a run where
+// no stock weapon was ever discharged, so the very first special-weapon shot already moves the world.
+uint32_t PlayerStockWeapon() noexcept {
+    const uint32_t p = PlayerPtr();
+    if (!p || !ValidAddr(p + kPlayerInventory, 0x44u)) return 0;
+    const uint32_t inv = p + kPlayerInventory;
+    const uint32_t held = R32(inv + kInvHeld);
+    if (ValidAddr(held, 0x110u) && R32(held + kWeaponOwner) == p) return held;
+    const uint32_t slots = R32(inv + kInvSlots);
+    for (uint32_t i = 0; i < 2u; ++i) {
+        if (!ValidAddr(slots + i * 4u, 4u)) break;
+        const uint32_t wpn = R32(slots + i * 4u);
+        if (ValidAddr(wpn, 0x110u) && R32(wpn + kWeaponOwner) == p) return wpn;
+    }
+    return 0;
+}
+
+// The packet a physical bullet may be fired with: our mirror, validated against the player's own
+// weapon so the spawner can never be handed a packet that no longer means anything.
+bool GuestFirePacket(uint32_t& out_pkt, float& out_range, float& out_speed, uint8_t& out_flags) {
+    out_pkt = 0;
+    out_range = 80.0f;
+    out_speed = 160.0f;
+    out_flags = 0;
+
+    uint32_t src = 0;
     float range = 0.0f, speed = 0.0f;
     uint8_t flags = 0;
-    if (!game::time_stop::LastPlayerFirePkt(pkt, range, speed, flags)) return;
+    if (game::time_stop::LastPlayerFirePkt(src, range, speed, flags) && src && ValidAddr(src, 24u) &&
+        HostPtr(src)) {
+        // Refresh our mirror from the genuine packet so range/speed/flags stay authentic.
+        if (BuildFirePacket(R32(src + 4u))) {
+            uint8_t* dst = reinterpret_cast<uint8_t*>(HostPtr(g_guest_fire_pkt));
+            std::memcpy(dst, reinterpret_cast<const uint8_t*>(HostPtr(src)), 24u);
+            std::memset(dst + 24, 0, 8);
+            g_guest_fire_pkt_src = src;
+        }
+        out_range = range;
+        out_speed = speed;
+        out_flags = flags;
+    }
+
+    const uint32_t p = PlayerPtr();
+    auto ensure_proj_data = [&](uint32_t pkt) {
+        if (!pkt || !ValidAddr(pkt, 0x20u)) return;
+        const uint32_t proj_data = R32(pkt + 0x0Cu);
+        if (!proj_data || !ValidAddr(proj_data, 0x1Cu)) {
+            static uint32_t s_safe_proj_data = 0;
+            if (!s_safe_proj_data) {
+                s_safe_proj_data = mem::AllocSystem(0x20u, 16u);
+                if (s_safe_proj_data && HostPtr(s_safe_proj_data)) {
+                    std::memset(HostPtr(s_safe_proj_data), 0, 0x20u);
+                    W32(s_safe_proj_data + 0x00u, 1u);
+                    G<float>(s_safe_proj_data + 0x14u) = 160.0f;
+                }
+            }
+            if (s_safe_proj_data) W32(pkt + 0x0Cu, s_safe_proj_data);
+        } else {
+            const float mag_range = G<float>(proj_data + 0x14u);
+            if (std::isfinite(mag_range) && mag_range > 10.0f && mag_range < 1000.0f) {
+                out_range = mag_range;
+            }
+        }
+    };
+    auto packet_ok = [&](uint32_t pkt) {
+        if (!p || !pkt || !ValidAddr(pkt, 0x20u)) return false;
+        const uint32_t wpn = R32(pkt + 4u);
+        if (!wpn || !ValidAddr(wpn, 0x110u) || R32(wpn + kWeaponOwner) != p) return false;
+        ensure_proj_data(pkt);
+        const uint32_t proj_data = R32(pkt + 0x0Cu);
+        return proj_data != 0 && ValidAddr(proj_data, 0x1Cu);
+    };
+    if (packet_ok(g_guest_fire_pkt)) {
+        out_pkt = g_guest_fire_pkt;
+        return true;
+    }
+
+    // No genuine player packet yet. Clone the first real packet the engine built -- from any
+    // weapon -- and replace only the weapon pointer with the player's own gun.
+    const uint32_t stock_weapon = PlayerStockWeapon();
+    uint8_t tmpl[64];
+    if (stock_weapon && game::time_stop::FirePacketTemplate(tmpl, sizeof(tmpl)) &&
+        BuildFirePacket(stock_weapon)) {
+        uint8_t* dst = reinterpret_cast<uint8_t*>(HostPtr(g_guest_fire_pkt));
+        std::memcpy(dst, tmpl, 32);
+        std::memcpy(dst + 4, &stock_weapon, sizeof(stock_weapon));
+        if (packet_ok(g_guest_fire_pkt)) {
+            g_guest_fire_pkt_src = 0;
+            ARSENAL_LOG_FIRST(3, "[ARSENAL] world bullet pkt cloned from genuine guest template");
+            out_pkt = g_guest_fire_pkt;
+            return true;
+        }
+    }
+    // Fallback directly to the stock weapon's live magazine packet (weapon+0xF4):
+    // sub_001DBD50 passes weapon+0xF4 directly as `fire_pkt` into 0x001DB7B0; sub_001DB910
+    // reads [pkt+0x04] (weapon) and [pkt+0x0C] (projectile/range table -> [ptr+0x14] float).
+    if (stock_weapon && BuildFirePacket(stock_weapon)) {
+        const uint32_t mag = R32(stock_weapon + 0xF4u);
+        if (mag && ValidAddr(mag, 0x24u) && HostPtr(mag) && R32(mag + 0x04u) == stock_weapon) {
+            uint8_t* dst = reinterpret_cast<uint8_t*>(HostPtr(g_guest_fire_pkt));
+            std::memcpy(dst, reinterpret_cast<const uint8_t*>(HostPtr(mag)), 32);
+            if (packet_ok(g_guest_fire_pkt)) {
+                g_guest_fire_pkt_src = 0;
+                ARSENAL_LOG_FIRST(3, "[ARSENAL] world bullet pkt cloned from player weapon+0xF4");
+                out_pkt = g_guest_fire_pkt;
+                return true;
+            }
+        }
+    }
+    g_guest_fire_pkt_src = 0;
+    return false;
+}
+
+void SpawnWorldBullet(X86Context& ctx, const float origin[3], const float dir[3],
+                      float min_range = 0.0f, float min_speed = 0.0f) {
+    // A real guest physical bullet (same spawner the game's own guns use) so cars, glass, props,
+    // decals and surface impacts react exactly like normal gunfire.
+    if (game::time_stop::IsFrozen()) return;
+    uint32_t pkt = 0;
+    float range = 80.0f, speed = 160.0f;
+    uint8_t flags = 0;
+    if (!GuestFirePacket(pkt, range, speed, flags)) {
+        ARSENAL_LOG_FIRST(3, "[ARSENAL] world bullet skipped: no player fire packet");
+        return;
+    }
+    range = std::max(range, min_range);
+    speed = std::max(speed, min_speed);
     const uint32_t mgr = R32(0x002D12D0u);
-    if (!mgr || !ValidAddr(mgr + 0x6E0u, 16u * 0x90u)) return;
+    if (!mgr || !ValidAddr(mgr + 0x6E0u, 16u * 0x90u)) {
+        ARSENAL_LOG_FIRST(3, "[ARSENAL] world bullet skipped: weapon manager 0x%08X unusable", mgr);
+        return;
+    }
 
     static uint32_t s_buf = 0;
     if (!s_buf) s_buf = mem::AllocSystem(32, 16);
@@ -630,6 +922,8 @@ void SpawnWorldBullet(X86Context& ctx, const float origin[3], const float dir[3]
     game::ballistics::SetSuppressPhysicalSpawnFx(false);
     ctx.ecx = saved_ecx;
     ctx.edx = saved_edx;
+    ARSENAL_LOG_FIRST(4, "[ARSENAL] world bullet spawned pkt=0x%08X range=%.1f speed=%.1f flags=%u",
+                      pkt, range, speed, unsigned(flags));
 }
 
 void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
@@ -753,6 +1047,15 @@ void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
                 apply_enemy_hit(pen_who, pen_hit, pen_feet_y, pen_head, ev.bullet_damage * 0.65f);
             }
         }
+
+        // The shot has to reach the world behind the body as well: fired past the last man it struck,
+        // the guest bullet dents the car, shatters the window and punches the wall exactly like
+        // stock gunfire, which is what made "the bullet does nothing" so obvious before.
+        const float min_r = (st.id == sa::SpecialWeaponId::Mauser1891) ? 160.0f : 90.0f;
+        const float min_v = (st.id == sa::SpecialWeaponId::Mauser1891) ? 240.0f : 180.0f;
+        const float past[3] = {best_hit[0] + ray[0] * 0.55f, best_hit[1] + ray[1] * 0.55f,
+                               best_hit[2] + ray[2] * 0.55f};
+        SpawnWorldBullet(ctx, past, ray, min_r, min_v);
     } else {
         float miss_t = 48.0f;
         bool hit_ground = false;
@@ -770,12 +1073,11 @@ void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
         };
         game::ballistics::EmitSpecialShotMuzzleAndTrace(muzzle, ray, miss_end, cal_scale, true,
                                                         hit_ground || miss_t < 47.0f);
-        // Real world-interacting bullet (cars, glass, props); throttled on the fast full-auto guns.
-        const bool fast_gun = (st.id == sa::SpecialWeaponId::MauserC96 || st.id == sa::SpecialWeaponId::Maxim1910);
-        if (!fast_gun || (st.mag_ammo & 1) == 0) {
-            const float start[3] = {eye[0] + ray[0] * 0.30f, eye[1] + ray[1] * 0.30f, eye[2] + ray[2] * 0.30f};
-            SpawnWorldBullet(ctx, start, ray);
-        }
+        // Real world-interacting bullet (cars, glass, barrels, props, walls) on every round fired.
+        const float min_r = (st.id == sa::SpecialWeaponId::Mauser1891) ? 160.0f : 90.0f;
+        const float min_v = (st.id == sa::SpecialWeaponId::Mauser1891) ? 240.0f : 180.0f;
+        const float start[3] = {eye[0] + ray[0] * 0.30f, eye[1] + ray[1] * 0.30f, eye[2] + ray[2] * 0.30f};
+        SpawnWorldBullet(ctx, start, ray, min_r, min_v);
         if (st.id == sa::SpecialWeaponId::Mauser1891) {
             sound::weapon_audio::TriggerWorldImpact(miss_end, hit_ground && ((g_shot_rng_seq & 1u) == 0u), true);
         } else if (st.id == sa::SpecialWeaponId::MauserC96) {
@@ -788,24 +1090,26 @@ void ExecuteArsenalBulletShot(X86Context& ctx, uint8_t* base,
 void GetBaseOffsets(sa::SpecialWeaponId id, float ads,
                     float& ox, float& oy, float& oz,
                     float& yaw, float& pitch) noexcept {
-    float hx = 0.165f, hy = -0.145f, hz = 0.345f, hyaw = -0.055f, hpitch = 0.0f;
-    float ax = 0.120f, ay = -0.120f, az = 0.320f, ayaw = -0.030f, apitch = 0.0f;
+    float hx = 0.120f, hy = -0.115f, hz = 0.180f, hyaw = -0.042f, hpitch = 0.0f;
+    float ax = 0.060f, ay = -0.090f, az = 0.160f, ayaw = -0.015f, apitch = 0.0f;
     switch (id) {
         case sa::SpecialWeaponId::Flamethrower:
-            hx = 0.150f; hy = -0.135f; hz = 0.310f; hyaw = -0.050f;
-            ax = 0.110f; ay = -0.125f; az = 0.300f; ayaw = -0.025f;
+            hx = 0.115f; hy = -0.112f; hz = 0.165f; hyaw = -0.040f;
+            ax = 0.075f; ay = -0.095f; az = 0.150f; ayaw = -0.020f;
             break;
         case sa::SpecialWeaponId::Mauser1891:
-            hx = 0.120f; hy = -0.108f; hz = 0.290f; hyaw = -0.038f;
-            ax = 0.000f; ay = -0.046f; az = 0.275f; ayaw =  0.000f;
+            // Framed boldly like BLACK's native AK-47: close receiver/grip/scope/bolt silhouette
+            // canted inward with RightGrip & LeftForegrip both cleanly on screen.
+            hx = 0.098f; hy = -0.070f; hz =  0.032f; hyaw = -0.115f; hpitch = 0.015f;
+            ax = 0.000f; ay = -0.056f; az = -0.045f; ayaw =  0.000f; apitch = 0.000f;
             break;
         case sa::SpecialWeaponId::MauserC96:
-            hx = 0.095f; hy = -0.082f; hz = 0.270f; hyaw = -0.042f;
-            ax = 0.000f; ay = -0.0845f; az = 0.255f; ayaw =  0.000f;
+            hx = 0.080f; hy = -0.080f; hz = 0.195f; hyaw = -0.036f;
+            ax = 0.000f; ay = -0.076f; az = 0.175f; ayaw =  0.000f;
             break;
         case sa::SpecialWeaponId::Maxim1910:
-            hx = 0.130f; hy = -0.195f; hz = 0.620f; hyaw = -0.060f;
-            ax = 0.042f; ay = -0.132f; az = 0.560f; ayaw = -0.018f;
+            hx = 0.110f; hy = -0.175f; hz = 0.490f; hyaw = -0.050f;
+            ax = 0.035f; ay = -0.125f; az = 0.440f; ayaw = -0.015f;
             break;
         default: break;
     }
@@ -829,24 +1133,42 @@ bool IsActive() {
     return g_want_active.load(std::memory_order_relaxed);
 }
 
+bool IsScopedOut() {
+    return g_hud_scoped_out.load(std::memory_order_relaxed);
+}
+
+bool ShouldHideBlackArms() {
+    return (g_hud_weapon_id.load(std::memory_order_relaxed) == uint8_t(sa::SpecialWeaponId::Mauser1891)) &&
+           g_m91_hands_ready.load(std::memory_order_acquire);
+}
+
 void SetActive(bool enable) {
     if (enable) EnsureLoaded();
-    std::lock_guard<std::mutex> lock(g_state_mutex);
-    const bool prev = g_want_active.load(std::memory_order_relaxed);
-    g_want_active.store(enable, std::memory_order_relaxed);
-    if (enable && !prev) {
-        g_flame_sim.SetActive(true, 0);
-    } else if (!enable && prev) {
-        g_flame_sim.DeactivateAndRestoreSlot();
-        g_trigger_held.store(false, std::memory_order_relaxed);
-        g_fire_pressed_q.store(false, std::memory_order_relaxed);
-        g_reload_queued.store(false, std::memory_order_relaxed);
-        g_select_fire_q.store(false, std::memory_order_relaxed);
-        g_aim_pad_held.store(false, std::memory_order_relaxed);
-        g_aim_touch_held.store(false, std::memory_order_relaxed);
-        g_nozzle_valid = false;
+    bool play_m91_equip = false;
+    {
+        std::lock_guard<std::mutex> lock(g_state_mutex);
+        const bool prev = g_want_active.load(std::memory_order_relaxed);
+        g_want_active.store(enable, std::memory_order_relaxed);
+        if (enable && !prev) {
+            g_flame_sim.SetActive(true, 0);
+            play_m91_equip = (g_arsenal.ActiveWeapon() == sa::SpecialWeaponId::Mauser1891);
+        } else if (!enable && prev) {
+            g_flame_sim.DeactivateAndRestoreSlot();
+            g_trigger_held.store(false, std::memory_order_relaxed);
+            g_fire_pressed_q.store(false, std::memory_order_relaxed);
+            g_reload_queued.store(false, std::memory_order_relaxed);
+            g_select_fire_q.store(false, std::memory_order_relaxed);
+            g_zoom_cycle_q.store(false, std::memory_order_relaxed);
+            g_aim_pad_held.store(false, std::memory_order_relaxed);
+            g_aim_touch_held.store(false, std::memory_order_relaxed);
+            g_hud_scoped_out.store(false, std::memory_order_relaxed);
+            g_nozzle_valid = false;
+        }
+        PublishHudLocked(g_arsenal.GetStatus(), g_flame_sim.Pressure());
     }
-    PublishHudLocked(g_arsenal.GetStatus(), g_flame_sim.Pressure());
+    if (play_m91_equip) {
+        sound::weapon_audio::TriggerSpecialSlot(153, 0.88f, false, true);
+    }
 }
 
 void Toggle() {
@@ -872,8 +1194,10 @@ void ResetLevelState() {
     g_fire_pressed_q.store(false, std::memory_order_relaxed);
     g_reload_queued.store(false, std::memory_order_relaxed);
     g_select_fire_q.store(false, std::memory_order_relaxed);
+    g_zoom_cycle_q.store(false, std::memory_order_relaxed);
     g_aim_pad_held.store(false, std::memory_order_relaxed);
     g_aim_touch_held.store(false, std::memory_order_relaxed);
+    g_hud_scoped_out.store(false, std::memory_order_relaxed);
     g_flame_sim.Reset();
     g_arsenal.ResetAll();
     g_nozzle_valid = false;
@@ -886,26 +1210,50 @@ void ResetLevelState() {
 void SelectSpecialWeapon(uint8_t index) {
     if (index >= sa::kWeaponCount) index = 0;
     EnsureLoaded();
+    bool play_m91_equip = false;
     {
         std::lock_guard<std::mutex> lock(g_state_mutex);
-        g_arsenal.SelectWeapon(static_cast<sa::SpecialWeaponId>(index));
+        const auto target = static_cast<sa::SpecialWeaponId>(index);
+        const bool switched = (g_arsenal.ActiveWeapon() != target);
+        g_arsenal.SelectWeapon(target);
         PublishHudLocked(g_arsenal.GetStatus(), g_flame_sim.Pressure());
+        play_m91_equip = switched && (target == sa::SpecialWeaponId::Mauser1891);
     }
-    if (!IsActive()) SetActive(true);
+    if (!IsActive()) {
+        SetActive(true);
+    } else if (play_m91_equip) {
+        sound::weapon_audio::TriggerSpecialSlot(153, 0.88f, false, true);
+    }
 }
 
 void CycleSpecialWeapon(int dir) {
     EnsureLoaded();
-    std::lock_guard<std::mutex> lock(g_state_mutex);
-    const int cur = int(g_arsenal.ActiveWeapon());
-    const int next = ((cur + (dir >= 0 ? 1 : -1)) % int(sa::kWeaponCount) + int(sa::kWeaponCount)) %
-                     int(sa::kWeaponCount);
-    g_arsenal.SelectWeapon(static_cast<sa::SpecialWeaponId>(next));
-    PublishHudLocked(g_arsenal.GetStatus(), g_flame_sim.Pressure());
+    bool play_m91_equip = false;
+    {
+        std::lock_guard<std::mutex> lock(g_state_mutex);
+        const int cur = int(g_arsenal.ActiveWeapon());
+        const int next = ((cur + (dir >= 0 ? 1 : -1)) % int(sa::kWeaponCount) + int(sa::kWeaponCount)) %
+                         int(sa::kWeaponCount);
+        const auto target = static_cast<sa::SpecialWeaponId>(next);
+        g_arsenal.SelectWeapon(target);
+        PublishHudLocked(g_arsenal.GetStatus(), g_flame_sim.Pressure());
+        play_m91_equip = (target == sa::SpecialWeaponId::Mauser1891);
+    }
+    if (play_m91_equip && IsActive()) {
+        sound::weapon_audio::TriggerSpecialSlot(153, 0.88f, false, true);
+    }
 }
 
 void ToggleFireMode() {
-    g_select_fire_q.store(true, std::memory_order_relaxed);
+    if (g_hud_weapon_id.load(std::memory_order_relaxed) == uint8_t(sa::SpecialWeaponId::Mauser1891)) {
+        g_zoom_cycle_q.store(true, std::memory_order_relaxed);
+    } else {
+        g_select_fire_q.store(true, std::memory_order_relaxed);
+    }
+}
+
+void CycleScopeZoom() {
+    g_zoom_cycle_q.store(true, std::memory_order_relaxed);
 }
 
 void TriggerManualReload() {
@@ -918,7 +1266,7 @@ void SetSpecialAiming(bool aiming) {
 
 float GetAdsFovScale() {
     if (!IsActive()) return 1.0f;
-    return std::clamp(g_hud_fov_scale.load(std::memory_order_relaxed), 1.0f, 2.5f);
+    return sa::ResolveZoomMagnification(g_hud_fov_scale.load(std::memory_order_relaxed));
 }
 
 const char* GetSpecialWeaponName(uint8_t index) {
@@ -1015,8 +1363,13 @@ void FilterGameplayPad(int port, input::Pad& pad) {
     const bool mode_edge = mode_now && !g_prev_mode_btn;
     g_prev_mode_btn = mode_now;
     if (!mode_now) g_swallow_mode = false;
-    if (mode_edge && g_hud_weapon_id.load(std::memory_order_relaxed) == uint8_t(sa::SpecialWeaponId::MauserC96)) {
+    const uint8_t cur_wid = g_hud_weapon_id.load(std::memory_order_relaxed);
+    if (mode_edge && cur_wid == uint8_t(sa::SpecialWeaponId::MauserC96)) {
         g_select_fire_q.store(true, std::memory_order_relaxed);
+        g_swallow_mode = true;
+    } else if (mode_edge && cur_wid == uint8_t(sa::SpecialWeaponId::Mauser1891) &&
+               g_hud_ads_blend.load(std::memory_order_relaxed) >= 0.45f) {
+        g_zoom_cycle_q.store(true, std::memory_order_relaxed);
         g_swallow_mode = true;
     }
     if (g_swallow_mode) pad.buttons &= uint16_t(~(1u << 0));
@@ -1065,6 +1418,7 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
     const bool rel = g_reload_queued.exchange(false, std::memory_order_relaxed);
     const bool refill = g_refill_queued.exchange(false, std::memory_order_relaxed);
     const bool sel_mode = g_select_fire_q.exchange(false, std::memory_order_relaxed);
+    const bool zoom_cycle = g_zoom_cycle_q.exchange(false, std::memory_order_relaxed);
     const bool ads_held =
         (g_aim_pad_held.load(std::memory_order_relaxed) || g_aim_touch_held.load(std::memory_order_relaxed)) &&
         !app::MenuOpen();
@@ -1087,6 +1441,7 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
         in.reload_pressed = rel;
         in.ads_held = ads_held;
         in.select_fire_pressed = sel_mode;
+        in.zoom_cycle_pressed = zoom_cycle;
         in.player_speed_mps = player_speed_mps;
         in.equip_progress = g_flame_sim.EquipProgress();
         ev = g_arsenal.Step(in);
@@ -1174,7 +1529,8 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
     const float yaw = base_yaw + reload_yaw + g_recoil_yaw_cur * ads_damp;
     const float pitch = base_pitch + draw_pitch + reload_pitch - g_recoil_pitch_cur -
                         ((st.id == sa::SpecialWeaponId::Flamethrower) ? flame_pressure * 0.028f : 0.0f);
-    const float roll = reload_roll + g_recoil_roll_cur * ads_damp;
+    const float hip_cant = (st.id == sa::SpecialWeaponId::Mauser1891) ? (-0.045f * (1.0f - st.ads_blend)) : 0.0f;
+    const float roll = hip_cant + reload_roll + g_recoil_roll_cur * ads_damp;
 
     const float cy = std::cos(yaw), sy = std::sin(yaw);
     const float cp = std::cos(pitch), sp = std::sin(pitch);
@@ -1195,6 +1551,13 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
     to_world_dir(lx, w_x);
     to_world_dir(ly, w_y);
     to_world_dir(lz, w_z);
+
+    const float vm_scale = (st.id == sa::SpecialWeaponId::Mauser1891) ? 1.12f : 1.0f;
+    for (int k = 0; k < 3; ++k) {
+        w_x[k] *= vm_scale;
+        w_y[k] *= vm_scale;
+        w_z[k] *= vm_scale;
+    }
 
     const float ox = base_ox + reload_x + sway_x + jitter_x;
     const float oy = base_oy + draw_y + reload_y + sway_y + jitter_y;
@@ -1233,10 +1596,13 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
     }
 
     const float aspect = (std::fabs(scene_proj[0]) > 0.05f && std::fabs(scene_proj[5]) > 0.05f)
-                             ? (scene_proj[5] / scene_proj[0])
+                             ? std::fabs(scene_proj[5] / scene_proj[0])
                              : g_last_cam_aspect;
     g_last_cam_aspect = aspect;
-    const float vm_fov_deg = std::clamp(float(game::Opt().viewmodel_fov), 45.0f, 88.0f);
+    // Match BLACK's native viewmodel vertical FOV (~40 deg for imposing Kar98k framing, ~50.6 deg for others)
+    const float vm_fov_deg = (st.id == sa::SpecialWeaponId::Mauser1891)
+                                 ? std::clamp(float(game::Opt().viewmodel_fov) - 8.5f, 38.0f, 43.0f)
+                                 : std::clamp(float(game::Opt().viewmodel_fov), 45.0f, 56.0f);
     float vm_proj[16];
     BuildPerspectiveD3D8LH(vm_fov_deg * kDegToRad, aspect, 0.04f, 12.0f, vm_proj);
 
@@ -1248,14 +1614,71 @@ void RenderAndStepFrame(X86Context& ctx, uint8_t* base) {
         light_intensity = 1.45f;
     }
 
-    if (asset.ready && !asset.work_verts.empty()) {
+    // Scoped sight picture: once the eye is fully behind the optic the overlay in
+    // scope_overlay.cpp *is* the view -- like every scoped weapon in the base
+    // game, the gun and arms leave the frame instead of floating around under a
+    // floating tube. Below that the viewmodel keeps rendering so the raise reads.
+    const bool scoped_out = (st.id == sa::SpecialWeaponId::Mauser1891) && st.ads_blend >= 0.86f;
+
+    if (!scoped_out && asset.ready && !asset.work_verts.empty()) {
         ApplyWeaponPartKinematics(asset, st, g_walk_phase, g_recoil_kick_z);
-        d3d::DrawViewmodelTexturedMesh(
-            asset.work_verts.data(), uint32_t(asset.work_verts.size()),
-            asset.model.indices.data(), uint32_t(asset.model.indices.size()),
-            asset.btex_hdr.cache_key, asset.swizzled_bgra,
-            asset.btex_hdr.width, asset.btex_hdr.height,
-            world, view, vm_proj, pilot_world, light_intensity);
+        if (st.id == sa::SpecialWeaponId::Mauser1891 && g_m91_hd.ready) {
+            const bool show_clip = st.reloading && (st.pose.clip_insert > 0.01f || st.pose.clip_eject > 0.01f);
+            std::vector<d3d::ViewmodelTexturedBatch> draw_batches;
+            draw_batches.reserve(g_m91_hd.batches.size());
+            for (const auto& b : g_m91_hd.batches) {
+                if (b.part_idx < asset.model.parts.size() &&
+                    std::strcmp(asset.model.parts[b.part_idx].name, "stripper_clip") == 0 &&
+                    !show_clip) {
+                    continue;
+                }
+                const MatTexSlot& tex = g_m91_hd.mats[b.mat_id];
+                if (!tex.ready || b.index_count < 3u) continue;
+                draw_batches.push_back({
+                    asset.model.indices.data() + b.first_index, b.index_count,
+                    tex.hdr.cache_key, tex.swizzled_bgra,
+                    tex.hdr.width, tex.hdr.height});
+            }
+            if (!draw_batches.empty()) {
+                d3d::DrawViewmodelTexturedBatches(
+                    asset.work_verts.data(), uint32_t(asset.work_verts.size()),
+                    draw_batches.data(), uint32_t(draw_batches.size()),
+                    world, view, vm_proj, pilot_world, light_intensity);
+            }
+        } else {
+            d3d::DrawViewmodelTexturedMesh(
+                asset.work_verts.data(), uint32_t(asset.work_verts.size()),
+                asset.model.indices.data(), uint32_t(asset.model.indices.size()),
+                asset.btex_hdr.cache_key, asset.swizzled_bgra,
+                asset.btex_hdr.width, asset.btex_hdr.height,
+                world, view, vm_proj, pilot_world, light_intensity);
+        }
+
+        if (st.id == sa::SpecialWeaponId::Mauser1891 && g_m91_hands.ready) {
+            const uint8_t target_clip = st.pose.hand_clip_id;
+            const float target_time = st.pose.hand_clip_time_s;
+            if (target_clip != g_m91_hands.cur_clip) {
+                g_m91_hands.prev_clip = g_m91_hands.cur_clip;
+                g_m91_hands.cur_clip = target_clip;
+                g_m91_hands.blend = 0.0f;
+            }
+            g_m91_hands.blend = std::min(1.0f, g_m91_hands.blend + dt / 0.075f);
+            if (g_m91_hands.skinner.SkinVerticesBlended(
+                    g_m91_hands.prev_clip, g_m91_hands.prev_time,
+                    g_m91_hands.cur_clip, target_time,
+                    g_m91_hands.blend, st.pose.trigger_pull, g_m91_hands.work_verts) &&
+                !g_m91_hands.work_verts.empty()) {
+                d3d::DrawViewmodelTexturedMesh(
+                    g_m91_hands.work_verts.data(), uint32_t(g_m91_hands.work_verts.size()),
+                    g_m91_hands.skinner.Indices().data(), uint32_t(g_m91_hands.skinner.Indices().size()),
+                    g_m91_hands.tex.hdr.cache_key, g_m91_hands.tex.swizzled_bgra,
+                    g_m91_hands.tex.hdr.width, g_m91_hands.tex.hdr.height,
+                    world, view, vm_proj, pilot_world, light_intensity);
+            }
+            if (g_m91_hands.blend >= 0.999f) {
+                g_m91_hands.prev_time = target_time;
+            }
+        }
     }
 
     if (st.id == sa::SpecialWeaponId::Flamethrower && !st.reloading) {
@@ -1396,6 +1819,8 @@ HudState GetHudState() {
     s.full_auto_mode = g_hud_full_auto.load(std::memory_order_relaxed);
     s.bolt_locked_open = g_hud_bolt_open.load(std::memory_order_relaxed);
     s.ads_blend = g_hud_ads_blend.load(std::memory_order_relaxed);
+    s.scope_zoom_x = g_hud_scope_zoom_x.load(std::memory_order_relaxed);
+    s.scope_zero_m = g_hud_scope_zero_m.load(std::memory_order_relaxed);
     return s;
 }
 

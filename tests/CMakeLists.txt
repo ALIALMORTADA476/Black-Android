@@ -30,6 +30,7 @@ add_executable(test_settings_core
     ${REPO_ROOT}/src/game/mission_select_rules.cpp
     ${REPO_ROOT}/src/game/overdrive_rules.cpp
     ${REPO_ROOT}/src/game/special_arsenal_core.cpp
+    ${REPO_ROOT}/src/game/weapon_hands_skinner.cpp
     ${REPO_ROOT}/src/sound/weapon_audio.cpp
 )
 
@@ -40,6 +41,10 @@ target_include_directories(test_settings_core PRIVATE
 
 target_link_libraries(test_settings_core PRIVATE tomlplusplus::tomlplusplus)
 
+add_executable(test_weapon_hands_ik test_weapon_hands_ik.cpp)
+target_include_directories(test_weapon_hands_ik PRIVATE ${REPO_ROOT}/src)
+
 enable_testing()
 add_test(NAME SettingsCoreTests COMMAND test_settings_core)
+add_test(NAME WeaponHandsIkTests COMMAND test_weapon_hands_ik)
 

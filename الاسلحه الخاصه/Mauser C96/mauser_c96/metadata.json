@@ -1,127 +1,45 @@
 {
-  "weapon_slug": "mauser_c96",
-  "display_name": "Mauser C96 (7.63x25mm Broomhandle)",
-  "type": "semi_automatic_pistol",
-  "units": "centimeters",
-  "forward_axis": "+X",
-  "up_axis": "+Y",
-  "right_axis": "+Z",
-  "triangles_final": 38356,
-  "vertices_final": 47079,
-  "triangles_highpoly": 153424,
-  "group_count": 7,
-  "material_count": 5,
-  "bbox_min": [
-    -3.239000082015991,
-    -8.805999755859375,
-    -1.8799999952316284
-  ],
-  "bbox_max": [
-    27.82699966430664,
-    16.149999618530273,
-    1.8799999952316284
-  ],
-  "muzzle_tip": [
-    27.83,
-    5.45,
-    0.0
-  ],
-  "ejection_port": [
-    6.8,
-    6.95,
-    0.0
-  ],
-  "sight_line_height": [
-    6.65,
-    7.35,
-    0.0
-  ],
-  "grip_center": [
-    0.0,
-    0.0,
-    0.0
-  ],
-  "magazine_well": [
-    9.8,
-    2.1,
-    0.0
-  ],
-  "triangles_per_group": {
-    "Receiver_Body": 27500,
-    "Bolt_BOLT": 2910,
-    "RearSight_SIGHT": 2678,
-    "Trigger_TRIGGER": 614,
-    "Hammer_HAMMER": 1270,
-    "SafetyLever_SAFETY": 784,
-    "StripperClip_MAG": 2600
+  "weapon_id": "mauser_c96",
+  "display_name": "Mauser C96 Broomhandle (7.63x25mm Carbine Stock)",
+  "class": "pistol",
+  "hand_ik_config_file": "hand_ik_mounts.json",
+  "sockets_preview": {
+    "Socket_RightHand_Grip": [
+      0.415,
+      -0.025,
+      0.008
+    ],
+    "Socket_TriggerFinger_IK": [
+      0.462,
+      0.018,
+      0.002
+    ],
+    "Socket_LeftHand_Foregrip": [
+      0.515,
+      0.025,
+      -0.006
+    ],
+    "Socket_BoltKnob_IK": [
+      0.435,
+      0.068,
+      0.015
+    ],
+    "Socket_ClipThumb_IK": [
+      0.499,
+      0.146,
+      0.0
+    ],
+    "Socket_Shoulder_Stock": [
+      0.012,
+      -0.022,
+      0.0
+    ]
   },
-  "reload_time_ms": 2600,
-  "pivots": [
-    {
-      "part": "Bolt_BOLT",
-      "axis": "X",
-      "pivot": [
-        1.2,
-        5.6,
-        0.0
-      ],
-      "min": -3.8,
-      "max": 0.0
-    },
-    {
-      "part": "StripperClip_MAG",
-      "axis": "Y",
-      "pivot": [
-        7.7,
-        6.7,
-        0.0
-      ],
-      "min": -5.2,
-      "max": 0.0
-    },
-    {
-      "part": "Hammer_HAMMER",
-      "axis": "Z",
-      "pivot": [
-        -0.4,
-        4.56,
-        0.0
-      ],
-      "min": 0.0,
-      "max": 54.0
-    },
-    {
-      "part": "Trigger_TRIGGER",
-      "axis": "Z",
-      "pivot": [
-        5.25,
-        1.3,
-        0.0
-      ],
-      "min": 0.0,
-      "max": 18.0
-    },
-    {
-      "part": "SafetyLever_SAFETY",
-      "axis": "Z",
-      "pivot": [
-        -0.55,
-        3.65,
-        1.15
-      ],
-      "min": -32.0,
-      "max": 0.0
-    },
-    {
-      "part": "RearSight_SIGHT",
-      "axis": "Z",
-      "pivot": [
-        6.65,
-        6.95,
-        0.0
-      ],
-      "min": 0.0,
-      "max": 22.0
-    }
+  "lod0": "model/mauser_c96_lod0.glb",
+  "texture_sources": [
+    "textures/mauser_c96_tex_0.jpg",
+    "textures/mauser_c96_tex_1.jpg",
+    "textures/mauser_c96_tex_2.jpg",
+    "textures/mauser_c96_atlas.jpg"
   ]
 }

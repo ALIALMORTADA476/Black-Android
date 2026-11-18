@@ -50,6 +50,11 @@ inline float Clamp01(float v) {
     return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
 }
 
+inline float SmoothStep(float e0, float e1, float x) {
+    const float t = Clamp01((x - e0) / (e1 - e0));
+    return t * t * (3.0f - 2.0f * t);
+}
+
 inline uint32_t PackBgra(float r, float g, float b, float a) {
     const uint32_t ua = uint32_t(Clamp01(a) * 255.0f + 0.5f);
     const uint32_t ur = uint32_t(Clamp01(r) * 255.0f + 0.5f);
@@ -181,66 +186,133 @@ uint32_t SampleVfxAtlasTexelBgra(uint32_t tx, uint32_t ty, float u_tile, float v
     const float rn = r / kMaxTileRadius;
     const float env = 1.0f - rn;
     const float soft_env = env * env * (3.0f - 2.0f * env);
-    // Keeps alpha rich through the inner flame body (rn <= 0.68) while fading cleanly to 0 before kMaxTileRadius.
+    // Keeps alpha rich through the inner flame/smoke body while fading cleanly to 0 before kMaxTileRadius.
     const float rim_ramp = Clamp01(env * 3.1f);
     const float rim_mask = rim_ramp * rim_ramp * (3.0f - 2.0f * rim_ramp);
     const float rgb_guard = Clamp01(env * 3.5f);
 
     if (ty == 0u) {
-        // Row 0: Organic domain-warped hydrocarbon soot & smoke billows.
-        const float qx = RotatedFbm2D(ux * 2.1f + float(tx) * 2.9f, uy * 2.1f + 1.4f, tile_seed, 4) - 0.5f;
-        const float qy = RotatedFbm2D(ux * 2.1f - 1.8f, uy * 2.1f + float(tx) * 3.7f, tile_seed + 41u, 4) - 0.5f;
-        const float w1 = Clamp01((RotatedFbm2D(ux * 3.8f + qx * 2.8f, uy * 3.8f + qy * 2.8f, tile_seed + 101u, 4) - 0.28f) * 2.1f);
-        const float fine = Clamp01((RotatedFbm2D(ux * 7.5f - qy * 1.5f, uy * 7.5f + qx * 1.5f, tile_seed + 173u, 3) - 0.28f) * 2.0f);
-        const float density = rim_mask * (1.0f - rn * 0.45f) * (0.42f + 0.65f * w1) * (0.64f + 0.36f * fine);
-        const float alpha_f = Clamp01(density * 0.96f);
-        const float lum = Clamp01(0.32f + 0.34f * w1 + 0.22f * fine - 0.14f * rn * rn) * rgb_guard;
+        // Row 0: Volumetric Self-Shadowed Smoke Billows (Smooth Multi-Lobe Optical
+        // Density Integration + Beer-Lambert Directional Light Extinction + Mie Silver Lining).
+        const float qx = (RotatedFbm2D(ux * 1.55f + float(tx) * 2.3f,
+                                       uy * 1.55f + 0.9f, tile_seed, 4) - 0.5f) * 0.42f;
+        const float qy = (RotatedFbm2D(ux * 1.55f - 1.4f,
+                                       uy * 1.55f + float(tx) * 3.1f, tile_seed + 41u, 4) - 0.5f) * 0.42f;
+        const float wx = ux + qx;
+        const float wy = uy + qy;
+        const float turb_low = RotatedFbm2D(wx * 2.15f + float(tx) * 1.7f,
+                                            wy * 2.15f - 0.8f, tile_seed + 101u, 4);
+        const float turb_mid = RotatedFbm2D(wx * 3.85f - qy * 1.6f,
+                                            wy * 3.85f + qx * 1.6f, tile_seed + 173u, 4);
+        const float turb_fine = RotatedFbm2D(wx * 6.80f + qx * 2.1f,
+                                             wy * 6.80f - qy * 2.1f, tile_seed + 257u, 3);
+
+        // Smoothly integrated volumetric density across 7 buoyant cauliflower smoke lobes
+        auto sample_cloud_field = [&](float px, float py) -> float {
+            float sum = 0.0f;
+            for (int k = 0; k < 7; ++k) {
+                float cx = 0.0f, cy = 0.0f, rad_lobe = 0.56f, weight = 0.66f;
+                if (k > 0) {
+                    const float ang = float(k - 1) * 1.04719755f + float(tx) * 0.73f +
+                                      0.32f * std::sin(float(k * 3u + tx * 5u));
+                    const float dist = 0.27f + 0.08f * std::cos(float(k * 7u + tx * 2u));
+                    cx = std::cos(ang) * dist;
+                    cy = std::sin(ang) * dist;
+                    rad_lobe = 0.44f + 0.06f * std::sin(float(k * 5u + tx));
+                    weight = 0.40f;
+                }
+                const float dx = (px - cx) / rad_lobe;
+                const float dy = (py - cy) / rad_lobe;
+                const float d2 = dx * dx + dy * dy;
+                if (d2 < 1.0f) {
+                    const float fall = 1.0f - d2;
+                    sum += weight * fall * fall * (1.0f + 0.5f * d2);
+                }
+            }
+            return Clamp01(sum * 0.94f);
+        };
+
+        const float base_field = sample_cloud_field(wx, wy);
+        // Sample optical thickness towards upper-left key light L=(-0.07, -0.11) for Beer-Lambert self-shadowing
+        const float lit_field = sample_cloud_field(wx - 0.07f, wy - 0.11f);
+        const float lit_turb = RotatedFbm2D((wx - 0.05f) * 2.15f + float(tx) * 1.7f,
+                                            (wy - 0.08f) * 2.15f - 0.8f, tile_seed + 101u, 3);
+
+        const float fbm_billow = 0.52f * turb_low + 0.32f * turb_mid + 0.16f * turb_fine;
+        const float density = Clamp01(
+            SmoothStep(0.05f, 0.58f, base_field * (0.54f + 0.78f * fbm_billow)) * rim_mask);
+        const float wisp_scale = (tx >= 2u) ? 0.88f : 0.96f;
+        const float alpha_f = Clamp01(std::pow(density, 1.05f) * wisp_scale);
+
+        // Beer-Lambert self-shadowing: optical depth along light ray attenuates interior/underbelly
+        const float shadow_ray_depth = Clamp01((lit_field - base_field) * 2.35f +
+                                               (lit_turb - turb_low) * 1.30f +
+                                               (uy + 0.35f) * 0.40f);
+        const float beer_transmittance = std::exp(-1.55f * shadow_ray_depth);
+        // Mie forward-scattered silver-lining at thin wispy edges facing the light
+        const float silver_lining =
+            Clamp01(density * (1.0f - density) * 1.45f * beer_transmittance);
+
+        const float lum = Clamp01(
+            (0.20f + 0.54f * beer_transmittance * (0.68f + 0.32f * fbm_billow) +
+             0.16f * silver_lining) *
+            rgb_guard);
         return PackBgra(lum, lum, lum, alpha_f);
     }
 
     if (ty == 1u) {
-        // Row 1: Double domain-warped Simplex FBM flame tongues with carved cool eddy cavities
-        // so layered additive sprites retain fiery internal curl instead of clamping to solid white.
-        const float tilt_x = (tx == 0u || tx == 2u) ? 0.34f : -0.32f;
-        const float qx = RotatedFbm2D(ux * 1.85f + float(tx) * 3.1f, uy * 1.85f - 1.7f, tile_seed, 4) - 0.5f;
-        const float qy = RotatedFbm2D(ux * 1.85f - 2.3f, uy * 1.85f + float(tx) * 4.1f, tile_seed + 47u, 4) - 0.5f;
-        const float wx = RotatedFbm2D(ux * 2.9f + 2.6f * qx + 1.7f, uy * 2.9f + 2.6f * qy + 9.2f,
-                                      tile_seed + 109u, 4) - 0.5f;
-        const float wy = RotatedFbm2D(ux * 2.9f + 2.6f * qx + 8.3f, uy * 2.9f + 2.6f * qy - 2.8f,
-                                      tile_seed + 163u, 4) - 0.5f;
+        // Row 1: Coherent Laminar-to-Turbulent Diffusion Flame Tongues & Vortex Ribbons
+        // with true Planck Blackbody Radiation spectrum (White-Gold 2300K -> Amber 1700K -> Crimson-Red 1150K).
+        const float sign_x = (tx == 0u || tx == 2u) ? 1.0f : -1.0f;
+        const float reach = Clamp01((0.65f - uy) * 0.78f);
 
-        // Strong fluid silhouette deformation breaks circularity into asymmetrical reaching flame tongues.
-        const float up_reach = Clamp01(-uy * 0.90f);
-        const float sx = ux * (0.90f + 0.28f * up_reach) + qx * 0.72f + wx * 0.54f +
-                         tilt_x * (0.30f - uy) * 0.45f;
-        const float sy_scale = (uy < 0.0f) ? 0.74f : 1.24f;
-        const float sy = uy * sy_scale + qy * 0.74f + wy * 0.56f;
-        const float rs = std::sqrt(sx * sx + sy * sy) / kMaxTileRadius;
+        // Smooth S-curve Kelvin-Helmholtz vortex wave along vertical axis
+        const float wave_phase = uy * 3.2f + float(tx) * 1.57f;
+        const float s_curve = sign_x * std::sin(wave_phase) * (0.14f + 0.22f * reach);
 
-        const float fine_raw = RotatedFbm2D(sx * 4.4f + wx * 2.4f, sy * 4.4f + wy * 2.4f, tile_seed + 241u, 4);
-        const float wisp_raw = RotatedFbm2D(sx * 8.6f - wy * 1.6f, sy * 8.6f + wx * 1.6f, tile_seed + 317u, 3);
-        const float billow = Clamp01((fine_raw - 0.34f) * 2.85f);
-        const float tendril = Clamp01((wisp_raw - 0.36f) * 2.60f);
-        const float curl_ridge = Clamp01(1.0f - std::fabs(wisp_raw * 2.0f - 1.0f) * 1.55f);
-        const float licks = std::pow(Clamp01(billow * 0.64f + tendril * 0.24f + curl_ridge * 0.24f), 1.35f);
+        // Low-frequency coherent domain warp preserves smooth liquid-like flame sheets
+        const float qx = RotatedFbm2D(ux * 1.35f + float(tx) * 2.7f,
+                                      uy * 1.15f - 0.9f, tile_seed, 3) - 0.5f;
+        const float qy = RotatedFbm2D(ux * 1.35f - 1.9f,
+                                      uy * 1.15f + float(tx) * 3.3f, tile_seed + 47u, 3) - 0.5f;
 
-        // Compact luminous heart slightly above geometric lower-center without washing out the whole tile.
-        const float core_dx = ux * 1.30f;
-        const float core_dy = (uy - 0.04f) * 1.25f;
-        const float core_dist = std::sqrt(core_dx * core_dx + core_dy * core_dy) / kMaxTileRadius;
-        const float core = Clamp01(1.0f - core_dist * 1.55f);
-        const float core_glow = core * core * (0.72f + 0.28f * billow);
+        const float taper = 0.82f + 0.95f * reach * reach;
+        const float sy_scale = 0.96f + 0.18f * uy;
+        const float fx = (ux - s_curve + qx * (0.38f + 0.32f * reach)) * taper;
+        const float fy = (uy - 0.08f + qy * 0.34f) * sy_scale;
+        const float flame_r = std::sqrt(fx * fx + fy * fy) / kMaxTileRadius;
 
-        const float body_falloff = Clamp01(1.0f - rs * 0.96f);
-        const float flame_mask =
-            Clamp01(body_falloff * (0.04f + 1.28f * licks) + core_glow * 0.74f);
-        const float alpha_f = Clamp01(flame_mask * rim_mask * 1.22f);
+        // Secondary licking tongues & carved cool air entrainment eddies (Rayleigh-Taylor fingers)
+        const float tongue_fbm = RotatedFbm2D(fx * 2.15f + qx * 1.2f,
+                                              fy * 1.65f - 0.6f, tile_seed + 109u, 3);
+        const float lick_fbm = RotatedFbm2D(fx * 3.60f - qy * 1.1f,
+                                            fy * 2.40f + 1.1f, tile_seed + 181u, 3);
+        const float eddy_carve = SmoothStep(0.28f, 0.68f, tongue_fbm * 0.68f + lick_fbm * 0.32f);
 
-        // Rich hydrocarbon blackbody gradient: incandescent gold core -> vivid amber licks -> deep orange tips.
-        const float heat = Clamp01(core_glow * 0.72f + licks * body_falloff * 0.72f - rs * 0.24f);
-        const float r_f = Clamp01(0.92f + 0.08f * heat) * rgb_guard;
-        const float g_f = Clamp01(0.30f + 0.54f * heat + 0.16f * heat * heat) * rgb_guard;
-        const float b_f = Clamp01(0.03f + 0.56f * heat * heat * heat) * rgb_guard;
+        const float sheet_body =
+            SmoothStep(1.02f, 0.18f, flame_r - (eddy_carve - 0.45f) * 0.42f);
+        const float outer_licks =
+            SmoothStep(0.42f, 0.78f, lick_fbm) * SmoothStep(1.05f, 0.35f, flame_r);
+
+        // Compact incandescent reaction heart anchored in lower-middle fuel zone
+        const float core_dx = (ux - s_curve * 0.4f) * 1.35f;
+        const float core_dy = (uy - 0.10f) * 1.30f;
+        const float core_d = std::sqrt(core_dx * core_dx + core_dy * core_dy) / kMaxTileRadius;
+        const float heart = SmoothStep(0.72f, 0.0f, core_d) * (0.75f + 0.25f * tongue_fbm);
+
+        const float flame_density = Clamp01(sheet_body * (0.25f + 0.85f * eddy_carve) +
+                                            outer_licks * 0.48f + heart * 0.65f);
+        const float alpha_f = Clamp01(flame_density * rim_mask * 1.18f);
+
+        // Planck Blackbody radiation spectrum mapped across normalized temperature T in [0..1]
+        const float temp = Clamp01(heart * 0.68f + sheet_body * eddy_carve * 0.58f +
+                                   outer_licks * 0.28f - rn * 0.18f);
+        const float r_f =
+            Clamp01(SmoothStep(0.02f, 0.24f, temp) * (0.88f + 0.12f * temp)) * rgb_guard;
+        const float g_f =
+            Clamp01(std::pow(Clamp01((temp - 0.12f) / 0.88f), 1.42f) * 0.94f) * rgb_guard;
+        const float b_f =
+            Clamp01(std::pow(Clamp01((temp - 0.46f) / 0.54f), 2.15f) * 0.72f) * rgb_guard;
         return PackBgra(r_f, g_f, b_f, alpha_f);
     }
 
@@ -291,31 +363,31 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
                          const float right[3], const float up[3]) {
         const float hc = Clamp01(h);
         const float rc = std::clamp(r, 0.045f, 1.35f);
-        const float phase = anim_time * 9.5f + float(seq) * 0.87f;
-        const float wobble = (1.0f - hc * 0.68f) * rc * 0.22f;
+        // Kelvin-Helmholtz counter-rotating helical vortex dynamics + Rayleigh-Taylor buoyancy
+        const float phase = anim_time * 10.8f + float(seq) * 0.91f;
+        const float vortex_amp = (1.0f - hc * 0.64f) * rc * 0.26f;
         const float ox = std::cos(phase);
-        const float oy = std::sin(phase * 1.19f + 0.7f);
-        const float rise = (1.0f - hc) * rc * 0.24f * (0.5f + 0.5f * std::sin(phase * 0.83f));
+        const float oy = std::sin(phase * 1.17f + 0.65f);
+        const float thermal_buoyancy =
+            (1.0f - hc) * rc * 0.30f * (0.55f + 0.45f * std::sin(phase * 0.79f));
 
         const float puff_pos[3] = {
-            p[0] + right[0] * ox * wobble + up[0] * oy * wobble,
-            p[1] + right[1] * ox * wobble + up[1] * oy * wobble + rise,
-            p[2] + right[2] * ox * wobble + up[2] * oy * wobble,
+            p[0] + right[0] * ox * vortex_amp + up[0] * oy * vortex_amp,
+            p[1] + right[1] * ox * vortex_amp + up[1] * oy * vortex_amp + thermal_buoyancy,
+            p[2] + right[2] * ox * vortex_amp + up[2] * oy * vortex_amp,
         };
 
-        // Flow-aligned elongation: fast-moving plasma jet near/mid muzzle stretches cleanly along velocity,
-        // relaxing downrange into turbulent curling flame eddies (no discrete square cards).
-        const float stretch_t = Clamp01((hc - 0.26f) / 0.74f);
-        const float flutter = (1.0f - hc * 0.52f) * 0.24f;
+        const float stretch_t = Clamp01((hc - 0.22f) / 0.78f);
+        const float flutter = (1.0f - hc * 0.48f) * 0.28f;
         const float raw_dir[3] = {
             dir[0] + right[0] * ox * flutter + up[0] * oy * flutter,
-            dir[1] + right[1] * ox * flutter + up[1] * oy * flutter + 0.16f * (1.0f - hc),
+            dir[1] + right[1] * ox * flutter + up[1] * oy * flutter + 0.22f * (1.0f - hc),
             dir[2] + right[2] * ox * flutter + up[2] * oy * flutter,
         };
         float flow_dir[3]{};
         NormalizeDir3(raw_dir, flow_dir);
 
-        // 1. Subtle luminous spine glow along jet core (low alpha avoids washing out flames into white).
+        // 1. Planck blackbody pressurized liquid-fuel core (white-gold near nozzle -> amber mid-stream).
         FlamePlumeSprite core;
         core.kind = FlameSpriteKind::CoreDisc;
         core.pos[0] = puff_pos[0];
@@ -324,17 +396,17 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
         core.dir[0] = flow_dir[0];
         core.dir[1] = flow_dir[1];
         core.dir[2] = flow_dir[2];
-        core.radius = rc * (0.44f + 0.14f * hc);
-        core.stretch = 1.15f + 0.80f * stretch_t;
+        core.radius = rc * (0.40f + 0.16f * hc);
+        core.stretch = 1.20f + 0.90f * stretch_t;
         core.rotation = 0.0f;
         core.r = 1.0f;
-        core.g = 0.76f + 0.18f * hc;
-        core.b = 0.18f + 0.36f * hc * hc;
-        core.alpha = Clamp01((0.16f + 0.22f * hc) * stream_fade);
+        core.g = 0.72f + 0.24f * hc;
+        core.b = 0.16f + 0.46f * hc * hc;
+        core.alpha = Clamp01((0.15f + 0.24f * hc) * stream_fade);
         core.tile = 4;
         push(core);
 
-        // 2. Flow-stretched swirling flame tongue (luminous golden-amber body without white clipping).
+        // 2. Primary flow-stretched diffusion flame sheet (Planck temperature gradient).
         FlamePlumeSprite fire;
         fire.kind = FlameSpriteKind::FireBillboard;
         fire.pos[0] = puff_pos[0];
@@ -343,34 +415,59 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
         fire.dir[0] = flow_dir[0];
         fire.dir[1] = flow_dir[1];
         fire.dir[2] = flow_dir[2];
-        fire.radius = rc * (1.36f + 0.54f * (1.0f - hc));
-        fire.stretch = 1.18f + 1.12f * stretch_t;
-        fire.rotation = 0.35f * std::sin(phase * 0.65f + float(seq) * 1.45f) +
-                        (1.0f - stretch_t) * (phase * 0.45f + float(seq) * 0.95f);
+        fire.radius = rc * (1.34f + 0.58f * (1.0f - hc));
+        fire.stretch = 1.22f + 1.25f * stretch_t;
+        fire.rotation = 0.32f * std::sin(phase * 0.68f + float(seq) * 1.41f) +
+                        (1.0f - stretch_t) * (phase * 0.42f + float(seq) * 0.89f);
         fire.r = 1.0f;
-        fire.g = 0.52f + 0.36f * hc;
-        fire.b = 0.04f + 0.16f * hc * hc;
-        fire.alpha = Clamp01((0.36f + 0.24f * hc) * stream_fade);
+        fire.g = 0.38f + 0.50f * hc;
+        fire.b = 0.02f + 0.24f * hc * hc;
+        fire.alpha = Clamp01((0.38f + 0.26f * hc) * stream_fade);
         fire.tile = 4 + int((seq * 5u + 1u) & 3u);
         push(fire);
 
-        // 3. Cooled outer hydrocarbon soot/smoke envelope (Row 0: tiles 0..3).
+        // 3. Secondary Rayleigh-Taylor upward-whipping flame tongue peeling off mid-stream vortex
+        if (!perf_mode && hc > 0.24f && hc < 0.86f && (seq % 2u == 1u)) {
+            const float whip_dir_raw[3] = {
+                flow_dir[0] * 0.65f - right[0] * ox * 0.28f,
+                flow_dir[1] * 0.65f + 0.58f,
+                flow_dir[2] * 0.65f - right[2] * ox * 0.28f,
+            };
+            FlamePlumeSprite lick;
+            lick.kind = FlameSpriteKind::FireBillboard;
+            lick.pos[0] = puff_pos[0] - right[0] * ox * vortex_amp * 0.6f;
+            lick.pos[1] = puff_pos[1] + rc * 0.22f;
+            lick.pos[2] = puff_pos[2] - right[2] * ox * vortex_amp * 0.6f;
+            NormalizeDir3(whip_dir_raw, lick.dir);
+            lick.radius = rc * (0.92f + 0.35f * (1.0f - hc));
+            lick.stretch = 1.45f + 0.65f * hc;
+            lick.rotation = -0.28f * std::cos(phase * 0.75f + float(seq));
+            lick.r = 0.98f;
+            lick.g = 0.26f + 0.42f * hc;
+            lick.b = 0.01f + 0.10f * hc * hc;
+            lick.alpha = Clamp01((0.26f + 0.20f * hc) * stream_fade);
+            lick.tile = 4 + int((seq * 3u + 2u) & 3u);
+            push(lick);
+        }
+
+        // 4. Cooled outer hydrocarbon soot/smoke envelope with warm internal fire underlighting (Row 0: tiles 0..3).
         if (hc < 0.78f && (seq & 1u) == 0u) {
+            const float underlight = hc * hc;
             FlamePlumeSprite smoke;
             smoke.kind = FlameSpriteKind::SmokeBillboard;
             smoke.pos[0] = puff_pos[0];
-            smoke.pos[1] = puff_pos[1] + rc * 0.34f;
+            smoke.pos[1] = puff_pos[1] + rc * (0.36f + 0.18f * (1.0f - hc));
             smoke.pos[2] = puff_pos[2];
-            smoke.dir[0] = 0.0f;
-            smoke.dir[1] = 1.0f;
-            smoke.dir[2] = 0.0f;
-            smoke.radius = rc * (1.82f + 0.48f * (1.0f - hc));
-            smoke.stretch = 1.05f + 0.16f * (1.0f - hc);
-            smoke.rotation = -phase * 0.35f + float(seq) * 0.67f;
-            smoke.r = 0.16f;
-            smoke.g = 0.14f;
-            smoke.b = 0.13f;
-            smoke.alpha = Clamp01((0.15f + 0.17f * (1.0f - hc)) * stream_fade);
+            smoke.dir[0] = flow_dir[0] * 0.25f;
+            smoke.dir[1] = 0.97f;
+            smoke.dir[2] = flow_dir[2] * 0.25f;
+            smoke.radius = rc * (1.85f + 0.54f * (1.0f - hc));
+            smoke.stretch = 1.08f + 0.20f * (1.0f - hc);
+            smoke.rotation = -phase * 0.32f + float(seq) * 0.67f;
+            smoke.r = 0.12f + 0.24f * underlight;
+            smoke.g = 0.10f + 0.10f * underlight;
+            smoke.b = 0.09f + 0.04f * underlight;
+            smoke.alpha = Clamp01((0.18f + 0.20f * (1.0f - hc)) * stream_fade);
             smoke.tile = int(seq & 3u);
             push(smoke);
         }
@@ -386,8 +483,6 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
         return written;
     }
 
-    // Order valid indices from newest/hottest (muzzle) to oldest/coolest (tail) so
-    // any out-of-order array compaction in the simulator never produces zig-zag spans.
     constexpr size_t kMaxInlineSegs = 256u;
     const size_t n_valid = std::min(count, kMaxInlineSegs);
     size_t order[kMaxInlineSegs]{};
@@ -409,8 +504,6 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
         return written;
     }
 
-    // Threshold beyond which dispersed tail droplets should billow independently
-    // rather than be connected by a straight line across empty air.
     constexpr float kMaxContinuousSpan = 1.45f;
     const float target_step = perf_mode ? 0.21f : 0.14f;
     const uint32_t max_substeps = perf_mode ? 10u : 16u;
@@ -435,7 +528,6 @@ size_t BuildFlamethrowerJetSprites(const float (*positions)[3],
             BuildOrthoBasis(dir, right, up);
         }
 
-        // Disconnected gap (dispersed tail droplet or ground cutoff): emit organic puffs at endpoints only.
         if (seg_len > kMaxContinuousSpan) {
             if (!endpoint_emitted) {
                 emit_puff(a, radii[ia], heats[ia], seq++, dir, right, up);
@@ -489,73 +581,78 @@ size_t BuildFlamethrowerPoolSprites(const float (*positions)[3],
         const float h = Clamp01(heats[i]);
         const float r = std::clamp(radii[i], 0.12f, 2.2f);
         const int idx = int(i);
+        // Rayleigh-Taylor buoyant flickering frequency f ~ 1.5 / sqrt(D)
+        const float rt_freq = 6.2f / std::sqrt(std::max(0.22f, r));
+        const float flicker = 0.86f + 0.14f * std::sin(anim_time * rt_freq + float(i) * 2.1f);
 
-        // Ground hydrocarbon scorch / smoke base (Row 0: tiles 0..3).
+        // 1. Ground hydrocarbon scorch / soot ring (Row 0: tiles 0..3).
         FlamePlumeSprite sg;
         sg.kind = FlameSpriteKind::SmokeGround;
         sg.pos[0] = positions[i][0];
         sg.pos[1] = positions[i][1];
         sg.pos[2] = positions[i][2];
-        sg.radius = r * 1.28f;
+        sg.radius = r * 1.30f;
         sg.rotation = float(i) * 1.07f;
-        sg.r = 0.10f;
-        sg.g = 0.09f;
-        sg.b = 0.08f;
-        sg.alpha = Clamp01(0.34f * stream_fade);
+        sg.r = 0.09f;
+        sg.g = 0.08f;
+        sg.b = 0.07f;
+        sg.alpha = Clamp01(0.38f * stream_fade);
         sg.tile = idx & 3;
         push(sg);
 
-        // Ground pool flame glow (Row 1: tiles 4..7 — never Row 2 blood tiles!).
+        // 2. Pulsing incandescent liquid napalm pool (Row 1: tiles 4..7).
         FlamePlumeSprite fg;
         fg.kind = FlameSpriteKind::FireGround;
         fg.pos[0] = positions[i][0];
         fg.pos[1] = positions[i][1];
         fg.pos[2] = positions[i][2];
-        fg.radius = r * 1.02f;
-        fg.rotation = anim_time * 1.1f - float(i) * 0.83f;
+        fg.radius = r * (0.98f + 0.08f * flicker);
+        fg.rotation = anim_time * 0.95f - float(i) * 0.83f;
         fg.r = 1.0f;
-        fg.g = 0.50f + 0.36f * h;
-        fg.b = 0.10f + 0.22f * h * h;
-        fg.alpha = Clamp01(0.50f * h * stream_fade);
+        fg.g = 0.46f + 0.42f * h;
+        fg.b = 0.06f + 0.24f * h * h;
+        fg.alpha = Clamp01(0.54f * h * flicker * stream_fade);
         fg.tile = 4 + (idx & 3);
         push(fg);
 
-        // Upward-licking stretched flame tongue above the pool (no sideways spinning squares).
-        const float sway_x = std::sin(anim_time * 4.3f + float(i) * 1.71f) * 0.18f;
-        const float sway_z = std::cos(anim_time * 3.9f + float(i) * 2.31f) * 0.18f;
+        // 3. Primary upward-licking stretched diffusion flame tongue (Row 1: tiles 4..7).
+        const float sway_x = std::sin(anim_time * rt_freq + float(i) * 1.71f) * 0.19f;
+        const float sway_z = std::cos(anim_time * (rt_freq * 0.88f) + float(i) * 2.31f) * 0.19f;
         const float raw_up[3] = {sway_x, 1.0f, sway_z};
         FlamePlumeSprite fb;
         fb.kind = FlameSpriteKind::FireBillboard;
         fb.pos[0] = positions[i][0];
-        fb.pos[1] = positions[i][1] + 0.14f + 0.20f * h;
+        fb.pos[1] = positions[i][1] + 0.14f + 0.22f * h;
         fb.pos[2] = positions[i][2];
         NormalizeDir3(raw_up, fb.dir);
-        fb.radius = r * 0.84f;
-        fb.stretch = 1.45f + 0.45f * h;
-        fb.rotation = 0.14f * std::sin(anim_time * 5.2f + float(i) * 1.9f);
+        fb.radius = r * 0.86f;
+        fb.stretch = 1.48f + 0.52f * h * flicker;
+        fb.rotation = 0.16f * std::sin(anim_time * 5.6f + float(i) * 1.9f);
         fb.r = 1.0f;
-        fb.g = 0.46f + 0.38f * h;
-        fb.b = 0.08f + 0.16f * h * h;
-        fb.alpha = Clamp01(0.46f * h * stream_fade);
+        fb.g = 0.42f + 0.42f * h;
+        fb.b = 0.05f + 0.18f * h * h;
+        fb.alpha = Clamp01(0.48f * h * stream_fade);
         fb.tile = 4 + ((idx + 1) & 3);
         push(fb);
 
-        if (h < 0.70f) {
+        // 4. Warm-underlit rising soot plume above cooling pool (Row 0: tiles 0..3).
+        if (h < 0.72f) {
+            const float warm_soot = h * h;
             FlamePlumeSprite sb;
             sb.kind = FlameSpriteKind::SmokeBillboard;
-            sb.pos[0] = positions[i][0];
-            sb.pos[1] = positions[i][1] + 0.30f + 0.25f * (1.0f - h);
-            sb.pos[2] = positions[i][2];
-            sb.dir[0] = 0.0f;
-            sb.dir[1] = 1.0f;
-            sb.dir[2] = 0.0f;
-            sb.radius = r * 1.15f;
-            sb.stretch = 1.12f;
-            sb.rotation = anim_time * 0.7f + float(i) * 0.59f;
-            sb.r = 0.14f;
-            sb.g = 0.12f;
-            sb.b = 0.11f;
-            sb.alpha = Clamp01(0.24f * (1.0f - h) * stream_fade);
+            sb.pos[0] = positions[i][0] + sway_x * 0.12f;
+            sb.pos[1] = positions[i][1] + 0.32f + 0.28f * (1.0f - h);
+            sb.pos[2] = positions[i][2] + sway_z * 0.12f;
+            sb.dir[0] = sway_x * 0.25f;
+            sb.dir[1] = 0.98f;
+            sb.dir[2] = sway_z * 0.25f;
+            sb.radius = r * 1.18f;
+            sb.stretch = 1.15f;
+            sb.rotation = anim_time * 0.65f + float(i) * 0.59f;
+            sb.r = 0.13f + 0.20f * warm_soot;
+            sb.g = 0.11f + 0.08f * warm_soot;
+            sb.b = 0.10f + 0.03f * warm_soot;
+            sb.alpha = Clamp01(0.26f * (1.0f - h * 0.85f) * stream_fade);
             sb.tile = (idx + 2) & 3;
             push(sb);
         }

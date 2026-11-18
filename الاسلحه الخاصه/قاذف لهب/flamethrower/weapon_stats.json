@@ -1,0 +1,134 @@
+{
+  "caliber": "Pressurized Thickened Napalm-B Stream (M2A1)",
+  "projectile_mass_g": 45.0,
+  "muzzle_velocity_mps": 58,
+  "energy_j": 1850,
+  "drag_model": "G7",
+  "drag_coefficient": 0.685,
+  "base_damage": 92,
+  "burn_damage_per_sec": 35,
+  "effective_range_m": 25.0,
+  "max_range_m": 43.0,
+  "weapon_class": "flamethrower",
+  "drop_table_m": [
+    {
+      "range": 0,
+      "drop_m": 0.0
+    },
+    {
+      "range": 10,
+      "drop_m": 0.16
+    },
+    {
+      "range": 20,
+      "drop_m": 0.72
+    },
+    {
+      "range": 30,
+      "drop_m": 1.85
+    },
+    {
+      "range": 40,
+      "drop_m": 3.9
+    },
+    {
+      "range": 50,
+      "drop_m": 7.4
+    },
+    {
+      "range": 100,
+      "drop_m": 28.5
+    },
+    {
+      "range": 200,
+      "drop_m": 96.0
+    },
+    {
+      "range": 400,
+      "drop_m": 280.0
+    },
+    {
+      "range": 600,
+      "drop_m": 520.0
+    },
+    {
+      "range": 800,
+      "drop_m": 810.0
+    }
+  ],
+  "velocity_table": [
+    {
+      "range": 0,
+      "velocity_mps": 58.0
+    },
+    {
+      "range": 10,
+      "velocity_mps": 46.5
+    },
+    {
+      "range": 20,
+      "velocity_mps": 35.2
+    },
+    {
+      "range": 30,
+      "velocity_mps": 24.8
+    },
+    {
+      "range": 40,
+      "velocity_mps": 15.4
+    },
+    {
+      "range": 50,
+      "velocity_mps": 8.2
+    },
+    {
+      "range": 100,
+      "velocity_mps": 2.0
+    },
+    {
+      "range": 200,
+      "velocity_mps": 0.5
+    },
+    {
+      "range": 400,
+      "velocity_mps": 0.0
+    },
+    {
+      "range": 600,
+      "velocity_mps": 0.0
+    },
+    {
+      "range": 800,
+      "velocity_mps": 0.0
+    }
+  ],
+  "hitbox_multipliers": {
+    "head": 1.6,
+    "neck": 1.45,
+    "upper_chest": 1.25
+  },
+  "penetration_cm": {
+    "wood": 4.5,
+    "concrete": 0.5,
+    "mild_steel": 0.2,
+    "glass": 8.0,
+    "sand": 2.5
+  },
+  "scope": {
+    "magnification": [
+      1,
+      1.5
+    ],
+    "fov_deg": [
+      65,
+      50
+    ],
+    "zeroing_m": [
+      10,
+      20,
+      30,
+      40,
+      50
+    ]
+  }
+}

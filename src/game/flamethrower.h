@@ -30,6 +30,8 @@ struct HudState {
     bool full_auto_mode = false;
     bool bolt_locked_open = false;
     float ads_blend = 0.0f;
+    float scope_zoom_x = 1.0f;
+    float scope_zero_m = 200.0f;
 };
 
 // Initializes/loads Special Arsenal .bmsh + .btex assets lazily on first use.
@@ -47,9 +49,12 @@ void ResetLevelState();
 void SelectSpecialWeapon(uint8_t index);
 void CycleSpecialWeapon(int dir);
 void ToggleFireMode();
+void CycleScopeZoom();
 void TriggerManualReload();
 void SetSpecialAiming(bool aiming);
 float GetAdsFovScale();
+bool IsScopedOut();
+bool ShouldHideBlackArms();
 const char* GetSpecialWeaponName(uint8_t index);
 
 // Intercepts Fire (RT / LMB) and Reload (A / R) while Flamethrower is active so the

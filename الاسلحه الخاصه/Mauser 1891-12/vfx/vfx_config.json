@@ -1,0 +1,66 @@
+{
+  "fire_spectrum_kelvin": {
+    "hottest": 2300,
+    "mid": 1700,
+    "coolest": 1150
+  },
+  "fire_colors": {
+    "white_gold": [
+      255,
+      240,
+      184
+    ],
+    "amber": [
+      254,
+      224,
+      155
+    ],
+    "crimson": [
+      246,
+      140,
+      39
+    ]
+  },
+  "muzzle_flash": {
+    "scale": 1.0,
+    "duration_s": 0.06,
+    "tongues": 7,
+    "muzzle_socket": "Socket_Muzzle",
+    "muzzle_position_m": [
+      0.85,
+      0.039,
+      0.0
+    ],
+    "muzzle_direction": [
+      1.0,
+      0.0,
+      0.0
+    ]
+  },
+  "smoke": {
+    "mode": 2,
+    "intensity": 105,
+    "duration_s": 1.1,
+    "buoyancy": 0.8,
+    "drag": 0.35,
+    "nodes": 192
+  },
+  "shockwave": {
+    "radius_m": 2.8,
+    "impulse_n": 180
+  },
+  "tracer": {
+    "length_m": 1.2,
+    "color": [
+      255,
+      190,
+      80
+    ]
+  },
+  "decals": [
+    "concrete",
+    "wood",
+    "metal",
+    "glass"
+  ]
+}

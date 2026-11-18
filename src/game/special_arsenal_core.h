@@ -63,7 +63,15 @@ struct BtexValidation {
     float std_rgb = 0.0f;
 };
 
+struct MmatBatch {
+    uint32_t part_idx = 0;
+    uint32_t mat_id = 0;
+    uint32_t first_index = 0;
+    uint32_t index_count = 0;
+};
+
 bool ParseBmsh(const uint8_t* data, size_t size, BmshModel& out);
+bool ParseMmat(const uint8_t* data, size_t size, std::vector<MmatBatch>& out);
 bool ParseBtexHeader(const uint8_t* data, size_t size, BtexHeader& out);
 BtexValidation ValidateBtex(const uint8_t* data, size_t size);
 
@@ -89,6 +97,8 @@ enum class AudioCueKind : uint8_t {
     Mauser91StripperClip,
     Mauser91DryFire,
     Mauser91ChamberClose,
+    Mauser91Equip,
+    Mauser91ScopeZoom,
     C96Shot,
     C96BreechClack,
     C96ClipReload,
@@ -108,6 +118,7 @@ struct ArsenalInput {
     bool reload_pressed = false;
     bool ads_held = false;
     bool select_fire_pressed = false;
+    bool zoom_cycle_pressed = false;
     float player_speed_mps = 0.0f;
     float equip_progress = 1.0f;
 };
@@ -128,6 +139,8 @@ struct PartAnimPose {
     float clip_insert = 0.0f;       // 0..1 stripper clip downward insertion
     float clip_eject = 0.0f;        // 0..1 empty stripper clip ejection arc
     float clip_rounds_left = 0.0f;  // 0..5
+    uint8_t hand_clip_id = 0u;      // 0=idle/fire, 1=bolt_cycle, 2=reload_stripper_clip
+    float hand_clip_time_s = 0.0f;  // synchronized time into Mauser 1891-12 hands animation clip
 
     // Mauser C96 / M712
     float barrel_recoil_m = 0.0f;   // 0..0.008 m short recoil barrel+upper extension
@@ -182,9 +195,14 @@ struct WeaponStatus {
     bool reloading = false;
     float ads_blend = 0.0f;
     float ads_fov_scale = 1.0f;
+    float scope_zoom_x = 1.0f;
+    float scope_zero_m = 200.0f;
     ActionPhase phase = ActionPhase::Idle;
     PartAnimPose pose{};
 };
+
+// Converts normalized FOV divisor ads_fov_scale (<= 1.0f) to optical magnification (>= 1.0f).
+float ResolveZoomMagnification(float ads_fov_scale) noexcept;
 
 class ArsenalSim {
 public:
@@ -220,6 +238,8 @@ private:
     int m91_mag_ = 5;
     int m91_reserve_ = 65;
     bool m91_reload_close_cue_sent_ = false;
+    float m91_zoom_x_ = 4.0f;
+    float m91_zero_m_ = 200.0f;
 
     int c96_mag_ = 20;
     int c96_reserve_ = 120;

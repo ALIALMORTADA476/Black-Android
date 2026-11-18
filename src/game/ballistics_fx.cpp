@@ -3062,10 +3062,17 @@ void RenderWorldScene() {
         }
         active_smoke_cnt++;
 
+        float life = std::clamp(n.age / std::max(n.ttl, 0.01f), 0.0f, 1.0f);
         if (world_dt > 0.0f) {
-          const float curl = n.is_muzzle_wisp ? 0.055f : 0.015f;
-          const float cx = std::sin(n.age * 4.8f + n.seed) * curl;
-          const float cz = std::cos(n.age * 4.1f + n.seed * 1.4f) * curl;
+          // Multi-frequency Kelvin-Helmholtz turbulent curl-vortex drift that widens as smoke rises
+          const float base_curl = n.is_muzzle_wisp ? 0.062f : (n.from_launcher ? 0.14f : 0.032f);
+          const float curl = base_curl * (0.45f + 0.85f * std::sqrt(life));
+          const float cx = (std::sin(n.age * 4.6f + n.seed) +
+                            0.45f * std::cos(n.age * 9.3f - n.seed * 0.7f)) *
+                           curl;
+          const float cz = (std::cos(n.age * 4.1f + n.seed * 1.4f) -
+                            0.45f * std::sin(n.age * 8.7f + n.seed * 0.9f)) *
+                           curl;
           n.pos[0] += (n.vel[0] + cx) * world_dt;
           n.pos[1] += n.vel[1] * world_dt;
           n.pos[2] += (n.vel[2] + cz) * world_dt;
@@ -3074,17 +3081,20 @@ void RenderWorldScene() {
             n.prev_pos[1] += n.vel[1] * 0.72f * world_dt;
             n.prev_pos[2] += (n.vel[2] * 0.65f + cz * 0.5f) * world_dt;
           }
-          float drag_rate = n.is_muzzle_wisp ? 3.8f : 1.8f;
-          float drag = std::max(0.0f, 1.0f - world_dt * drag_rate);
+          const float drag_rate = n.is_muzzle_wisp ? 3.6f : (n.from_launcher ? 1.45f : 1.75f);
+          const float drag = std::exp(-world_dt * drag_rate);
           n.vel[0] *= drag;
           n.vel[2] *= drag;
-          n.vel[1] += world_dt * (n.is_muzzle_wisp ? 0.14f : 0.05f);
+          // Rayleigh-Taylor thermal buoyancy acceleration decays as plume cools by air entrainment
+          const float buoy =
+              (n.is_muzzle_wisp ? 0.18f : (n.from_launcher ? 0.34f : 0.08f)) *
+              (1.0f - 0.65f * life);
+          n.vel[1] = n.vel[1] * drag + world_dt * buoy;
         }
 
-        float life = n.age / n.ttl;
-        float fade_in = std::min(1.0f, n.age * 16.0f);
+        float fade_in = std::min(1.0f, n.age * 18.0f);
         float fade =
-            fade_in * std::pow(std::clamp(1.0f - life, 0.0f, 1.0f), 1.75f);
+            fade_in * std::pow(std::clamp(1.0f - life, 0.0f, 1.0f), 1.65f);
         float alpha = n.opacity * fade;
         if (alpha < 0.006f)
           continue;
@@ -3097,15 +3107,21 @@ void RenderWorldScene() {
           continue;
         }
 
+        // Power-law turbulent entrainment radius expansion (r ~ t^0.72)
         float expand =
-            n.from_launcher ? 3.4f : (n.is_muzzle_wisp ? 2.15f : 1.75f);
-        float world_radius = n.base_radius * (1.0f + life * expand);
-        float warm = n.is_muzzle_wisp
-                         ? std::max(0.0f, 1.0f - life * 4.5f) * 0.08f
-                         : 0.0f;
-        Color3 smoke_rgb{std::min(1.0f, n.tint * 0.88f + warm),
-                         std::min(1.0f, n.tint * 0.89f + warm * 0.5f),
-                         std::min(1.0f, n.tint * 0.94f)};
+            n.from_launcher ? 3.55f : (n.is_muzzle_wisp ? 2.25f : 1.85f);
+        float world_radius = n.base_radius * (1.0f + std::pow(life, 0.78f) * expand);
+
+        // Internal fire subsurface scattering (warm amber-orange underlighting on fresh combustion plumes)
+        const bool is_combustion_soot = n.from_launcher || (n.tint < 0.32f);
+        const float fire_underlight =
+            is_combustion_soot
+                ? (std::pow(std::max(0.0f, 1.0f - life * 2.15f), 1.85f) * 0.28f)
+                : (n.is_muzzle_wisp ? std::max(0.0f, 1.0f - life * 4.5f) * 0.09f : 0.0f);
+        Color3 smoke_rgb{
+            std::min(1.0f, n.tint * 0.88f + fire_underlight),
+            std::min(1.0f, n.tint * 0.89f + fire_underlight * 0.44f),
+            std::min(1.0f, n.tint * 0.94f + fire_underlight * 0.08f)};
 
         if (n.has_prev && (n.from_launcher || n.is_muzzle_wisp)) {
           float rib_w = n.is_muzzle_wisp ? (world_radius * 0.34f)
@@ -3115,10 +3131,19 @@ void RenderWorldScene() {
                        PackColor3(smoke_rgb, alpha * 0.42f), g_cam);
         }
 
-        EmitTexturedBillboard(smoke_tex_verts, n.pos, world_radius * 1.45f,
-                              n.seed + n.age * 0.45f,
-                              int(std::fabs(n.seed) * 7.0f + n.age * 3.0f) & 3,
-                              PackColor3(smoke_rgb, alpha * 0.78f), g_cam);
+        const int s_tile = int(std::fabs(n.seed) * 7.0f + n.age * 2.4f) & 3;
+        const float s_rot = n.seed + n.age * (0.42f - 0.18f * life);
+        // Dual-layer volumetric self-shadowing on heavy plumes: dark base underbelly + lit upper billow
+        if (!perf_mode && is_combustion_soot && world_radius > 0.26f) {
+          const float shadow_pos[3] = {n.pos[0], n.pos[1] - world_radius * 0.22f, n.pos[2]};
+          const Color3 shadow_rgb{smoke_rgb.r * 0.56f, smoke_rgb.g * 0.54f, smoke_rgb.b * 0.54f};
+          EmitTexturedBillboard(smoke_tex_verts, shadow_pos, world_radius * 1.38f,
+                                -s_rot * 0.75f, (s_tile + 1) & 3,
+                                PackColor3(shadow_rgb, alpha * 0.58f), g_cam);
+        }
+        EmitTexturedBillboard(smoke_tex_verts, n.pos, world_radius * 1.48f,
+                              s_rot, s_tile,
+                              PackColor3(smoke_rgb, alpha * 0.82f), g_cam);
       }
     }
 
@@ -3463,49 +3488,77 @@ void RenderWorldScene() {
                 d3d::PackColorBgra(0.72f, 0.70f, 0.66f, shell * 0.34f), g_cam);
             continue;
           }
+          // Compute velocity-aligned buoyant flow direction for stretched flame tongues
+          const float f_spd = std::sqrt(f.vel[0] * f.vel[0] + f.vel[1] * f.vel[1] +
+                                        f.vel[2] * f.vel[2]);
+          float f_dir[3] = {0.0f, 1.0f, 0.0f};
+          if (f_spd > 0.05f) {
+            f_dir[0] = f.vel[0] / f_spd;
+            f_dir[1] = (f.vel[1] + 0.85f) / (f_spd + 0.85f);
+            f_dir[2] = f.vel[2] / f_spd;
+            const float dl = std::sqrt(f_dir[0] * f_dir[0] + f_dir[1] * f_dir[1] +
+                                       f_dir[2] * f_dir[2]);
+            if (dl > 1e-4f) {
+              f_dir[0] /= dl;
+              f_dir[1] /= dl;
+              f_dir[2] /= dl;
+            }
+          }
+
           if (f.is_burn_fire) {
-            // Burning target / lingering torch fire: bright natural orange-gold flame
-            // instead of explosion's blood-red crimson char volume.
-            const float body_r = std::clamp(0.92f + 0.08f * cool, 0.0f, 1.0f);
-            const float body_g = std::clamp(0.42f + 0.40f * cool, 0.0f, 1.0f);
-            const float body_b = std::clamp(0.06f + 0.20f * cool * cool, 0.0f, 1.0f);
+            // Burning target / lingering napalm fire: Rayleigh-Taylor upward-stretched
+            // flame tongues with Planck blackbody transition & warm-underlit soot sheath.
+            const float body_r = std::clamp(0.94f + 0.06f * cool, 0.0f, 1.0f);
+            const float body_g = std::clamp(0.34f + 0.48f * cool * cool, 0.0f, 1.0f);
+            const float body_b = std::clamp(0.03f + 0.22f * cool * cool * cool, 0.0f, 1.0f);
             const float body_a =
-                std::clamp(std::pow(cool, 1.20f) * 0.52f, 0.0f, 0.68f);
-            EmitTexturedBillboard(
-                smoke_tex_verts, f.pos, rad, f.rot, f.tile,
-                d3d::PackColorBgra(body_r, body_g, body_b, body_a), g_cam);
+                std::clamp(std::pow(cool, 1.15f) * 0.56f, 0.0f, 0.72f);
+            const float burn_stretch = 1.32f + 0.48f * cool;
+            EmitStretchedBillboard(
+                smoke_tex_verts, f.pos, f_dir, rad, burn_stretch, f.rot * 0.35f,
+                f.tile, d3d::PackColorBgra(body_r, body_g, body_b, body_a),
+                g_cam);
 
             const float glow_a =
-                std::clamp(std::pow(cool, 1.35f) * 0.85f * f.heat, 0.0f, 1.0f);
+                std::clamp(std::pow(cool, 1.30f) * 0.88f * f.heat, 0.0f, 1.0f);
             if (glow_a > 0.02f) {
-              EmitTexturedBillboard(
-                  fire_tex_verts, f.pos, rad * 0.92f, -f.rot * 0.7f, f.tile,
-                  d3d::PackColorBgra(1.0f, 0.56f + 0.34f * cool,
-                                     0.12f + 0.24f * cool * cool, glow_a),
+              EmitStretchedBillboard(
+                  fire_tex_verts, f.pos, f_dir, rad * 0.90f,
+                  burn_stretch * 1.08f, -f.rot * 0.25f, 4 + ((f.tile + 1) & 3),
+                  d3d::PackColorBgra(1.0f, 0.52f + 0.40f * cool,
+                                     0.10f + 0.30f * cool * cool, glow_a),
                   g_cam);
             }
           } else {
-            // Explosion fireball + charred soot cloud
+            // Explosion fireball: Planck blackbody radiation cooling from incandescent
+            // white-gold core (u=0) -> vivid amber-orange (u=0.35) -> crimson-lit soot cloud (u>0.6)
             const float body_r =
-                (u < 0.55f) ? (0.98f - 0.30f * (u / 0.55f))
-                            : std::max(0.16f, 0.68f - 1.00f * (u - 0.55f));
-            const float body_g = (u < 0.25f) ? (0.42f - 0.30f * (u / 0.25f))
-                                             : std::max(0.05f, 0.15f * cool);
-            const float body_b = 0.030f;
+                (u < 0.52f) ? (1.00f - 0.26f * (u / 0.52f))
+                            : std::max(0.14f, 0.74f - 1.15f * (u - 0.52f));
+            const float body_g =
+                (u < 0.32f) ? (0.52f - 0.36f * (u / 0.32f))
+                            : std::max(0.04f, 0.16f * cool * cool);
+            const float body_b =
+                (u < 0.18f) ? (0.18f * (1.0f - u / 0.18f)) : 0.025f;
             const float body_a =
-                std::clamp(std::pow(cool, 1.15f) * 0.84f, 0.0f, 0.90f);
-            EmitTexturedBillboard(
-                smoke_tex_verts, f.pos, rad, f.rot, f.tile,
-                d3d::PackColorBgra(body_r, body_g, body_b, body_a), g_cam);
+                std::clamp(std::pow(cool, 1.10f) * 0.86f, 0.0f, 0.92f);
+            const float fb_stretch =
+                1.08f + 0.38f * std::clamp(f_spd * 0.14f, 0.0f, 1.0f) * cool;
+            const int body_tile = (u > 0.62f) ? (f.tile & 3) : f.tile;
+            EmitStretchedBillboard(
+                smoke_tex_verts, f.pos, f_dir, rad, fb_stretch, f.rot * 0.4f,
+                body_tile, d3d::PackColorBgra(body_r, body_g, body_b, body_a),
+                g_cam);
 
             const float glow_a =
-                std::clamp(std::pow(cool, 1.55f) * 0.74f * f.heat, 0.0f, 1.0f);
+                std::clamp(std::pow(cool, 1.48f) * 0.78f * f.heat, 0.0f, 1.0f);
             if (glow_a > 0.02f) {
-              EmitTexturedBillboard(
-                  fire_tex_verts, f.pos, rad * 0.86f, -f.rot * 0.7f, f.tile,
+              EmitStretchedBillboard(
+                  fire_tex_verts, f.pos, f_dir, rad * 0.88f,
+                  fb_stretch * 1.12f, -f.rot * 0.35f, 4 + ((f.tile + 1) & 3),
                   d3d::PackColorBgra(
-                      1.0f, 0.40f + 0.42f * cool * cool,
-                      0.05f + 0.06f * cool, glow_a),
+                      1.0f, 0.44f + 0.46f * cool * cool,
+                      0.06f + 0.22f * cool * cool * cool, glow_a),
                   g_cam);
             }
           }
@@ -3523,7 +3576,7 @@ void RenderWorldScene() {
             continue;
           }
           std::memcpy(em.prev_pos, em.pos, sizeof(em.prev_pos));
-          const float drag = std::exp(-0.85f * world_dt);
+          const float drag = std::exp(-0.92f * world_dt);
           em.vel[0] *= drag;
           em.vel[2] *= drag;
           em.vel[1] = em.vel[1] * drag - 13.5f * world_dt;
@@ -3547,29 +3600,38 @@ void RenderWorldScene() {
             std::clamp(em.age / std::max(em.ttl, 0.01f), 0.0f, 1.0f);
         const float cool = std::clamp((1.0f - u) * em.temp, 0.0f, 1.0f);
         const float alpha =
-            std::clamp(std::pow(1.0f - u, 0.75f) * 0.96f, 0.0f, 1.0f);
-        const float streak_t = 0.032f;
+            std::clamp(std::pow(1.0f - u, 0.72f) * 0.96f, 0.0f, 1.0f);
+        // 2-segment curved ballistic spark arc with gravity sag
+        const float streak_t = 0.036f;
         const float tail[3] = {
-            em.pos[0] - std::clamp(em.vel[0] * streak_t, -0.45f, 0.45f),
-            em.pos[1] - std::clamp(em.vel[1] * streak_t, -0.45f, 0.45f),
-            em.pos[2] - std::clamp(em.vel[2] * streak_t, -0.45f, 0.45f)};
+            em.pos[0] - std::clamp(em.vel[0] * streak_t, -0.48f, 0.48f),
+            em.pos[1] - std::clamp(em.vel[1] * streak_t, -0.48f, 0.48f) -
+                0.5f * 13.5f * streak_t * streak_t,
+            em.pos[2] - std::clamp(em.vel[2] * streak_t, -0.48f, 0.48f)};
+        const float mid_p[3] = {
+            0.5f * (tail[0] + em.pos[0]),
+            0.5f * (tail[1] + em.pos[1]) + 0.15f * 13.5f * streak_t * streak_t,
+            0.5f * (tail[2] + em.pos[2])};
         const Color3 c_core{
-            1.0f, std::clamp(0.46f + 0.46f * cool * cool, 0.0f, 1.0f),
-            std::clamp(0.08f + 0.36f * cool * cool * cool, 0.0f, 1.0f)};
-        const Color3 c_halo{1.0f, std::clamp(0.32f + 0.34f * cool, 0.0f, 1.0f),
-                            0.04f};
-        Emit3DRibbon(tracer_verts, tail, em.pos, em.radius * 0.22f, em.radius,
-                     PackColor3(c_halo, alpha * 0.24f),
+            1.0f, std::clamp(0.48f + 0.48f * cool * cool, 0.0f, 1.0f),
+            std::clamp(0.10f + 0.48f * cool * cool * cool, 0.0f, 1.0f)};
+        const Color3 c_halo{1.0f, std::clamp(0.26f + 0.40f * cool, 0.0f, 1.0f),
+                            0.03f};
+        Emit3DRibbon(tracer_verts, tail, mid_p, em.radius * 0.16f,
+                     em.radius * 0.58f, PackColor3(c_halo, alpha * 0.18f),
+                     PackColor3(c_halo, alpha * 0.62f), g_cam);
+        Emit3DRibbon(tracer_verts, mid_p, em.pos, em.radius * 0.58f, em.radius,
+                     PackColor3(c_halo, alpha * 0.62f),
                      PackColor3(c_core, alpha), g_cam);
         Emit3DSoftDisc(tracer_verts, em.pos, em.radius * 1.45f, c_core,
-                       alpha * 0.88f, g_cam);
-        if (u < 0.72f) {
+                       alpha * 0.90f, g_cam);
+        if (u < 0.78f) {
           EmitTexturedBillboard(
-              fire_tex_verts, em.pos, em.radius * 3.8f, float(i) * 0.73f,
+              fire_tex_verts, em.pos, em.radius * 3.9f, float(i) * 0.73f,
               12 + (int(i) & 1),
               d3d::PackColorBgra(1.0f,
-                                 std::clamp(0.14f + 0.38f * cool, 0.0f, 1.0f),
-                                 0.02f, alpha * 0.65f),
+                                 std::clamp(0.18f + 0.44f * cool, 0.0f, 1.0f),
+                                 0.03f, alpha * 0.68f),
               g_cam);
         }
       }

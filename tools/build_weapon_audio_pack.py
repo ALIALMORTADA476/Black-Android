@@ -39,6 +39,7 @@ WEB_DIR = os.path.join(REPO, ".local", "audio_src", "web")
 ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_analysis.json")
 EXTRA_ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_extra_analysis.json")
 SCRATCH = r"C:\Users\313\.gemini\antigravity\brain\db2924e5-7d7e-4013-bc79-497f520eff0a\scratch"
+PACK_AUDIO_DIR = os.path.join(REPO, "الاسلحه الخاصه", "Mauser 1891-12", "audio")
 OUT_PAK = os.path.join(REPO, "app", "src", "main", "assets", "weapon_audio", "black_weapon_audio.pak")
 OUT_MANIFEST = os.path.join(SCRATCH, "weapon_audio_manifest.json")
 SR = 48000
@@ -141,6 +142,8 @@ SLOTS = {
     "MXM_WHEEL_ROLL": 150,
     "MXM_BELT_ADVANCE": 151,
     "TAIL_C96_OUTDOOR": 152,
+    "M91_EQUIP": 153,
+    "M91_SUPP": 154,
 }
 
 # Stem categories: matches StemCategory enum & StemForSlot() in weapon_audio.cpp
@@ -165,7 +168,7 @@ def slot_stem(slot_name):
         return STEM_RELOAD
     if slot_name in (
         "MELEE_SWING", "MELEE_HIT", "PICKUP_AMMO", "PICKUP_HEALTH", "WEAPON_DROP",
-        "FLM_VALVE_SHUTOFF", "M91_BOLT", "M91_DRY", "M91_CHAMBER_CLOSE",
+        "FLM_VALVE_SHUTOFF", "M91_BOLT", "M91_DRY", "M91_CHAMBER_CLOSE", "M91_EQUIP",
         "C96_BREECH", "C96_DRY", "C96_LOCKOPEN", "MXM_BELT_ADVANCE"
     ) or any(
         k in slot_name for k in ("_COCK", "FIRE_SELECT", "SILENCER_", "DEAD_CLICK", "CHNG_WPN", "CASING_", "_CASE")
@@ -1316,6 +1319,21 @@ def build_all_clips():
     web_bolt      = TW("mech_bolt_action.wav", 620.0, 55.0, gap=240.0)
     web_clip      = TW("mech_stripper_clip.wav", 700.0, 55.0, gap=280.0)
     web_rfl_dry   = TW("mech_dry_fire_rifle.wav", 320.0, 90.0, gap=180.0)
+    # NEW AAA Mauser 1891-12 (Kar98k) pack WAVs — 48 kHz stereo, user-supplied, zero clipping
+    def _pk_wav(fn):
+        _sr, _bits, _a = read_wav_float32(os.path.join(PACK_AUDIO_DIR, fn))
+        return resample_48k(_a, _sr) if _sr != SR else _a
+    pk_fire = [_pk_wav("fire_indoor_%02d.wav" % i) for i in range(1, 5)]
+    pk_outdoor = [_pk_wav("fire_outdoor_%02d.wav" % i) for i in range(1, 4)]
+    pk_supp = [_pk_wav("fire_suppressed_01.wav")]
+    pk_bolt_open = [_pk_wav(f) for f in ("bolt_open.wav", "bolt_open_01.wav", "bolt_open_02.wav")]
+    pk_bolt_pull = [_pk_wav(f) for f in ("bolt_pull.wav", "bolt_pull_01.wav", "bolt_pull_02.wav", "bolt_open_and_pull_raw.wav")]
+    pk_bolt_push = [_pk_wav(f) for f in ("bolt_push.wav", "bolt_push_01.wav", "bolt_push_02.wav")]
+    pk_bolt_cycle = [_pk_wav("bolt_cycle_full.wav")]
+    pk_bolt_close = [_pk_wav(f) for f in ("bolt_close.wav", "bolt_close_01.wav", "bolt_close_02.wav", "bolt_push_and_close_raw.wav")]
+    pk_clip = [_pk_wav(f) for f in ("clip_insert.wav", "reload_full_master.wav")]
+    pk_dry = [_pk_wav("dry_fire_click.wav")]
+    pk_equip = [_pk_wav("equip_foley.wav")]
     # Studio 192 kHz & 96 kHz/24-bit Mauser C96 M712 (7.63x25mm) pools — zero clipping
     c96_ppq_crk   = T(F("Walther PPQ/X_29.wav"), 640.0, 28.0, gap=280.0)
     c96_ppq_whp   = T(F("Walther PPQ/X_43.wav"), 640.0, 28.0, gap=250.0)
@@ -1700,46 +1718,41 @@ def build_all_clips():
             "web:freesound CC0 burst_short+napalm_spray_foam",
             eq_bands=[(140, 1.3, 2.8), (2800, 1.3, 1.6)], transient_boost_db=1.0, fade_out_ms=90.0, width_pct=108)
 
-    # Mauser 1891-12 (7.65x53mm Argentine + Cock-on-Close Bolt + 5-rd Stripper Clip)
-    # Mastered from 96 kHz/24-bit studio recordings (Pole Position K98k / M1903A3 / M38 /
-    # Gamemaster 1623 Stereo / Lynx 65m ORTF / BAR 300m / Archive.org SSE_Library_GUNS), 0 clips!
-    for i in range(4):
-        gmc_body = m91_gmc_shot[1:] if len(m91_gmc_shot) > 1 else m91_gmc_shot
-        add("M91_FIRE", f"96kHz Studio K98k Mauser + Gamemaster Stereo + 1040 Snap + 1065 Body #{i+1}",
-            align_mix([(stereoize_web(pick(m91_k98_fire, i), refl_gain=0.18), 0.78, 0),
-                       (pick(gmc_body, i), 0.70, 0),
-                       (stereoize_web(pick(m91_fal_crk, i), refl_gain=0.16), 0.36, 2),
-                       (pick(m91_bar_far, i), 0.26, 5)], 980),
-            "sotiyat:K98k+GDC1623+1040+1065",
+    # Mauser Karabiner 98k — COMPLETE 27-WAV AAA pack integration (48 kHz True Stereo, 0 clips)
+    for i, a in enumerate(pk_fire):
+        add("M91_FIRE", f"AAA Kar98k indoor firing #{i+1}", a,
+            "pack:Mauser 1891-12/audio/fire_indoor",
             eq_bands=[(68, 1.2, 4.4), (1750, 1.4, 2.6), (5600, 1.4, 1.9)],
-            in_room_punch=True, ceil_db=-0.75, transient_boost_db=2.3, comp_ratio=2.3, width_pct=110)
-    for i in range(4):
-        add("M91_BOLT", f"96kHz K98k Mauser Bolt Lift & Pull + M38 Steel Throw #{i+1}",
-            align_mix([(stereoize_web(pick(m91_k98_hdl, i), refl_gain=0.15), 0.84, 0),
-                       (stereoize_web(pick(m91_m38_hdl, i * 2), refl_gain=0.15), 0.48, 65)], 580),
-            "sotiyat:K98k_Handling+M38_Handling", eq_bands=eq_f, transient_boost_db=1.7, width_pct=98)
-        add("M91_CLIP", f"SSE CC0 Stripper Clip Insert + K98k Brass/Steel Lock #{i+1}",
-            align_mix([(stereoize_web(pick(web_clip, i), refl_gain=0.15), 0.88, 0),
-                       (stereoize_web(pick(m91_k98_hdl, i + 3), refl_gain=0.14), 0.36, 110)], 680),
-            "web:SSE_stripper_clip+K98k_Handling", eq_bands=eq_f, transient_boost_db=1.6, width_pct=96)
-        add("M91_CHAMBER_CLOSE", f"96kHz M1903A3 Mauser-Action Cock-on-Close Sear Lock #{i+1}",
-            align_mix([(stereoize_web(pick(m91_1903_blt, i), refl_gain=0.15), 0.86, 0),
-                       (stereoize_web(pick(web_bolt, i), refl_gain=0.14), 0.42, 48)], 560),
-            "sotiyat:M1903A3_Bolt+SSE_bolt", eq_bands=eq_f, transient_boost_db=1.9, width_pct=98)
-        add("TAIL_M91_OUTDOOR", f"96kHz ORTF 65m + Valley 50m + Mosin 50m Rolling Rifle Tail #{i+1}",
-            align_mix([(pick(m91_lynx_tail, i), 0.86, 0),
-                       (pick(t_mattak, i), 0.56, 18),
-                       (stereoize_web(pick(m91_mosin_50, i), refl_gain=0.22), 0.38, 32),
-                       (stereoize_web(pick(m91_sse_dist, i), refl_gain=0.20), 0.24, 55)], 2050),
-            "GDC6908+2783+MN0115+SSE_dist",
+            in_room_punch=True, ceil_db=-0.75, transient_boost_db=1.4, comp_ratio=2.2, width_pct=106)
+    for i, a in enumerate(pk_bolt_open + pk_bolt_pull + pk_bolt_cycle):
+        add("M91_BOLT", f"AAA Kar98k bolt open/pull manipulation #{i+1}", a,
+            "pack:Mauser 1891-12/audio/bolt_open_pull", eq_bands=eq_f, transient_boost_db=1.2, width_pct=98)
+    for i, a in enumerate(pk_bolt_push + pk_bolt_close):
+        add("M91_CHAMBER_CLOSE", f"AAA Kar98k bolt push/close #{i+1}", a,
+            "pack:Mauser 1891-12/audio/bolt_push_close", eq_bands=eq_f,
+            transient_boost_db=1.3, width_pct=98)
+    for i, a in enumerate(pk_clip):
+        add("M91_CLIP", f"AAA Kar98k stripper clip #{i+1}", a,
+            "pack:Mauser 1891-12/audio/clip_insert", eq_bands=eq_f,
+            transient_boost_db=1.2, width_pct=98)
+    for i, a in enumerate(pk_dry):
+        add("M91_DRY", f"AAA Kar98k dry fire #{i+1}", a,
+            "pack:Mauser 1891-12/audio/dry_fire_click", eq_bands=eq_f,
+            transient_boost_db=1.3, width_pct=98)
+    for i, a in enumerate(pk_outdoor):
+        add("TAIL_M91_OUTDOOR", f"AAA Kar98k outdoor tail #{i+1}", a,
+            "pack:Mauser 1891-12/audio/fire_outdoor",
             eq_bands=[(95, 1.2, 2.8), (1500, 1.3, 1.4), (5800, 1.2, -1.8)],
-            transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=170.0, width_pct=122)
-    for i in range(3):
-        add("M91_DRY", f"SSE CC0 Rifle Firing-Pin Snap + M38 Sear Click #{i+1}",
-            align_mix([(stereoize_web(pick(web_rfl_dry, i), refl_gain=0.12), 0.88, 0),
-                       (stereoize_web(pick(m91_m38_hdl, i + 8), refl_gain=0.12), 0.28, 14)], 320),
-            "web:SSE_dry_fire+M38_Handling",
-            eq_bands=eq_f, transient_boost_db=1.8, width_pct=96)
+            transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=170.0, width_pct=114)
+    for i, a in enumerate(pk_equip):
+        add("M91_EQUIP", f"AAA Kar98k equip foley #{i+1}", a,
+            "pack:Mauser 1891-12/audio/equip_foley", eq_bands=eq_f,
+            transient_boost_db=1.1, width_pct=98)
+    for i, a in enumerate(pk_supp):
+        add("M91_SUPP", f"AAA Kar98k suppressed firing #{i+1}", a,
+            "pack:Mauser 1891-12/audio/fire_suppressed",
+            eq_bands=[(85, 1.2, 3.2), (2200, 1.4, 2.0), (5400, 1.3, -1.5)],
+            supp_punch=True, ceil_db=-1.05, transient_boost_db=1.1, comp_ratio=2.0, width_pct=100)
 
     # Mauser C96 / M712 (192kHz/96kHz Studio 7.63x25mm Bottle-Neck + Outdoor Slap + Breech + Clip)
     for i in range(4):
@@ -2060,5 +2073,120 @@ def main():
     )
 
 
+def build_m91_pack_clips(master_fn):
+    """Master all 27 Mauser 1891-12 WAVs cleanly into their dedicated BWAR v3 slots."""
+    def _pk_wav(fn):
+        _sr, _bits, _a = read_wav_float32(os.path.join(PACK_AUDIO_DIR, fn))
+        return resample_48k(_a, _sr) if _sr != SR else _a
+    eq_f = [(220, 1.3, 1.0), (3400, 1.4, 2.2), (7600, 1.3, 1.8)]
+    pk_fire = [_pk_wav("fire_indoor_%02d.wav" % i) for i in range(1, 5)]
+    pk_outdoor = [_pk_wav("fire_outdoor_%02d.wav" % i) for i in range(1, 4)]
+    pk_supp = [_pk_wav("fire_suppressed_01.wav")]
+    pk_bolt_open = [_pk_wav(f) for f in ("bolt_open.wav", "bolt_open_01.wav", "bolt_open_02.wav")]
+    pk_bolt_pull = [_pk_wav(f) for f in ("bolt_pull.wav", "bolt_pull_01.wav", "bolt_pull_02.wav", "bolt_open_and_pull_raw.wav")]
+    pk_bolt_push = [_pk_wav(f) for f in ("bolt_push.wav", "bolt_push_01.wav", "bolt_push_02.wav")]
+    pk_bolt_cycle = [_pk_wav("bolt_cycle_full.wav")]
+    pk_bolt_close = [_pk_wav(f) for f in ("bolt_close.wav", "bolt_close_01.wav", "bolt_close_02.wav", "bolt_push_and_close_raw.wav")]
+    pk_clip = [_pk_wav(f) for f in ("clip_insert.wav", "reload_full_master.wav")]
+    pk_dry = [_pk_wav("dry_fire_click.wav")]
+    pk_equip = [_pk_wav("equip_foley.wav")]
+
+    for i, a in enumerate(pk_fire):
+        master_fn("M91_FIRE", f"AAA Kar98k indoor firing #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/fire_indoor",
+                  eq_bands=[(68, 1.2, 4.4), (1750, 1.4, 2.6), (5600, 1.4, 1.9)],
+                  in_room_punch=True, ceil_db=-0.75, transient_boost_db=1.4, comp_ratio=2.2, width_pct=106)
+    for i, a in enumerate(pk_bolt_open + pk_bolt_pull + pk_bolt_cycle):
+        master_fn("M91_BOLT", f"AAA Kar98k bolt open/pull manipulation #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/bolt_open_pull", eq_bands=eq_f, transient_boost_db=1.2, width_pct=98)
+    for i, a in enumerate(pk_bolt_push + pk_bolt_close):
+        master_fn("M91_CHAMBER_CLOSE", f"AAA Kar98k bolt push/close #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/bolt_push_close", eq_bands=eq_f,
+                  transient_boost_db=1.3, width_pct=98)
+    for i, a in enumerate(pk_clip):
+        master_fn("M91_CLIP", f"AAA Kar98k stripper clip #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/clip_insert", eq_bands=eq_f,
+                  transient_boost_db=1.2, width_pct=98)
+    for i, a in enumerate(pk_dry):
+        master_fn("M91_DRY", f"AAA Kar98k dry fire #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/dry_fire_click", eq_bands=eq_f,
+                  transient_boost_db=1.3, width_pct=98)
+    for i, a in enumerate(pk_outdoor):
+        master_fn("TAIL_M91_OUTDOOR", f"AAA Kar98k outdoor tail #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/fire_outdoor",
+                  eq_bands=[(95, 1.2, 2.8), (1500, 1.3, 1.4), (5800, 1.2, -1.8)],
+                  transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=170.0, width_pct=114)
+    for i, a in enumerate(pk_equip):
+        master_fn("M91_EQUIP", f"AAA Kar98k equip foley #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/equip_foley", eq_bands=eq_f,
+                  transient_boost_db=1.1, width_pct=98)
+    for i, a in enumerate(pk_supp):
+        master_fn("M91_SUPP", f"AAA Kar98k suppressed firing #{i+1}", a,
+                  "pack:Mauser 1891-12/audio/fire_suppressed",
+                  eq_bands=[(85, 1.2, 3.2), (2200, 1.4, 2.0), (5400, 1.3, -1.5)],
+                  supp_punch=True, ceil_db=-1.05, transient_boost_db=1.1, comp_ratio=2.0, width_pct=100)
+
+
+def patch_m91_slots():
+    """Patch M91 slots (132..135, 145, 149, 153, 154) cleanly inside existing black_weapon_audio.pak."""
+    with open(OUT_PAK, "rb") as f:
+        raw = f.read()
+    magic, ver, sr, slot_count, clip_count, sig_count = struct.unpack_from("<4s5I", raw, 0)
+    assert magic == b"BWAR" and ver == PACK_VERSION and sr == SR
+    off = 24
+    old_clips = [struct.unpack_from("<3I2H", raw, off + i * 16) for i in range(clip_count)]
+    off += clip_count * 16
+    old_sigs = raw[off:off + sig_count * 16]
+    off += sig_count * 16
+    old_pcm = np.frombuffer(raw, dtype="<i2", offset=off)
+
+    m91_sids = {SLOTS[k] for k in ("M91_FIRE", "M91_BOLT", "M91_CLIP", "M91_DRY", "TAIL_M91_OUTDOOR",
+                                    "M91_CHAMBER_CLOSE", "M91_EQUIP", "M91_SUPP")}
+    new_recs = []
+    pcm_chunks = []
+    cur_off = 0
+    for sid, soff, frames, ch, width_pct in old_clips:
+        if sid in m91_sids:
+            continue
+        nsamp = frames * ch
+        sl = old_pcm[soff:soff + nsamp]
+        new_recs.append((sid, cur_off, frames, ch, width_pct))
+        pcm_chunks.append(sl.tobytes())
+        cur_off += nsamp
+
+    added = []
+    def add_m91(slot_name, desc, raw_arr, src_fid, **mkw):
+        mastered, ch, width_pct = master_clip(raw_arr, **mkw)
+        frames = len(mastered)
+        flat = mastered.reshape(-1) if (ch == 2 and mastered.ndim == 2) else (mastered[:, 0] if mastered.ndim == 2 else mastered)
+        pcm16 = np.round(np.clip(flat, -1.0, 1.0) * 32767.0).astype("<i2")
+        st = stats_of(mastered)
+        assert st["clipped"] == 0, f"Clipped samples in {desc}: {st['clipped']}"
+        sid = SLOTS[slot_name]
+        nonlocal cur_off
+        new_recs.append((sid, cur_off, frames, ch, width_pct))
+        pcm_chunks.append(pcm16.tobytes())
+        cur_off += len(pcm16)
+        added.append((slot_name, sid, ch, st.get("lr_corr", st.get("corr", 1.0)),
+                      st.get("peak_dbfs", st.get("peak_db", 0.0)), desc))
+
+    build_m91_pack_clips(add_m91)
+    tmp_pak = OUT_PAK + ".tmp"
+    with open(tmp_pak, "wb") as f:
+        f.write(struct.pack("<4s5I", b"BWAR", PACK_VERSION, SR, len(SLOTS), len(new_recs), sig_count))
+        for r in new_recs:
+            f.write(struct.pack("<3I2H", *r))
+        f.write(old_sigs)
+        for ch_b in pcm_chunks:
+            f.write(ch_b)
+    os.replace(tmp_pak, OUT_PAK)
+    print(f"[OK] Patched M91 (all 27 WAVs -> 8 slots) in {OUT_PAK}: {len(new_recs)} clips, {len(SLOTS)} slots, 0 clipped")
+    for sn, sid, ch, corr, pk, desc in added:
+        print(f"  slot={sid:3d} {sn:18s} ch={ch} corr={corr:+.3f} peak={pk:+.2f} dBFS  {desc}")
+
+
 if __name__ == "__main__":
-    main()
+    if "--patch-m91" in sys.argv:
+        patch_m91_slots()
+    else:
+        main()

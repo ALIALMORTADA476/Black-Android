@@ -9,6 +9,7 @@
 #include "common/mouse_keyboard.h"
 #include "common/options.h"
 #include "core/input.h"
+#include "d3d/world_overlay.h"
 #include "game/ballistics_fx.h"
 #include "game/combat_feedback_rules.h"
 #include "game/flamethrower.h"
@@ -254,6 +255,11 @@ X86_FUNC(sub_00176F60) {
   const bool is_gun_list =
       ctx.esi == R32(kDisplay) + kDisplayDrawLists + kGunDrawList * kDrawListSize;
   if (is_gun_list && game::flamethrower::IsActive()) {
+    if (!game::flamethrower::IsScopedOut()) {
+      d3d::SetGunListMode(game::flamethrower::ShouldHideBlackArms() ? 1 : 2);
+      __imp__sub_00176F60(ctx, base);
+      d3d::SetGunListMode(0);
+    }
     game::flamethrower::RenderAndStepFrame(ctx, base);
     ctx.esp += 4;
     return;

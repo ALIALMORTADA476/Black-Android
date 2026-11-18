@@ -796,7 +796,9 @@ bool ButtonShown(size_t i) {
     const Button& b = kButtons[i];
     if (g_editing) return b.when != When::Menus;
     if (g_layout[i].hidden) return false;
-    if (i == kZoomButton && !(game::g_zoom < kScoped)) return false;
+    const auto sa_hud = game::flamethrower::GetHudState();
+    const bool m91_scoped = sa_hud.active && sa_hud.weapon_id == 1 && sa_hud.ads_blend >= 0.45f;
+    if (i == kZoomButton && !(game::g_zoom < kScoped || m91_scoped)) return false;
     const auto& enh = modsettings::Registry().GetEnhanced();
     if (b.press == kDash && !enh.kinetic_dash_enabled) {
         return false;
@@ -1459,9 +1461,17 @@ void DrawIcon(const Pen& p, Icon icon) {
             p.Line(-0.36f, -0.14f, 0, 0.22f);
             p.Line(0, 0.22f, 0.36f, -0.14f);
             break;
-        case Icon::Zoom: {  // the scope's level, X2 or X5: the turn scales by a half at X2, a quarter at X5, not a
-            // fifth, so by which it is nearer; the editor shows X2
-            const char* text = !g_editing && game::g_zoom < kScopeX5 ? "X5" : "X2";
+        case Icon::Zoom: {
+            const auto sa_hud = game::flamethrower::GetHudState();
+            const char* text = "X2";
+            if (!g_editing) {
+                if (sa_hud.active && sa_hud.weapon_id == 1) {
+                    const float zx = sa_hud.scope_zoom_x;
+                    text = (zx >= 7.0f) ? "X8" : (zx >= 5.0f) ? "X6" : (zx >= 3.0f) ? "X4" : "X2";
+                } else if (game::g_zoom < kScopeX5) {
+                    text = "X5";
+                }
+            }
             float size = p.r * 0.8f;
             ImVec2 ts = ImGui::GetFont()->CalcTextSizeA(size, FLT_MAX, 0, text);
             p.dl->AddText(ImGui::GetFont(), size, ImVec2(p.c.x - ts.x / 2, p.c.y - ts.y / 2), p.col, text);
@@ -1688,9 +1698,14 @@ void Draw() {
             const float pfs = std::max(11.0f, h * 0.017f);
             const float pad_x = 12.0f;
             const float pgap = 8.0f;
-            const bool has_mode = (ft.weapon_id == 2);
+            const bool has_mode = (ft.weapon_id == 2 || ft.weapon_id == 1);
             const char* lbl_next = "NEXT WPN";
-            const char* lbl_mode = ft.full_auto_mode ? "MODE: AUTO" : "MODE: SEMI";
+            char lbl_mode[24];
+            if (ft.weapon_id == 1) {
+                std::snprintf(lbl_mode, sizeof(lbl_mode), "ZOOM: %.0fX", ft.scope_zoom_x);
+            } else {
+                std::snprintf(lbl_mode, sizeof(lbl_mode), "%s", ft.full_auto_mode ? "MODE: AUTO" : "MODE: SEMI");
+            }
             const char* lbl_rld = "RELOAD";
             const float w_next = ImGui::GetFont()->CalcTextSizeA(pfs, FLT_MAX, 0, lbl_next).x + pad_x * 2.0f;
             const float w_mode = has_mode ? (ImGui::GetFont()->CalcTextSizeA(pfs, FLT_MAX, 0, lbl_mode).x + pad_x * 2.0f) : 0.0f;

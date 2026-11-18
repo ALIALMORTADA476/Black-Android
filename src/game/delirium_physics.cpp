@@ -436,6 +436,17 @@ X86_FUNC(sub_001DB910) {
         }
     }
 
+    // Guard: the original function dereferences a pointer read from the third stack argument
+    // (weapon-related table).  In arsenal-only runs the weapon's fire-data table at +0xc is
+    // still NULL (lazily initialized by the game's own fire path), so the deref faults at
+    // guest address 0x10.  Skip the original call in that case -- the bullet continues to its
+    // target without AI reaction, which is exactly what we want for world bullets.
+    const uint32_t arg3 = R32(ctx.esp + 0x0cu);
+    if (arg3 == 0u || !game::delirium_phys::IsValidGuestAddr(arg3, 0x14u)) {
+        if (redirected) ctx.edi = orig_edi;
+        return;
+    }
+
     __imp__sub_001DB910(ctx, base);
     if (redirected) {
         ctx.edi = orig_edi;

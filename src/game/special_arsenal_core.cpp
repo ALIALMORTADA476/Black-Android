@@ -158,6 +158,23 @@ bool ParseBmsh(const uint8_t* data, size_t size, BmshModel& out) {
     return false;
 }
 
+bool ParseMmat(const uint8_t* data, size_t size, std::vector<MmatBatch>& out) {
+    out.clear();
+    if (!data || size < 8u) return false;
+    if (ReadU32(data + 0u) != 0x54414D4Du) return false;  // 'MMAT'
+    const uint32_t cnt = ReadU32(data + 4u);
+    if (cnt == 0u || cnt > 256u || size < 8u + size_t(cnt) * 16u) return false;
+    out.resize(cnt);
+    for (uint32_t i = 0; i < cnt; ++i) {
+        const uint8_t* bp = data + 8u + size_t(i) * 16u;
+        out[i].part_idx = ReadU32(bp + 0u);
+        out[i].mat_id = ReadU32(bp + 4u);
+        out[i].first_index = ReadU32(bp + 8u);
+        out[i].index_count = ReadU32(bp + 12u);
+    }
+    return true;
+}
+
 bool ParseBtexHeader(const uint8_t* data, size_t size, BtexHeader& out) {
     out = BtexHeader{};
     if (!data || size < 32u) return false;
@@ -209,6 +226,11 @@ BtexValidation ValidateBtex(const uint8_t* data, size_t size) {
     return res;
 }
 
+float ResolveZoomMagnification(float ads_fov_scale) noexcept {
+    const float clamped = std::clamp(ads_fov_scale, 0.10f, 1.0f);
+    return std::clamp(1.0f / clamped, 1.0f, 8.5f);
+}
+
 void ArsenalSim::ResetAll() {
     initialized_ = true;
     active_ = SpecialWeaponId::Flamethrower;
@@ -232,6 +254,8 @@ void ArsenalSim::ResetAll() {
     m91_mag_ = 5;
     m91_reserve_ = 65;
     m91_reload_close_cue_sent_ = false;
+    m91_zoom_x_ = 4.0f;
+    m91_zero_m_ = 200.0f;
 
     c96_mag_ = 20;
     c96_reserve_ = 120;
@@ -470,6 +494,13 @@ ArsenalStepEvents ArsenalSim::Step(const ArsenalInput& in) {
         }
 
         case SpecialWeaponId::Mauser1891: {
+            if (in.zoom_cycle_pressed || (in.ads_held && in.select_fire_pressed)) {
+                if (m91_zoom_x_ < 3.0f) m91_zoom_x_ = 4.0f;
+                else if (m91_zoom_x_ < 5.0f) m91_zoom_x_ = 6.0f;
+                else if (m91_zoom_x_ < 7.0f) m91_zoom_x_ = 8.0f;
+                else m91_zoom_x_ = 2.0f;
+                ev.PushAudio(AudioCueKind::Mauser91ScopeZoom);
+            }
             // Advance cock-on-close bolt state machine
             if (phase_ == ActionPhase::BoltWaitRelease) {
                 if (!in.fire_held) {
@@ -675,29 +706,44 @@ WeaponStatus ArsenalSim::GetStatusFor(SpecialWeaponId id) const noexcept {
             s.mag_ammo = m91_mag_;
             s.max_mag_ammo = 5;
             s.reserve_ammo = m91_reserve_;
-            s.ads_fov_scale = 1.0f - 0.46f * s.ads_blend;  // 1.85x precision iron sights
+            s.scope_zoom_x = m91_zoom_x_;
+            s.scope_zero_m = m91_zero_m_;
+            const float target_fov_scale = 1.0f / std::clamp(m91_zoom_x_, 1.0f, 8.0f);
+            s.ads_fov_scale = 1.0f + (target_fov_scale - 1.0f) * s.ads_blend;
             s.pose.trigger_pull = (s.phase == ActionPhase::BoltWaitRelease) ? 0.95f : 0.0f;
             s.pose.safety_lever = s.reloading ? 0.0f : 1.0f;
             s.pose.rear_sight_deg = 4.5f * s.ads_blend;
+            s.pose.hand_clip_id = 0u;
+            s.pose.hand_clip_time_s = 0.0f;
             if (s.phase == ActionPhase::BoltLift) {
                 const float t = 1.0f - std::clamp(phase_timer_ / 0.11f, 0.0f, 1.0f);
                 s.pose.bolt_lift_deg = 68.0f * t;
+                s.pose.hand_clip_id = 1u;
+                s.pose.hand_clip_time_s = t * 0.16f;
             } else if (s.phase == ActionPhase::BoltBack) {
                 const float t = 1.0f - std::clamp(phase_timer_ / 0.14f, 0.0f, 1.0f);
                 s.pose.bolt_lift_deg = 68.0f;
                 s.pose.bolt_retract_m = 0.096f * t;
                 s.pose.bolt_stop_deg = -14.0f * t;
+                s.pose.hand_clip_id = 1u;
+                s.pose.hand_clip_time_s = 0.16f + t * 0.26f;
             } else if (s.phase == ActionPhase::BoltPushCocking) {
                 const float t = std::clamp(phase_timer_ / 0.18f, 0.0f, 1.0f);
                 s.pose.bolt_lift_deg = 68.0f;
                 s.pose.bolt_retract_m = 0.096f * t;
                 s.pose.bolt_stop_deg = -14.0f * t;
+                s.pose.hand_clip_id = 1u;
+                s.pose.hand_clip_time_s = 0.52f + (1.0f - t) * 0.24f;
             } else if (s.phase == ActionPhase::BoltLock) {
                 const float t = std::clamp(phase_timer_ / 0.09f, 0.0f, 1.0f);
                 s.pose.bolt_lift_deg = 68.0f * t;
+                s.pose.hand_clip_id = 1u;
+                s.pose.hand_clip_time_s = 0.76f + (1.0f - t) * 0.16f;
             } else if (s.reloading) {
                 // Normalized 78-frame Mauser 1891-12 stripper-clip reload choreography
                 const float rt = 1.0f - std::clamp(reload_timer_ / 1.75f, 0.0f, 1.0f);
+                s.pose.hand_clip_id = 2u;
+                s.pose.hand_clip_time_s = rt * 2.58f;
                 auto ramp = [](float a, float b, float x) -> float {
                     if (x <= a) return 0.0f;
                     if (x >= b) return 1.0f;

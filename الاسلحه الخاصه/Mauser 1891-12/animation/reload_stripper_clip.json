@@ -1,0 +1,401 @@
+{
+  "name": "reload_stripper_clip",
+  "weapon": "kar_98",
+  "clip": "reload_stripper_clip",
+  "duration_s": 2.6,
+  "fps": 30,
+  "pivots_m": {
+    "Weapon_Root": [
+      0.3,
+      0.01,
+      0.0
+    ],
+    "Receiver_And_Body": [
+      0.3,
+      0.01,
+      0.0
+    ],
+    "Scope_Assembly": [
+      0.47,
+      0.065,
+      0.0
+    ],
+    "Trigger_Gatilho": [
+      0.315,
+      0.012,
+      0.0
+    ],
+    "Bolt_Carrier": [
+      0.32,
+      0.0395,
+      0.0
+    ],
+    "Bolt_Handle": [
+      0.295,
+      0.0395,
+      0.0
+    ],
+    "Bolt_Safety_Sleeve": [
+      0.268,
+      0.044,
+      0.0
+    ],
+    "Stripper_Clip": [
+      0.335,
+      0.052,
+      0.0
+    ]
+  },
+  "bolt_lift_deg": 68.0,
+  "bolt_retract_m": 0.09,
+  "clip_insert": 0.0,
+  "clip_eject": 0.0,
+  "trigger_pull": 0.0,
+  "tracks": {
+    "Bolt_Handle": [
+      {
+        "time_s": 0.0,
+        "frame": 0,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.2,
+        "frame": 6,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          -68.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.48,
+        "frame": 14,
+        "translation_m": [
+          -0.09,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          -68.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.05,
+        "frame": 61,
+        "translation_m": [
+          -0.09,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          -68.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.35,
+        "frame": 70,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          -68.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.58,
+        "frame": 77,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "Bolt_Carrier": [
+      {
+        "time_s": 0.0,
+        "frame": 0,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.2,
+        "frame": 6,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.48,
+        "frame": 14,
+        "translation_m": [
+          -0.09,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.05,
+        "frame": 61,
+        "translation_m": [
+          -0.09,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.35,
+        "frame": 70,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.58,
+        "frame": 77,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "Bolt_Safety_Sleeve": [
+      {
+        "time_s": 0.0,
+        "frame": 0,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.2,
+        "frame": 6,
+        "translation_m": [
+          -0.004,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.48,
+        "frame": 14,
+        "translation_m": [
+          -0.094,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.05,
+        "frame": 61,
+        "translation_m": [
+          -0.094,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.35,
+        "frame": 70,
+        "translation_m": [
+          -0.004,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 2.58,
+        "frame": 77,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "Stripper_Clip": [],
+    "Weapon_Root": [
+      {
+        "time_s": 0.0,
+        "frame": 0,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.48,
+        "frame": 14,
+        "translation_m": [
+          -0.01,
+          -0.008,
+          0.01
+        ],
+        "rotation_deg": [
+          -8.0,
+          5.0,
+          6.0
+        ]
+      },
+      {
+        "time_s": 0.92,
+        "frame": 28,
+        "translation_m": [
+          -0.01,
+          -0.012,
+          0.01
+        ],
+        "rotation_deg": [
+          -10.0,
+          6.0,
+          4.0
+        ]
+      },
+      {
+        "time_s": 1.68,
+        "frame": 50,
+        "translation_m": [
+          -0.01,
+          -0.018,
+          0.01
+        ],
+        "rotation_deg": [
+          -12.0,
+          6.0,
+          2.0
+        ]
+      },
+      {
+        "time_s": 2.35,
+        "frame": 70,
+        "translation_m": [
+          0.006,
+          0.003,
+          0.0
+        ],
+        "rotation_deg": [
+          -2.0,
+          1.0,
+          -2.0
+        ]
+      },
+      {
+        "time_s": 2.6,
+        "frame": 78,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  }
+}

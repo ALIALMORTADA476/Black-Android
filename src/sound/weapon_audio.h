@@ -56,7 +56,11 @@ uint64_t Fnv1a64(const void* data, size_t bytes);
 int32_t FindSignature(uint64_t fnv64, uint32_t orig_bytes, uint16_t* out_flags = nullptr);
 
 // Called on sub_001EEFD0 player shot completion (immediate zero-latency layered gunfire trigger).
-void OnPlayerFire(std::string_view weapon_code, bool suppressed, bool alt_fire = false);
+// force_pack bypasses the user's mod_audio_pack_enabled flag; required for MOD-ONLY
+// special weapons (M2 / Mauser 1891-12 / C96 / Maxim) which have no ISO audio fallback,
+// so the "Original audio" toggle would otherwise silence them completely.
+void OnPlayerFire(std::string_view weapon_code, bool suppressed, bool alt_fire = false,
+                  bool force_pack = false);
 
 // Called from buffers.cpp Play(). Caches signature match in sig_slot/sig_flags; returns true
 // when Enhanced audio handles this sound and the original 16 kHz buffer output should be muted.
@@ -85,7 +89,9 @@ void TriggerOverdriveCue(bool activating);
 void TriggerSpecialAmmoCue(uint8_t ammo_mode);
 
 // Authentic Special Arsenal BWAR v3 extended cues (slots 129..151: M2-2, Mauser 1891-12, C96, Maxim M1910)
-void TriggerSpecialSlot(int32_t slot_id, float gain = 1.0f, bool is_loop = false);
+// force_pack bypasses mod_audio_pack_enabled for MOD-ONLY weapons (no ISO audio fallback).
+void TriggerSpecialSlot(int32_t slot_id, float gain = 1.0f, bool is_loop = false,
+                        bool force_pack = false);
 
 // Spatialized 3D bullet world impact + ricochet & supersonic crack echo in the environment
 void TriggerWorldImpact(const float pos[3], bool ricochet, bool supersonic_crack);

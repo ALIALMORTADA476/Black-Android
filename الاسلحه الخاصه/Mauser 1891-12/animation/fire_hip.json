@@ -1,0 +1,158 @@
+{
+  "name": "fire_hip",
+  "weapon": "kar_98",
+  "clip": "fire_hip",
+  "duration_s": 0.38,
+  "fps": 30,
+  "pivots_m": {
+    "Weapon_Root": [
+      0.3,
+      0.01,
+      0.0
+    ],
+    "Receiver_And_Body": [
+      0.3,
+      0.01,
+      0.0
+    ],
+    "Scope_Assembly": [
+      0.47,
+      0.065,
+      0.0
+    ],
+    "Trigger_Gatilho": [
+      0.315,
+      0.012,
+      0.0
+    ],
+    "Bolt_Carrier": [
+      0.32,
+      0.0395,
+      0.0
+    ],
+    "Bolt_Handle": [
+      0.295,
+      0.0395,
+      0.0
+    ],
+    "Bolt_Safety_Sleeve": [
+      0.268,
+      0.044,
+      0.0
+    ],
+    "Stripper_Clip": [
+      0.335,
+      0.052,
+      0.0
+    ]
+  },
+  "bolt_lift_deg": 0.0,
+  "bolt_retract_m": 0.0,
+  "clip_insert": 0.0,
+  "clip_eject": 0.0,
+  "trigger_pull": 1.0,
+  "tracks": {
+    "Trigger_Gatilho": [
+      {
+        "time_s": 0.0,
+        "frame": 0,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.05,
+        "frame": 2,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          -18.0
+        ]
+      },
+      {
+        "time_s": 0.18,
+        "frame": 5,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "Weapon_Root": [
+      {
+        "time_s": 0.0,
+        "frame": 0,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "time_s": 0.05,
+        "frame": 2,
+        "translation_m": [
+          -0.038,
+          0.011,
+          0.002
+        ],
+        "rotation_deg": [
+          0.8,
+          -0.4,
+          5.8
+        ]
+      },
+      {
+        "time_s": 0.14,
+        "frame": 4,
+        "translation_m": [
+          -0.018,
+          0.005,
+          0.001
+        ],
+        "rotation_deg": [
+          0.3,
+          -0.2,
+          2.2
+        ]
+      },
+      {
+        "time_s": 0.38,
+        "frame": 11,
+        "translation_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_deg": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  }
+}

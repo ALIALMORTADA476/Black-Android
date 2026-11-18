@@ -699,7 +699,35 @@ std::atomic<uint32_t> g_last_player_pkt{0};
 std::atomic<float> g_last_player_range{80.0f};
 std::atomic<float> g_last_player_speed{160.0f};
 std::atomic<uint32_t> g_last_player_flags{0};
+
+// First genuine guest fire packet of any ownership. The guest's bullet-impact / AI-return-fire
+// path reads many fields past the weapon pointer; a zeroed stand-in makes a table lookup return
+// NULL and faults. Keeping a real packet (even an enemy's) and swapping in our weapon keeps every
+// field structurally valid. The packet is stack-allocated by the guest, so snapshot it into our
+// own storage while it is live.
+constexpr uint32_t kFirePktTemplateSize = 64u;
+uint8_t g_fire_pkt_template[kFirePktTemplateSize]{};
+std::atomic<bool> g_fire_pkt_template_valid{false};
+
+void CaptureFirePacketTemplate(uint32_t fire_pkt) {
+    if (!fire_pkt || !IsValidAnyGuestAddr(fire_pkt, 24u)) return;
+    bool expected = false;
+    if (!g_fire_pkt_template_valid.compare_exchange_strong(expected, true,
+                                                           std::memory_order_acq_rel)) return;
+    const uint32_t n = IsValidAnyGuestAddr(fire_pkt, kFirePktTemplateSize)
+                           ? kFirePktTemplateSize : 24u;
+    for (uint32_t i = 0; i < n; ++i) g_fire_pkt_template[i] = G<uint8_t>(fire_pkt + i);
+    for (uint32_t i = n; i < kFirePktTemplateSize; ++i) g_fire_pkt_template[i] = 0;
+}
 }  // namespace
+
+bool FirePacketTemplate(uint8_t* dst, uint32_t dst_size) {
+    if (!dst || !dst_size || !g_fire_pkt_template_valid.load(std::memory_order_acquire)) return false;
+    const uint32_t n = std::min(dst_size, kFirePktTemplateSize);
+    std::memcpy(dst, g_fire_pkt_template, n);
+    if (dst_size > n) std::memset(dst + n, 0, dst_size - n);
+    return true;
+}
 
 bool LastPlayerFirePkt(uint32_t& pkt, float& range, float& speed, uint8_t& flags) {
     pkt = g_last_player_pkt.load(std::memory_order_relaxed);
@@ -717,6 +745,7 @@ bool LastPlayerFirePkt(uint32_t& pkt, float& range, float& speed, uint8_t& flags
 void InvokeBulletSpawnerAndObserve(X86Context& ctx, uint8_t* base, uint32_t expected_mgr, uint32_t arg_mgr,
                                    uint32_t muzzle_ea, uint32_t fire_pkt, uint32_t dir_ea,
                                    float range, float speed, uint8_t flags) {
+    CaptureFirePacketTemplate(fire_pkt);
     if (fire_pkt && IsValidAnyGuestAddr(fire_pkt, 8u)) {
         const uint32_t wpn = R32(fire_pkt + 4u);
         const uint32_t world = R32(layout::kWorld);

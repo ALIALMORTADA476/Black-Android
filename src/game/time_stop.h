@@ -48,6 +48,11 @@ bool TryQueueOverflowBullet(uint32_t mgr, uint32_t muzzle_ea, uint32_t fire_pkt,
 // Last genuine player-owned fire packet the guest spawned a physical bullet with (valid only while its
 // weapon is still owned by the player). Lets Special Arsenal weapons spawn real world-interacting bullets.
 bool LastPlayerFirePkt(uint32_t& pkt, float& range, float& speed, uint8_t& flags);
+
+// A full, genuine fire packet captured from the first guest bullet spawn of any kind. The guest
+// impact/AI code reads many fields beyond the weapon pointer, so a zeroed stand-in crashes it;
+// Special Arsenal clones this template (replacing only the weapon pointer) instead.
+bool FirePacketTemplate(uint8_t* dst, uint32_t dst_size);
 bool IsFrozen();
 
 // Visual HUD badge + suspended physical bullet spatial indicators.

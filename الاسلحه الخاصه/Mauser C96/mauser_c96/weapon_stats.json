@@ -1,0 +1,116 @@
+{
+  "caliber": "7.63x25mm Mauser",
+  "projectile_mass_g": 5.5,
+  "muzzle_velocity_mps": 425,
+  "energy_j": 497,
+  "drag_model": "G7",
+  "drag_coefficient": 0.167,
+  "base_damage": 54,
+  "weapon_class": "pistol",
+  "drop_table_m": [
+    {
+      "range": 0,
+      "drop_m": 0.0
+    },
+    {
+      "range": 50,
+      "drop_m": 0.08
+    },
+    {
+      "range": 100,
+      "drop_m": 0.38
+    },
+    {
+      "range": 150,
+      "drop_m": 0.96
+    },
+    {
+      "range": 200,
+      "drop_m": 1.92
+    },
+    {
+      "range": 300,
+      "drop_m": 5.15
+    },
+    {
+      "range": 400,
+      "drop_m": 10.8
+    },
+    {
+      "range": 600,
+      "drop_m": 31.4
+    },
+    {
+      "range": 800,
+      "drop_m": 68.5
+    }
+  ],
+  "velocity_table": [
+    {
+      "range": 0,
+      "velocity_mps": 425
+    },
+    {
+      "range": 50,
+      "velocity_mps": 362
+    },
+    {
+      "range": 100,
+      "velocity_mps": 315
+    },
+    {
+      "range": 150,
+      "velocity_mps": 282
+    },
+    {
+      "range": 200,
+      "velocity_mps": 256
+    },
+    {
+      "range": 300,
+      "velocity_mps": 218
+    },
+    {
+      "range": 400,
+      "velocity_mps": 188
+    },
+    {
+      "range": 600,
+      "velocity_mps": 142
+    },
+    {
+      "range": 800,
+      "velocity_mps": 108
+    }
+  ],
+  "hitbox_multipliers": {
+    "head": 2.2,
+    "neck": 1.65,
+    "upper_chest": 1.15
+  },
+  "penetration_cm": {
+    "wood": 22.0,
+    "concrete": 4.2,
+    "mild_steel": 0.45,
+    "glass": 15.0,
+    "sand": 18.0
+  },
+  "scope": {
+    "magnification": [
+      1,
+      1.5
+    ],
+    "fov_deg": [
+      60,
+      45
+    ],
+    "zeroing_m": [
+      50,
+      100,
+      200,
+      400,
+      600,
+      800
+    ]
+  }
+}

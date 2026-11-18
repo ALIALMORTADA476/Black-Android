@@ -1,0 +1,180 @@
+{
+  "weapon_id": "mauser_c96",
+  "embedded_glb_hand_sockets": {
+    "Socket_RightHand_Grip": {
+      "parent_node": "Weapon_Root",
+      "world_position_m": [
+        0.415,
+        -0.025,
+        0.008
+      ],
+      "rotation_euler_deg": [
+        -18,
+        0,
+        -24
+      ]
+    },
+    "Socket_TriggerFinger_IK": {
+      "parent_node": "Trigger_Gatilho",
+      "world_position_m": [
+        0.462,
+        0.018,
+        0.002
+      ]
+    },
+    "Socket_LeftHand_Foregrip": {
+      "parent_node": "Weapon_Root",
+      "world_position_m": [
+        0.515,
+        0.025,
+        -0.006
+      ],
+      "rotation_euler_deg": [
+        75,
+        10,
+        8
+      ]
+    },
+    "Socket_BoltKnob_IK": {
+      "parent_node": "Bolt_Carrier",
+      "world_position_m": [
+        0.435,
+        0.068,
+        0.015
+      ]
+    },
+    "Socket_ClipThumb_IK": {
+      "parent_node": "Stripper_Clip",
+      "world_position_m": [
+        0.499,
+        0.146,
+        0.0
+      ]
+    },
+    "Socket_Shoulder_Stock": {
+      "parent_node": "Weapon_Root",
+      "world_position_m": [
+        0.012,
+        -0.022,
+        0.0
+      ]
+    }
+  },
+  "finger_curl_poses_deg": {
+    "right_hand_grip": {
+      "thumb": [
+        22,
+        34,
+        28
+      ],
+      "index_on_trigger": [
+        18,
+        42,
+        35
+      ],
+      "middle": [
+        58,
+        68,
+        52
+      ],
+      "ring": [
+        62,
+        72,
+        55
+      ],
+      "pinky": [
+        65,
+        74,
+        58
+      ]
+    },
+    "left_hand_foregrip": {
+      "thumb": [
+        35,
+        42,
+        25
+      ],
+      "index": [
+        48,
+        58,
+        42
+      ],
+      "middle": [
+        52,
+        62,
+        46
+      ],
+      "ring": [
+        55,
+        64,
+        48
+      ],
+      "pinky": [
+        58,
+        66,
+        50
+      ]
+    },
+    "right_hand_bolt_pinch": {
+      "thumb": [
+        38,
+        45,
+        35
+      ],
+      "index": [
+        42,
+        52,
+        40
+      ],
+      "middle": [
+        46,
+        56,
+        44
+      ],
+      "ring": [
+        70,
+        78,
+        65
+      ],
+      "pinky": [
+        75,
+        82,
+        68
+      ]
+    }
+  },
+  "animation_ik_weight_curves": {
+    "idle_walk_sprint_fire": {
+      "left_target": "Socket_LeftHand_Foregrip",
+      "right_target": "Socket_RightHand_Grip"
+    },
+    "bolt_cycle": [
+      {
+        "time_s": 0.0,
+        "right_target": "Socket_RightHand_Grip"
+      },
+      {
+        "time_s": 0.08,
+        "right_target": "Socket_BoltKnob_IK"
+      },
+      {
+        "time_s": 0.65,
+        "right_target": "Socket_RightHand_Grip"
+      }
+    ],
+    "reload_stripper_clip": [
+      {
+        "time_s": 0.1,
+        "right_target": "Socket_BoltKnob_IK"
+      },
+      {
+        "time_s": 0.48,
+        "right_target": "Socket_ClipThumb_IK"
+      },
+      {
+        "time_s": 2.45,
+        "right_target": "Socket_RightHand_Grip"
+      }
+    ]
+  }
+}

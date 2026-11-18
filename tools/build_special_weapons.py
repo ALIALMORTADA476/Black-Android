@@ -1,4 +1,4 @@
-hgsgh#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Builds BMSH v2 (multi-part, UV-mapped, 16-bit indexed) + BTEX v1 (1024x1024 Morton-swizzled
 A8R8G8B8, format 0x0AA10621) assets for all 4 Special Arsenal weapons:
@@ -777,26 +777,15 @@ def build_obj_pbr_pack(out_name: str, folder_rel: str, slug: str, scale: float,
 
 
 def build_mauser_1891():
-    """Mauser Model 1891-12 rebuilt from the delivered asset pack."""
-    build_obj_pbr_pack(
-        out_name="mauser_1891_12",
-        folder_rel="Mauser 1891-12",
-        slug="mauser_1891_12",
-        scale=0.0086,
-        group_map={
-            "Receiver_Body": "body_stock",
-            "BoltBody_BOLT": "bolt_body",
-            "BoltHandle_CHARGE": "bolt_handle",
-            "StripperClip_MAG": "stripper_clip",
-            "Trigger_TRIGGER": "trigger",
-            "SafetyWing_SAFETY": "safety_lever",
-            "BoltStop_LATCH": "bolt_stop",
-            "RearSightLeaf_SIGHT": "rear_sight",
-        },
-        fallback_part="body_stock",
-        default_muzzle_cm=[93.0, 3.85, 0.0],
-        default_eject_cm=[3.5, 4.35, 1.25],
-    )
+    """Mauser Karabiner 98k rebuilt from the new AAA GLB asset pack.
+
+    The pack now ships a 60k-triangle GLB with embedded 1K PBR textures instead
+    of the old OBJ+PNG pack. The converter lives in tools/build_m91_glb.py so it
+    can be regenerated independently; delegate to it here so a full rebuild
+    never overwrites the GLB-derived assets with the obsolete OBJ path.
+    """
+    import build_m91_glb
+    build_m91_glb.main()
 
 
 # ---------------------------------------------------------------------------
