@@ -95,25 +95,27 @@ namespace {
 std::atomic<bool> g_open{false};
 
 // Tactical High-Contrast Obsidian & Cyber Gold Palette
-constexpr ImVec4 kPanelBg{0.06f, 0.08f, 0.12f,
-                          0.98f}; // Deep Slate Obsidian #0F141F (98% opaque,
-                                  // blocks background clutter)
-constexpr ImVec4 kBorder{1.0f, 0.82f, 0.20f, 0.90f}; // Vivid Cyber Gold #FFD133
-constexpr ImVec4 kText{1.0f, 1.0f, 1.0f, 1.0f}; // Crisp 100% Pure White #FFFFFF
-constexpr ImVec4 kHighlight{0.75f, 0.58f, 0.10f,
-                            0.40f}; // Tactical Gold Highlight
-constexpr ImVec4 kHeading{1.0f, 0.82f, 0.20f,
-                          1.0f}; // Vivid Cyber Gold Heading #FFD133
-constexpr ImVec4 kDim{0.75f, 0.82f, 0.92f,
-                      1.0f}; // Bright Cool Steel / Cyber Silver #C0D1EB
-constexpr ImVec4 kTab{0.12f, 0.16f, 0.24f, 1.0f}; // Deep Armor Slate #1F293D
-constexpr ImVec4 kTabHovered{0.20f, 0.28f, 0.42f,
-                             1.0f}; // Hover Slate Accent #33476B
-constexpr ImVec4 kButton{0.14f, 0.19f, 0.28f,
-                         1.0f}; // Tactile Armor Button #243047
-constexpr ImVec4 kButtonHovered{0.25f, 0.35f, 0.52f,
-                                1.0f}; // Vivid Action Blue/Slate #405985
-constexpr ImVec4 kLine{1.0f, 0.82f, 0.20f, 0.40f}; // Gold Accent Separator Line
+constexpr ImVec4 kPanelBg{0.102f, 0.125f, 0.157f,
+                          0.96f}; // Eye-Care Warm Matte Slate #1A2028
+constexpr ImVec4 kBorder{0.251f, 0.400f, 0.412f,
+                         0.85f}; // Muted Sage-Slate Border #406669
+constexpr ImVec4 kText{0.902f, 0.918f, 0.937f,
+                       1.0f}; // Soft Warm Paper Off-White #E6EAEF (no glare)
+constexpr ImVec4 kHighlight{0.149f, 0.255f, 0.267f,
+                            0.90f}; // Calm Sage-Teal Selection Wash
+constexpr ImVec4 kHeading{0.400f, 0.780f, 0.706f,
+                          1.0f}; // Soothing Seafoam-Teal Heading #66C7B4
+constexpr ImVec4 kDim{0.596f, 0.651f, 0.722f,
+                      1.0f}; // Soft Cool Pewter Slate #98A6B8
+constexpr ImVec4 kTab{0.133f, 0.165f, 0.208f, 1.0f}; // Matte Card Slate #222A35
+constexpr ImVec4 kTabHovered{0.184f, 0.235f, 0.290f,
+                             1.0f}; // Soft Hover Slate #2F3C4A
+constexpr ImVec4 kButton{0.145f, 0.180f, 0.224f,
+                         1.0f}; // Matte Control Slate #252E39
+constexpr ImVec4 kButtonHovered{0.204f, 0.271f, 0.325f,
+                                1.0f}; // Calm Slate-Teal Hover #344553
+constexpr ImVec4 kLine{0.400f, 0.780f, 0.706f,
+                       0.30f}; // Gentle Sage Separator Line
 
 struct TacticalTheme {
   ImVec4 heading;
@@ -128,25 +130,26 @@ inline TacticalTheme CurrentTheme() {
   std::string_view accent = modsettings::Registry().GetEnhanced().theme_accent;
   if (accent == "crimson") {
     return {
-        ImVec4(1.0f, 0.30f, 0.28f, 1.0f), // Vivid Crimson #FF4D47
-        ImVec4(0.95f, 0.25f, 0.22f, 0.90f), ImVec4(0.50f, 0.14f, 0.12f, 0.50f),
-        ImVec4(1.0f, 0.30f, 0.28f, 0.45f),  ImVec4(0.22f, 0.10f, 0.12f, 1.0f),
-        ImVec4(0.40f, 0.16f, 0.18f, 1.0f)};
+        ImVec4(0.84f, 0.52f, 0.49f, 1.0f), // Eye-Care Warm Terracotta #D6857D
+        ImVec4(0.54f, 0.33f, 0.32f, 0.85f), ImVec4(0.27f, 0.16f, 0.16f, 0.88f),
+        ImVec4(0.84f, 0.52f, 0.49f, 0.32f), ImVec4(0.18f, 0.14f, 0.15f, 1.0f),
+        ImVec4(0.28f, 0.20f, 0.20f, 1.0f)};
   }
   if (accent == "olive") {
     return {
-        ImVec4(0.70f, 0.92f, 0.38f, 1.0f), // Vivid Tactical Green #B3EB61
-        ImVec4(0.60f, 0.82f, 0.30f, 0.90f), ImVec4(0.28f, 0.40f, 0.14f, 0.50f),
-        ImVec4(0.70f, 0.92f, 0.38f, 0.45f), ImVec4(0.14f, 0.20f, 0.12f, 1.0f),
-        ImVec4(0.26f, 0.38f, 0.20f, 1.0f)};
+        ImVec4(0.57f, 0.75f, 0.49f, 1.0f), // Eye-Care Forest Moss #92BE7E
+        ImVec4(0.36f, 0.49f, 0.32f, 0.85f), ImVec4(0.16f, 0.24f, 0.15f, 0.88f),
+        ImVec4(0.57f, 0.75f, 0.49f, 0.32f), ImVec4(0.15f, 0.18f, 0.15f, 1.0f),
+        ImVec4(0.22f, 0.29f, 0.21f, 1.0f)};
   }
-  // Default: Tactical Cyber Gold (Vivid, High-Contrast)
+  // Default: Eye-Care Calm Sage-Teal & Warm Matte Slate (low eye-strain)
   return {
-      ImVec4(1.0f, 0.82f, 0.20f, 1.0f),  // #FFD133
-      ImVec4(1.0f, 0.80f, 0.18f, 0.90f), // #FFCC2E
-      ImVec4(0.75f, 0.58f, 0.10f, 0.40f), ImVec4(1.0f, 0.82f, 0.20f, 0.45f),
-      ImVec4(0.14f, 0.19f, 0.28f, 1.0f), // #243047
-      ImVec4(0.25f, 0.35f, 0.52f, 1.0f)  // #405985
+      ImVec4(0.400f, 0.780f, 0.706f, 1.0f), // #66C7B4 Soft Seafoam-Teal
+      ImVec4(0.251f, 0.400f, 0.412f, 0.85f), // #406669 Muted Border
+      ImVec4(0.149f, 0.255f, 0.267f, 0.90f), // Soft Teal Wash
+      ImVec4(0.400f, 0.780f, 0.706f, 0.30f),
+      ImVec4(0.145f, 0.180f, 0.224f, 1.0f), // #252E39
+      ImVec4(0.204f, 0.271f, 0.325f, 1.0f)  // #344553
   };
 }
 
@@ -230,14 +233,14 @@ void Section(const char *title) {
   float avail_w = ImGui::GetContentRegionAvail().x;
   float bar_h = ImGui::GetTextLineHeight() + em * 0.35f;
   dl->AddRectFilled(p0, ImVec2(p0.x + avail_w, p0.y + bar_h),
-                    IM_COL32(16, 24, 38, 195), 5.0f);
+                    IM_COL32(31, 39, 49, 225), 7.0f);
   if (IsRtl()) {
-    dl->AddRectFilled(ImVec2(p0.x + avail_w - 4.0f, p0.y + 2.0f),
-                      ImVec2(p0.x + avail_w, p0.y + bar_h - 2.0f),
+    dl->AddRectFilled(ImVec2(p0.x + avail_w - 4.0f, p0.y + 4.0f),
+                      ImVec2(p0.x + avail_w, p0.y + bar_h - 4.0f),
                       ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
   } else {
-    dl->AddRectFilled(ImVec2(p0.x, p0.y + 2.0f),
-                      ImVec2(p0.x + 4.0f, p0.y + bar_h - 2.0f),
+    dl->AddRectFilled(ImVec2(p0.x + 2.0f, p0.y + 4.0f),
+                      ImVec2(p0.x + 6.0f, p0.y + bar_h - 4.0f),
                       ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
   }
   ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
@@ -245,7 +248,8 @@ void Section(const char *title) {
   if (IsRtl()) {
     float text_w = ImGui::CalcTextSize(shaped_title.c_str()).x;
     if (avail_w > text_w + em * 0.6f)
-      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail_w - text_w - em * 0.5f);
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail_w - text_w -
+                           em * 0.5f);
   } else {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + em * 0.5f);
   }
@@ -289,13 +293,15 @@ void RowLabel(const RowBox &box, const char *label) {
   if (IsRtl()) {
     // Mirrored RTL layout: right-aligned label on the right side
     float text_w = ImGui::CalcTextSize(text.c_str()).x;
-    float pos_x = box.row_x + box.row_w - text_w - style.ItemInnerSpacing.x - box.em * 0.35f;
+    float pos_x = box.row_x + box.row_w - text_w - style.ItemInnerSpacing.x -
+                  box.em * 0.35f;
     ImGui::SetCursorPos(
         ImVec2(std::max(pos_x, box.row_x + box.block_w), box.row_y + y_offset));
   } else {
     // Standard LTR layout: left-aligned label on the left side
     ImGui::SetCursorPos(
-        ImVec2(box.row_x + style.ItemInnerSpacing.x + box.em * 0.35f, box.row_y + y_offset));
+        ImVec2(box.row_x + style.ItemInnerSpacing.x + box.em * 0.35f,
+               box.row_y + y_offset));
   }
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(text.c_str());
@@ -329,23 +335,23 @@ int OptionRow(const char *label, const char *value) {
   const ImVec2 rmax = ImGui::GetItemRectMax();
   dl->AddRectFilled(
       rmin, rmax,
-      (row_hovered || row_focused) ? IM_COL32(28, 39, 59, 215)
-                                   : IM_COL32(17, 23, 35, 165),
-      6.0f);
+      (row_hovered || row_focused) ? IM_COL32(39, 49, 62, 235)
+                                   : IM_COL32(28, 35, 44, 210),
+      8.0f);
   dl->AddRect(
       rmin, rmax,
       (row_hovered || row_focused)
           ? ImGui::ColorConvertFloat4ToU32(theme.border)
-          : IM_COL32(48, 64, 92, 95),
-      6.0f, 0, 1.0f);
+          : IM_COL32(58, 72, 88, 90),
+      8.0f, 0, 1.0f);
   if (row_hovered || row_focused) {
     if (IsRtl()) {
-      dl->AddRectFilled(ImVec2(rmax.x - 3.5f, rmin.y + 3.0f),
-                        ImVec2(rmax.x, rmax.y - 3.0f),
+      dl->AddRectFilled(ImVec2(rmax.x - 4.0f, rmin.y + 5.0f),
+                        ImVec2(rmax.x - 1.0f, rmax.y - 5.0f),
                         ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
     } else {
-      dl->AddRectFilled(ImVec2(rmin.x, rmin.y + 3.0f),
-                        ImVec2(rmin.x + 3.5f, rmax.y - 3.0f),
+      dl->AddRectFilled(ImVec2(rmin.x + 1.0f, rmin.y + 5.0f),
+                        ImVec2(rmin.x + 4.0f, rmax.y - 5.0f),
                         ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
     }
   }
@@ -374,7 +380,7 @@ int OptionRow(const char *label, const char *value) {
   float value_x = block_x + btn_sz + style.ItemSpacing.x;
   std::string shaped_value = Ui(value);
 
-  // Status pill badge for ON / OFF / ENHANCED / ORIGINAL states
+  // Eye-care toggle switch / percentage bar inside the value capsule
   const bool is_on_state =
       (std::strcmp(value, "ON") == 0 || std::strcmp(value, "ENHANCED") == 0 ||
        std::strcmp(value, "ALWAYS") == 0 ||
@@ -387,28 +393,68 @@ int OptionRow(const char *label, const char *value) {
   const ImVec2 pill_min(win_pos.x - win_scroll.x + value_x + 2.0f,
                         win_pos.y - win_scroll.y + box.row_y + 3.0f);
   const ImVec2 pill_max(win_pos.x - win_scroll.x + value_x + box.value_w - 2.0f,
-                        win_pos.y - win_scroll.y + box.row_y + box.row_h - 3.0f);
-  if (is_on_state) {
-    dl->AddRectFilled(pill_min, pill_max, IM_COL32(14, 96, 72, 185), 5.0f);
-    dl->AddRect(pill_min, pill_max, IM_COL32(46, 232, 168, 225), 5.0f, 0, 1.2f);
-  } else if (is_off_state) {
-    dl->AddRectFilled(pill_min, pill_max, IM_COL32(26, 32, 46, 175), 5.0f);
-    dl->AddRect(pill_min, pill_max, IM_COL32(72, 86, 112, 120), 5.0f, 0, 1.0f);
+                        win_pos.y - win_scroll.y + box.row_y + box.row_h -
+                            3.0f);
+  const float pill_h = std::max(pill_max.y - pill_min.y, 8.0f);
+  const float pill_w = std::max(pill_max.x - pill_min.x, 12.0f);
+
+  if (is_on_state || is_off_state) {
+    // Soft rounded track + sliding switch knob on the trailing edge
+    dl->AddRectFilled(
+        pill_min, pill_max,
+        is_on_state ? IM_COL32(34, 88, 78, 200) : IM_COL32(36, 44, 56, 200),
+        pill_h * 0.5f);
+    dl->AddRect(
+        pill_min, pill_max,
+        is_on_state ? IM_COL32(82, 190, 156, 210) : IM_COL32(84, 98, 118, 130),
+        pill_h * 0.5f, 0, 1.2f);
+    const float sw_w = std::min(pill_h * 1.45f, pill_w * 0.26f);
+    const float sw_h = pill_h * 0.56f;
+    const float sw_x0 =
+        IsRtl() ? (pill_min.x + 8.0f) : (pill_max.x - sw_w - 8.0f);
+    const float sw_y0 = pill_min.y + (pill_h - sw_h) * 0.5f;
+    dl->AddRectFilled(
+        ImVec2(sw_x0, sw_y0), ImVec2(sw_x0 + sw_w, sw_y0 + sw_h),
+        is_on_state ? IM_COL32(82, 190, 156, 235) : IM_COL32(62, 74, 92, 230),
+        sw_h * 0.5f);
+    const float knob_r = sw_h * 0.42f;
+    const float knob_cx =
+        is_on_state ? (sw_x0 + sw_w - knob_r - 2.5f) : (sw_x0 + knob_r + 2.5f);
+    const float knob_cy = sw_y0 + sw_h * 0.5f;
+    dl->AddCircleFilled(ImVec2(knob_cx, knob_cy), knob_r,
+                        is_on_state ? IM_COL32(236, 248, 244, 250)
+                                    : IM_COL32(168, 178, 194, 220),
+                        16);
   } else {
-    dl->AddRectFilled(pill_min, pill_max, IM_COL32(20, 28, 44, 155), 5.0f);
+    dl->AddRectFilled(pill_min, pill_max, IM_COL32(30, 38, 49, 190), 7.0f);
+    dl->AddRect(pill_min, pill_max, IM_COL32(68, 84, 102, 100), 7.0f, 0, 1.0f);
+    // Optional subtle progress gauge when value ends with '%'
+    char *endptr = nullptr;
+    float pct_val = std::strtof(value, &endptr);
+    if (endptr && endptr != value && std::strchr(value, '%')) {
+      float frac = std::clamp(pct_val / 100.0f, 0.04f, 1.0f);
+      ImVec2 fill_max(pill_min.x + pill_w * frac, pill_max.y);
+      ImU32 fill_col = ImGui::ColorConvertFloat4ToU32(theme.highlight);
+      dl->AddRectFilled(pill_min, fill_max, fill_col, 7.0f);
+    }
   }
 
+  const float text_zone_w =
+      (is_on_state || is_off_state) ? (box.value_w - pill_h * 1.4f) : box.value_w;
+  const float text_base_x =
+      (IsRtl() && (is_on_state || is_off_state)) ? (value_x + pill_h * 1.2f)
+                                                 : value_x;
   float pad =
-      (box.value_w - ImGui::CalcTextSize(shaped_value.c_str()).x) * 0.5f;
+      (text_zone_w - ImGui::CalcTextSize(shaped_value.c_str()).x) * 0.5f;
   ImGui::SetCursorPos(
-      ImVec2(value_x + std::max(pad, 0.0f), box.row_y + y_offset));
+      ImVec2(text_base_x + std::max(pad, 2.0f), box.row_y + y_offset));
   ImGui::AlignTextToFramePadding();
   if (is_on_state) {
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.32f, 0.98f, 0.74f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.56f, 0.89f, 0.78f, 1.0f));
   } else if (is_off_state) {
     ImGui::PushStyleColor(ImGuiCol_Text, kDim);
   } else {
-    ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
+    ImGui::PushStyleColor(ImGuiCol_Text, kText);
   }
   ImGui::TextUnformatted(shaped_value.c_str());
   ImGui::PopStyleColor();
@@ -1374,7 +1420,7 @@ void DrawWeapons() {
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
 
-  Section("SUPPLIES");
+    Section("SUPPLIES");
     float supply_w = (ImGui::GetContentRegionAvail().x - gap) * 0.5f;
     ImGui::PushStyleColor(ImGuiCol_Button, kTab);
     ImGui::PushStyleColor(ImGuiCol_Text, kDim);
@@ -2405,7 +2451,7 @@ void DrawCategoryCombatGameplay(float em) {
       Changed();
     }
   }
-  auto toggleCombatBool = [&](const char* label, modsettings::SettingId id,
+  auto toggleCombatBool = [&](const char *label, modsettings::SettingId id,
                               bool current) {
     if (OptionRow(label, OnOff(current))) {
       reg.SetBool(id, !current, app::Get(), game::Opt());
@@ -2431,8 +2477,8 @@ void DrawCategoryCombatGameplay(float em) {
     }
     int step = OptionRow("HEADSHOT LETHALITY", htext);
     if (step) {
-      float next = std::clamp(enh.headshot_multiplier + float(step) * 0.5f,
-                              1.0f, 4.0f);
+      float next =
+          std::clamp(enh.headshot_multiplier + float(step) * 0.5f, 1.0f, 4.0f);
       reg.SetFloat(modsettings::SettingId::GameplayHeadshotMultiplier, next,
                    app::Get(), game::Opt());
       modsettings::Presets().NotifySettingChanged(
@@ -2451,21 +2497,24 @@ void DrawCategoryCombatGameplay(float em) {
                    enh.enhanced_recoil_feedback);
 
   Section("KINETIC DASH & TACTICAL GEAR");
-  toggleCombatBool("KINETIC DASH",
-                   modsettings::SettingId::KineticDashEnabled,
+  toggleCombatBool("KINETIC DASH", modsettings::SettingId::KineticDashEnabled,
                    enh.kinetic_dash_enabled);
   {
-    const char* ammo_label = "STD ROUNDS";
-    if (enh.special_ammo_mode == 1u) ammo_label = "THERMITE INCENDIARY";
-    else if (enh.special_ammo_mode == 2u) ammo_label = "EXPLOSIVE HE FRAG";
-    else if (enh.special_ammo_mode == 3u) ammo_label = "RAIL ARMOR-PIERCING";
+    const char *ammo_label = "STD ROUNDS";
+    if (enh.special_ammo_mode == 1u)
+      ammo_label = "THERMITE INCENDIARY";
+    else if (enh.special_ammo_mode == 2u)
+      ammo_label = "EXPLOSIVE HE FRAG";
+    else if (enh.special_ammo_mode == 3u)
+      ammo_label = "RAIL ARMOR-PIERCING";
     int step = OptionRow("SPECIAL AMMO MODE", ammo_label);
     if (step) {
       int next = (int(enh.special_ammo_mode) + (step > 0 ? 1 : 3)) % 4;
       reg.SetUint(modsettings::SettingId::SpecialAmmoMode, uint32_t(next),
                   app::Get(), game::Opt());
       modsettings::Presets().NotifySettingChanged(
-          modsettings::SettingId::SpecialAmmoMode, reg, app::Get(), game::Opt());
+          modsettings::SettingId::SpecialAmmoMode, reg, app::Get(),
+          game::Opt());
       Changed();
     }
   }
@@ -2691,8 +2740,7 @@ void DrawCategoryPhysicsLab(float em) {
       char buf[96];
       std::snprintf(buf, sizeof(buf), "%s: %s###%s", Ui(label_key).c_str(),
                     Ui(cur_val ? "ON" : "OFF", false).c_str(), tag);
-      ImGui::PushStyleColor(ImGuiCol_Button,
-                            cur_val ? theme.highlight : kTab);
+      ImGui::PushStyleColor(ImGuiCol_Button, cur_val ? theme.highlight : kTab);
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme.button_hovered);
       ImGui::PushStyleColor(ImGuiCol_Text, cur_val ? theme.heading : kText);
       if (ImGui::Button(buf, ImVec2(half_w, btn_h))) {
@@ -2707,12 +2755,10 @@ void DrawCategoryPhysicsLab(float em) {
                       modsettings::SettingId::PhysicsDeliriumBlindFire,
                       "STAGGER BLIND-FIRE", enh.delirium_blind_fire);
       ImGui::SameLine();
-      draw_del_toggle("del_en",
-                      modsettings::SettingId::PhysicsDeliriumEnabled,
+      draw_del_toggle("del_en", modsettings::SettingId::PhysicsDeliriumEnabled,
                       "DELIRIUM PHYSICS", enh.delirium_physics_enabled);
     } else {
-      draw_del_toggle("del_en",
-                      modsettings::SettingId::PhysicsDeliriumEnabled,
+      draw_del_toggle("del_en", modsettings::SettingId::PhysicsDeliriumEnabled,
                       "DELIRIUM PHYSICS", enh.delirium_physics_enabled);
       ImGui::SameLine();
       draw_del_toggle("del_bf",
@@ -2724,8 +2770,8 @@ void DrawCategoryPhysicsLab(float em) {
     const float d_pad_v = std::max(em * 0.45f, 10.0f);
     const float d_step_w = std::max(em * 2.5f, 54.0f);
     const float d_rst_w = std::max(em * 5.2f, 96.0f);
-    const float d_sld_w = std::max(
-        avail_w - (d_step_w * 2.0f + d_rst_w + gap * 3.0f), em * 6.0f);
+    const float d_sld_w =
+        std::max(avail_w - (d_step_w * 2.0f + d_rst_w + gap * 3.0f), em * 6.0f);
 
     auto draw_del_float = [&](const char *tag, modsettings::SettingId sid,
                               const char *title_key, float min_v, float max_v,
@@ -2814,10 +2860,9 @@ void DrawCategoryPhysicsLab(float em) {
     draw_del_float("del_int", modsettings::SettingId::PhysicsDeliriumIntensity,
                    "DELIRIUM REACTION INTENSITY", 0.25f, 3.00f, 0.05f, 1.35f,
                    "%.2fx", false);
-    draw_del_float("del_ago",
-                   modsettings::SettingId::PhysicsDeliriumAgonyDuration,
-                   "AGONY WRITHING TIME", 0.00f, 2.50f, 0.10f, 1.10f,
-                   "%.1fs", true);
+    draw_del_float(
+        "del_ago", modsettings::SettingId::PhysicsDeliriumAgonyDuration,
+        "AGONY WRITHING TIME", 0.00f, 2.50f, 0.10f, 1.10f, "%.1fs", true);
   }
 
   // ------------------------------------------------------------------------
@@ -3557,11 +3602,11 @@ void DrawCategoryInterface(float em) {
 
   Section("THEME & HUD PRESENTATION");
   {
-    const char *theme_name = "TACTICAL BRASS";
+    const char *theme_name = "CALM SAGE-TEAL";
     if (enh.theme_accent == "crimson")
-      theme_name = "SPECIAL OPS CRIMSON";
+      theme_name = "WARM TERRACOTTA";
     else if (enh.theme_accent == "olive")
-      theme_name = "MILITARY OLIVE";
+      theme_name = "SOFT FOREST MOSS";
     int step = OptionRow("CONSOLE ACCENT THEME", theme_name);
     if (step)
       StepThemeAccent(step);
@@ -4032,19 +4077,19 @@ void DrawCategorySidebar(float width, float height, float em) {
                   display_label.c_str(), int(c.cat));
 
     if (is_active) {
-      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.25f, 0.38f, 0.96f));
+      ImGui::PushStyleColor(ImGuiCol_Button, theme.highlight);
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme.button_hovered);
       ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme.button_hovered);
       ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
-      ImGui::PushStyleColor(ImGuiCol_Border, theme.heading);
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.2f);
+      ImGui::PushStyleColor(ImGuiCol_Border, theme.border);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
     } else {
-      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.10f, 0.14f, 0.21f, 0.92f));
+      ImGui::PushStyleColor(ImGuiCol_Button, kTab);
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kTabHovered);
       ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme.highlight);
       ImGui::PushStyleColor(ImGuiCol_Text, kDim);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.24f, 0.34f, 0.50f, 0.55f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.1f);
+      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.22f, 0.28f, 0.34f, 0.55f));
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     }
 
     if (ImGui::Button(btn_id, ImVec2(target_w, btn_h))) {
@@ -4119,7 +4164,7 @@ void DrawTacticalFooter(float em) {
   if (!IsRtl()) {
     // LTR: Status hint on Left, Action buttons on Right
     if (restart_needed && reg.GetEnhanced().show_restart_banners) {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.78f, 0.20f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.87f, 0.71f, 0.41f, 1.0f));
       char restart_msg[128];
       std::snprintf(restart_msg, sizeof(restart_msg), "(!) %s (%u)",
                     Ui("RESTART REQUIRED").c_str(), restart_count);
@@ -4167,7 +4212,7 @@ void DrawTacticalFooter(float em) {
         std::snprintf(restart_msg, sizeof(restart_msg), "(!) %s (%u)",
                       Ui("RESTART REQUIRED").c_str(), restart_count);
         status_txt = restart_msg;
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.78f, 0.20f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.87f, 0.71f, 0.41f, 1.0f));
       } else {
         status_txt = Ui("LB/RB: SWITCH TABS | TOUCH TO CONFIGURE");
         ImGui::PushStyleColor(ImGuiCol_Text, kDim);
@@ -4258,22 +4303,23 @@ void DrawPanel() {
     float close_btn_w = em * 3.4f;
     float close_btn_h = em * 2.0f;
 
-    const uint32_t live_res =
-        game::Opt().dynamic_resolution ? dynres::Percent() : app::Get().render_percent;
+    const uint32_t live_res = game::Opt().dynamic_resolution
+                                  ? dynres::Percent()
+                                  : app::Get().render_percent;
     const float live_fps = std::clamp(game::g_fps.load(), 0.0f, 999.0f);
     char telemetry_badge[96];
     std::snprintf(telemetry_badge, sizeof(telemetry_badge),
                   "[ %.0f FPS  |  RES %u%% ]", live_fps, live_res);
 
-    // Tactical Header with Prominent Close [X] Button & Live Telemetry Badge
+    // Eye-Care Tactical Header with Soft Close [X] Button & Calm Telemetry Badge
     if (!IsRtl()) {
       // LTR Header: Title on Left, Live Telemetry + Close [X] on Right
       ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
       ImGui::TextUnformatted(
-          Ui("BLACK ENHANCED EDITION — TACTICAL OPS CONSOLE").c_str());
+          Ui("BLACK ENHANCED — EYE-COMFORT OPS CONSOLE").c_str());
       ImGui::PopStyleColor();
       ImGui::SameLine();
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.32f, 0.94f, 0.82f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, kDim);
       ImGui::TextUnformatted(telemetry_badge);
       ImGui::PopStyleColor();
 
@@ -4283,12 +4329,12 @@ void DrawPanel() {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad_x);
 
       ImGui::PushStyleColor(ImGuiCol_Button,
-                            ImVec4(0.72f, 0.14f, 0.14f, 0.96f));
+                            ImVec4(0.56f, 0.23f, 0.23f, 0.92f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                            ImVec4(0.90f, 0.20f, 0.18f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_Border, theme.heading);
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
+                            ImVec4(0.70f, 0.30f, 0.30f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, kText);
+      ImGui::PushStyleColor(ImGuiCol_Border, theme.border);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
       if (ImGui::Button("[ X ]###hdr_close",
                         ImVec2(close_btn_w, close_btn_h))) {
         ToggleMenu();
@@ -4298,12 +4344,12 @@ void DrawPanel() {
     } else {
       // RTL Header: Close [X] on Left, Live Telemetry + Title on Right
       ImGui::PushStyleColor(ImGuiCol_Button,
-                            ImVec4(0.72f, 0.14f, 0.14f, 0.96f));
+                            ImVec4(0.56f, 0.23f, 0.23f, 0.92f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                            ImVec4(0.90f, 0.20f, 0.18f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_Border, theme.heading);
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
+                            ImVec4(0.70f, 0.30f, 0.30f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, kText);
+      ImGui::PushStyleColor(ImGuiCol_Border, theme.border);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
       if (ImGui::Button("[ X ]###hdr_close",
                         ImVec2(close_btn_w, close_btn_h))) {
         ToggleMenu();
@@ -4313,7 +4359,7 @@ void DrawPanel() {
 
       ImGui::SameLine();
       std::string shaped_title =
-          Ui("BLACK ENHANCED EDITION — TACTICAL OPS CONSOLE");
+          Ui("BLACK ENHANCED — EYE-COMFORT OPS CONSOLE");
       std::string build_tag = std::string(telemetry_badge) + "  ";
       float title_w = ImGui::CalcTextSize(shaped_title.c_str()).x;
       float build_w = ImGui::CalcTextSize(build_tag.c_str()).x;
@@ -4323,7 +4369,7 @@ void DrawPanel() {
       if (pad_x > 0)
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad_x);
 
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.32f, 0.94f, 0.82f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, kDim);
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(build_tag.c_str());
       ImGui::PopStyleColor();
@@ -4556,7 +4602,8 @@ void DrawUi(double fps) {
     PollCapture();
     DrawPanel();
   } else {
-    // Scope mask first: every other HUD element must stay readable on top of it.
+    // Scope mask first: every other HUD element must stay readable on top of
+    // it.
     game::scope_overlay::DrawOverlay(io.DisplaySize.x, io.DisplaySize.y);
     game::combat_feedback::DrawOverlay(io.DisplaySize.x, io.DisplaySize.y);
     game::overdrive::DrawHudOverlay(io.DisplaySize.x, io.DisplaySize.y);

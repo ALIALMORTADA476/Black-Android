@@ -38,8 +38,7 @@ FFX_MASTER_DIR = os.path.join(REPO, ".local", "audio_src", "ffx", "Master Tracks
 WEB_DIR = os.path.join(REPO, ".local", "audio_src", "web")
 ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_analysis.json")
 EXTRA_ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_extra_analysis.json")
-SCRATCH = r"C:\Users\313\.gemini\antigravity\brain\db2924e5-7d7e-4013-bc79-497f520eff0a\scratch"
-PACK_AUDIO_DIR = os.path.join(REPO, "الاسلحه الخاصه", "Mauser 1891-12", "audio")
+SCRATCH = os.path.join(REPO, ".local", "audio_src", "build_scratch")
 OUT_PAK = os.path.join(REPO, "app", "src", "main", "assets", "weapon_audio", "black_weapon_audio.pak")
 OUT_MANIFEST = os.path.join(SCRATCH, "weapon_audio_manifest.json")
 SR = 48000
@@ -993,6 +992,14 @@ def build_all_clips():
     L = lambda ref, sk=42.0, mx=2200.0, hpf=40.0, gap=400.0: get_tails(
         ref, skip_ms=sk, max_dur_ms=mx, hpf_hz=hpf, min_gap_ms=gap
     )
+    def TS(rel, mx=950.0, hpf=28.0, gap=240.0):
+        res = T(S(rel), mx, hpf, gap=gap)
+        if not res:
+            res = T(S(rel), mx, hpf, gap=gap, whole=True)
+        return res
+    def LS(rel, sk=45.0, mx=1800.0, hpf=34.0, gap=240.0):
+        res = L(S(rel), sk=sk, mx=mx, hpf=hpf, gap=gap)
+        return res if res else TS(rel, mx=mx, hpf=hpf, gap=gap)
 
     # =========================================================================
     # CURATED SLICED POOLS — ZERO SHARED PRIMARY FIREARM SOURCES!
@@ -1003,8 +1010,12 @@ def build_all_clips():
         T(S("Modern_Firearms_Military_Pack/Gun_Pistol_9mm_Shot_var02.wav"), 800, 32, whole=True) +
         T(S("Modern_Firearms_Military_Pack/Gun_Pistol_9mm_Shot_var03.wav"), 800, 32, whole=True)
     )
-    luger_c = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Super Thump - Weapons of World War II - Designed/STDSGN_WoWW2_Wep_Pistol_Luger_Shot_X5.wav"), 780, 32, gap=450.0)
-    tt33_c  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Tokarev TT-33 semi-automatic pistol/TT33, Firing, t1, Inside Car, Omni, CMC6.wav"), 640, 35, gap=450.0)
+    luger_c = T(F("Smith & Wesson 642/V_1.wav"), 780, 32, whole=True) + TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/9mm/WAV/9mm Double Tap.wav", 680, 30, gap=140.0) if os.path.isdir(os.path.join(SOTIYAT_DIR, "Snake's SECOND Authentic Gun Sounds")) else []
+    tt33_c  = TS("Snake's SECOND Authentic Gun Sounds/Isolated/9mm/WAV/9mm Single Isolated.wav", 650, 32)
+    ffx_sks  = T(F("SKS/U_12.wav"), 820, 28, gap=350.0)
+    ffx_mosn = T(F("Mosin Nagant/M_19.wav"), 920, 26, gap=350.0)
+    ffx_m12s = T(F("Model 12/K_19.wav"), 900, 26, gap=350.0)
+    ffx_novs = T(F("Nova/O_18.wav"), 900, 26, gap=350.0)
 
     mf_asr = (
         T(S("Modern_Firearms_Military_Pack/Gun_Assault_Rifle_Burst_var01.wav"), 800, 32, whole=True) +
@@ -1016,7 +1027,7 @@ def build_all_clips():
         T(S("Modern_Firearms_Military_Pack/Gun_Shotgun_Blast_Pump_var02.wav"), 920, 28, whole=True) +
         T(S("Modern_Firearms_Military_Pack/Gun_Shotgun_Blast_Pump_var03.wav"), 920, 28, whole=True)
     )
-    wj_shg = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Wav Junction Sound Effects - Shotguns/0003_Shotgun_Fire_3.wav"), 900, 28, whole=True)
+    wj_shg = ffx_m12s + ffx_novs + T(729, 900)
     mf_snr = (
         T(S("Modern_Firearms_Military_Pack/Gun_Sniper_Rifle_Heavy_var01.wav"), 1020, 26, whole=True) +
         T(S("Modern_Firearms_Military_Pack/Gun_Sniper_Rifle_Heavy_var02.wav"), 1020, 26, whole=True) +
@@ -1027,12 +1038,12 @@ def build_all_clips():
         T(S("Modern_Firearms_Military_Pack/Gun_Silenced_Suppressed_var02.wav"), 520, 38, whole=True) +
         T(S("Modern_Firearms_Military_Pack/Gun_Silenced_Suppressed_var03.wav"), 520, 38, whole=True)
     )
-    ak0405_d = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - AK-74/AK0405 AK-74 rear long distance burst 05 rounds.wav"), 850, 35, gap=70.0)
-    m3gg_c   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Super Thump - M3 Grease Gun Recorded Source/STSRC_WoWW2_Wep_SMG_M3_GreaseGun_Submachine_Gun_Auto_Shot_X7_Attached.wav"), 560, 35, gap=70.0)
-    m1919_d  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Super Thump - Weapons of World War II - Designed/STDSGN_WoWW2_Wep_MG_M1919_Machinegun_Auto-Burst_Shot_X6.wav"), 680, 30, gap=450.0)
-    k98_fire = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mauser Karabiner 98 kurz K98k bolt-action rifle/K98k, Firing, t2, MKH416.wav"), 880, 32, gap=450.0)
-    mg42_c   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - MG 42 machine gun/MG 42, Firing, t1, Burst, Long, Mountain Top, D100.wav"), 620, 38, gap=65.0)
-    ppsh_fire = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Tokarev PPSh-41 submachine gun/PPSh41, Firing, t1, Burst, Long, MKH416.wav"), 550, 40, gap=65.0)
+    ak0405_d = TS("Snake's Authentic Gun Sounds/Full Sound/7.62x39/WAV/762x39 Burst WAV.wav", 850, 35, gap=70.0) + T(1008, 750)
+    m3gg_c   = TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/9mm/WAV/9mm Slow Burst.wav", 560, 35, gap=70.0) + T(1111, 600)
+    m1919_d  = TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Burst WAV.wav", 680, 30, gap=250.0) + T(1067, 680, gap=65.0)
+    k98_fire = ffx_mosn + TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Single WAV.wav", 880, 32)
+    mg42_c   = TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Spray WAV.wav", 620, 38, gap=65.0) + T(1060, 680)
+    ppsh_fire = TS("Snake's Authentic Gun Sounds/Full Sound/.22LR/WAV/22LR Burst WAV.wav", 550, 40, gap=65.0) + T(1055, 520)
 
     mf_exp = (
         get_long_events(S("Modern_Firearms_Military_Pack/Tactical_Frag_Grenade_Explode_var01.wav"), 1200, 1800, 650, 24) +
@@ -1162,9 +1173,9 @@ def build_all_clips():
         T(S("Modern_Firearms_Military_Pack/Tactical_Smoke_Grenade_Hiss_var02.wav"), 150, 220.0, whole=True) +
         T(S("Modern_Firearms_Military_Pack/Tactical_Smoke_Grenade_Hiss_var03.wav"), 150, 220.0, whole=True)
     )
-    aksd_813  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - AK-74/AKSD0813 AK-74 spot A close burst 03 rounds.wav"), 580, 65.0, gap=65.0)
-    aksd_854  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - AK-74/AKSD0854 AK-74 spot D far burst 03 rounds.wav"), 820, 45.0, gap=250.0)
-    mnsd_315  = L(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - Mosin Nagant/MNSD0315 MOSIN-NAGANT mixed long distance shot.wav"), 45, 1800, 40.0, 450.0)
+    aksd_813  = T(F("Savage 10 .300 Blackout/T_15.wav"), 580, 65.0, gap=65.0)
+    aksd_854  = L(F("Savage 10 .300 Blackout/T_15.wav"), 45, 1400, 40.0, 250.0) or T(1021, 820, 45.0)
+    mnsd_315  = L(2536, 45, 1800, 40.0, 450.0) or T(2536, 800)
 
     # Rolling Acoustic Tails ("Mattak") & Indoor Reflections (True Stereo!)
     t_m1911   = L(4935, 40, 1500) + L(727, 55, 1600)
@@ -1192,12 +1203,10 @@ def build_all_clips():
                  get_long_events(1851, 1200.0, 1650.0, 600.0, 42.0))
 
     # Supersonic Cracks & Bullet Flybys (prioritizing صوتيات PM_BBI + 1853/4847)
-    pm_flyby  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/PMSFX - Bullet Bys &Impacts/PM_BBI_Bullet_Passby_Whizzby_Airy_5.wav"), 580, 80.0, gap=300.0)
-    whip_fly  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Olivier Girardot - Hand Guns Sound Effects Pack/Whip sound 21.wav"), 450, 80.0, gap=250.0)
-    flyby_whz = pm_flyby[:6] + T(4847, 650, 80.0) + T(1606, 550, 80.0) + T(2514, 550, 80.0) + whip_fly
+    flyby_whz = T(4847, 650, 80.0) + T(1606, 550, 80.0) + T(2514, 550, 80.0)
     crk_1853  = get_takes(1853, max_dur_ms=420.0, hpf_hz=110.0, prefer_clean=True, min_dur_ms=55.0)
 
-    # Mechanicals, Reloads, Casings (صوتيات + FFX 192k + GDC)
+    # Mechanicals, Reloads, Casings (Snake + Sotiyat + FFX 192k + GDC)
     p38_mag   = T(5149, 700, 45.0)
     deag_mag  = T(6883, 700, 45.0)
     m4_chrg   = T(69, 750, 50.0)
@@ -1208,8 +1217,8 @@ def build_all_clips():
     ts_load   = T(1302, 700, 55.0)
     ts_pump   = T(1305, 520, 55.0)
     sg_load   = T(6659, 620, 55.0)
-    wj_pump   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Wav Junction Sound Effects - Shotguns/0019_Shotgun_Pump_Action_1.wav"), 520, 55.0, gap=200.0)
-    wj_safe   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Wav Junction Sound Effects - Shotguns/0023_Shotgun_Safety_Switch_On_Off_2.wav"), 450, 60.0, gap=200.0)
+    wj_pump   = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/Pump Reload Full Fast WAV.wav", 620, 55.0)
+    wj_safe   = TS("Snake's SECOND Authentic Gun Sounds/& More/Revolver/32 SW Long/WAV/32 SW Hammer Cock.wav", 450, 60.0)
     rev_cyl   = T(1115, 680, 55.0) + ffx_sw_h
     rev_ld    = T(6877, 680, 55.0)
     mp40_ck   = T(5042, 620, 55.0)
@@ -1221,9 +1230,9 @@ def build_all_clips():
     semi_ck   = T(1624, 400, 65.0)
     dry_m1911 = T(4936, 280, 95.0)
     sil_scrw  = T(2537, 480, 75.0)
-    tt33_clr  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Tokarev TT-33 semi-automatic pistol/TT33, Handling, Clearing, MK012.wav"), 600, 55.0, gap=300.0)
-    ak74_asmb = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - AK-74/AK0709 AK-74 assemble disassemble.wav"), 650, 55.0, gap=350.0)
-    cas_ak    = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/SculpTunes – Cartridges & Casings Shell/7 62 x 39 PPU  - Casings Shell & Cartdridges  - Impact and Roll on Tile Floor - Inside.wav"), 520, 140.0, gap=250.0) + T(5194, 520, 140.0)
+    tt33_clr  = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Chamber Check Full.wav", 600, 55.0)
+    ak74_asmb = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AK Reload Full WAV.wav", 650, 55.0)
+    cas_ak    = TS("Snake's SECOND Authentic Gun Sounds/& More/Revolver/44 Magnum/WAV/44 Magnum Eject Floor Impact.wav", 520, 140.0) + T(5194, 520, 140.0)
     cas_9mm   = T(5195, 480, 160.0) + mf_shdrp
     cas_50    = T(3088, 520, 120.0)
     cas_shg   = T(1273, 550, 120.0)
@@ -1263,10 +1272,9 @@ def build_all_clips():
     pck_hlth  = T(250, 550, 65.0, gap=350.0)[:2] + T(2522, 420, 50.0, whole=True)
     snpr_brth = T(1152, 1100, 35.0, gap=850.0)[:2] + T(1707, 900, 35.0, whole=True)
     heart_bt  = T(1151, 880, 26.0, gap=650.0)[:3]
-    debris_rb = (T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Bluezone - Tank - Explosion Sound Effects/Bluezone_BC0271_debris_falling_rock_dust_002.wav"), 1150, 35.0, gap=500.0)[:2] +
-                 T(5815, 1150, 35.0, gap=600.0)[:2] + T(5816, 1150, 40.0, gap=500.0)[:2] + T(5822, 1150, 35.0, gap=500.0)[:2])
+    debris_rb = (T(5815, 1150, 35.0, gap=600.0)[:2] + T(5816, 1150, 40.0, gap=500.0)[:2] + T(5822, 1150, 35.0, gap=500.0)[:2])
     car_wind  = T(36, 1100, 45.0, gap=600.0)[:2] + T(6631, 1100, 35.0, gap=600.0)[:2]
-    wpn_drop  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/aXLsound - Metal Sweeteners - 192 kHz/MtSw - Source - Fall - various objects.wav"), 680, 55.0, gap=400.0)[:3] + T(2510, 550, 55.0, whole=True)
+    wpn_drop  = TS("Snake's SECOND Authentic Gun Sounds/& More/Bipod/WAV/Bipod Impact Both Legs.wav", 680, 55.0) + T(2510, 550, 55.0, whole=True)
     ui_conf   = T(484, 650, 60.0, whole=True) + T(2331, 650, 60.0, whole=True) + T(2140, 550, 60.0, whole=True)
     ui_hint   = T(2139, 550, 60.0, whole=True) + T(2141, 450, 60.0, whole=True) + T(2332, 650, 60.0, gap=300.0)[:2]
     ui_alert  = get_loop_slices(110, dur_ms=1450.0, count=2, xfade_ms=65.0, hpf_hz=60.0) + T(1911, 650, 60.0, whole=True)
@@ -1302,38 +1310,98 @@ def build_all_clips():
     web_flm_longb    = TW("flm_burst_long.wav", 900.0, 32.0, gap=560.0)
     web_flm_ign_sm   = TW("flm_ignite_small.wav", 420.0, 42.0, gap=210.0)
     web_flm_ign_bg   = TW("flm_ignite_big.wav", 760.0, 34.0, gap=360.0)
-    # Studio 96 kHz/24-bit & Archive.org CC0 48 kHz/24-bit Mauser 1891-12 pools (0 clipped samples!)
-    m91_k98_fire = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mauser Karabiner 98 kurz K98k bolt-action rifle/K98k, Firing, t2, MKH416.wav"), 920.0, 26.0, gap=420.0)
-    m91_gmc_shot = T(G("2017_Gamemaster Audio -  Gun Sound Pack/1623_gun_rifle_sniper_shot_01.wav"), 950.0, 24.0, gap=400.0)
+    # Snake's Authentic Gun Sounds + Snake's SECOND Authentic Gun Sounds (Real CC0 Firearm Recordings)
+    snk_9mm_f = (
+        TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/9mm/WAV/9mm Single.wav", 820, 30) +
+        TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/9mm/WAV/9mm Double Tap.wav", 680, 30, gap=140.0) +
+        TS("Snake's SECOND Authentic Gun Sounds/Isolated/9mm/WAV/9mm Single Isolated.wav", 650, 32)
+    )
+    snk_556_f = (
+        TS("Snake's Authentic Gun Sounds/Full Sound/5.56/WAV/556 Single WAV.wav", 880, 28) +
+        TS("Snake's Authentic Gun Sounds/Full Sound/5.56/WAV/556 Double Tap WAV.wav", 700, 28, gap=140.0) +
+        TS("Snake's Authentic Gun Sounds/Isolated/5.56/WAV/556 Single Isolated WAV.wav", 680, 30)
+    )
+    snk_762_f = (
+        TS("Snake's Authentic Gun Sounds/Full Sound/7.62x39/WAV/762x39 Single WAV.wav", 900, 26) +
+        TS("Snake's Authentic Gun Sounds/Full Sound/7.62x39/WAV/762x39 Double Tap WAV.wav", 720, 26, gap=140.0) +
+        TS("Snake's Authentic Gun Sounds/Isolated/7.62x39/WAV/762x39 Single Isolated WAV.wav", 700, 28)
+    )
+    snk_308_f = (
+        TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/.308 (7.62x51)/WAV/308 Single.wav", 960, 24) +
+        TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/.308 (7.62x51)/WAV/308 Double Tap.wav", 760, 24, gap=140.0) +
+        TS("Snake's SECOND Authentic Gun Sounds/Isolated/.308 (7.62x51)/WAV/308 Single Isolated.wav", 740, 26)
+    )
+    snk_762x54r_f = (
+        TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Single WAV.wav", 980, 24) +
+        TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Double Tap WAV.wav", 780, 24, gap=140.0) +
+        TS("Snake's Authentic Gun Sounds/Isolated/7.62x54R/WAV/762x54r Single Isolated WAV.wav", 760, 26)
+    )
+    snk_20ga_f = (
+        TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/20 Gauge/WAV/20 Gauge Single.wav", 940, 26) +
+        TS("Snake's SECOND Authentic Gun Sounds/Full Sounds/20 Gauge/WAV/20 Gauge Double Tap.wav", 760, 26, gap=140.0) +
+        TS("Snake's SECOND Authentic Gun Sounds/Isolated/20 Gauge/WAV/20 Gauge Single Isolated.wav", 720, 28)
+    )
+    snk_t_9mm = LS("Snake's SECOND Authentic Gun Sounds/Full Sounds/9mm/WAV/9mm Single.wav")
+    snk_t_556 = LS("Snake's Authentic Gun Sounds/Full Sound/5.56/WAV/556 Single WAV.wav")
+    snk_t_762 = LS("Snake's Authentic Gun Sounds/Full Sound/7.62x39/WAV/762x39 Single WAV.wav")
+    snk_t_308 = LS("Snake's SECOND Authentic Gun Sounds/Full Sounds/.308 (7.62x51)/WAV/308 Single.wav")
+    snk_t_54r = LS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Single WAV.wav")
+    snk_t_20g = LS("Snake's SECOND Authentic Gun Sounds/Full Sounds/20 Gauge/WAV/20 Gauge Single.wav")
+
+    # Mechanical & reload recordings from Snake's packs
+    snk_ak_rack = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AK Rack WAV.wav", 650, 50)
+    snk_ak_rld  = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AK Reload Part 1 WAV.wav", 700, 50) + TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AK Reload Part 2 WAV.wav", 700, 50)
+    snk_ar_chg  = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AR Charging Handle WAV.wav", 650, 50)
+    snk_ar_rel  = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AR Bolt Release WAV.wav", 650, 50)
+    snk_ar_rld  = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AR Reload Part 1 WAV.wav", 700, 50) + TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/AR Reload Part 2 WAV.wav", 700, 50)
+    snk_pst_rck = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Rack Full.wav", 650, 50)
+    snk_pst_rel = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Slide Release.wav", 550, 50)
+    snk_pst_rld = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Reload 1.wav", 700, 50) + TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Reload 2.wav", 700, 50)
+    snk_pst_dry = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Dry Fire.wav", 400, 60)
+    snk_44_ejc  = TS("Snake's SECOND Authentic Gun Sounds/& More/Revolver/44 Magnum/WAV/44 Magnum Eject Full.wav", 700, 50)
+    snk_44_sld  = TS("Snake's SECOND Authentic Gun Sounds/& More/Revolver/44 Magnum/WAV/44 Magnum Single Load.wav", 600, 50)
+    snk_shg_pmp = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/Pump Shell Load WAV.wav", 650, 50) + TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/Pump Reload Part 1 WAV.wav", 700, 50)
+    snk_blt_mos = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/Mosin Bolt Cycle WAV.wav", 700, 50) + TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/308 Bolt Cycle WAV.wav", 700, 50)
+
+    # Real Bolt / Rifle pools using GDC + FFX + Snake + Web
+    m91_k98_fire = ffx_mosn + TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Single WAV.wav", 920.0, 26.0)
+    m91_gmc_shot = snk_308_f + T(1012, 950.0, 24.0)
     m91_fal_crk  = T(1040, 720.0, 42.0, gap=350.0)
-    m91_bar_far  = T(G("2016_Pole Position Production - M1918 Brownin/1065_M1918_Browning_Automatic_Rifle_.30cal_300m_in_front_Double_shots_x_1.wav"), 1500.0, 28.0, gap=420.0)
+    m91_bar_far  = TS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Double Tap WAV.wav", 1200.0, 28.0)
     m91_lynx_tail = L(6908, 46.0, 1950.0, 32.0, gap=450.0)
-    m91_mosin_50 = L(S("Sonniss.com - GDC 2020 - Game Audio Bundle/FLYSOUND - Mosin Nagant/MN0115 MOSIN-NAGANT 50m distant front left shots.wav"), 42.0, 1600.0, 34.0, gap=450.0)
+    m91_mosin_50 = LS("Snake's Authentic Gun Sounds/Full Sound/7.62x54R/WAV/762x54r Single WAV.wav", 42.0, 1600.0, 34.0)
     m91_sse_dist = L(W("sse_distant_rifle_reverb.wav"), 46.0, 1800.0, 34.0, gap=350.0)
-    m91_k98_hdl  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mauser Karabiner 98 kurz K98k bolt-action rifle/K98k, Handling, Various, t2, 1m, Right, MKH8060.wav"), 520.0, 50.0, gap=200.0)
-    m91_m38_hdl  = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mosin-Nagant M38 bolt-action rifle/M38, Handling, Various, t2, 1m, Above, Right, MKH8060.wav"), 520.0, 50.0, gap=200.0)
-    m91_1903_blt = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Springfield 1903A3 bolt-action rifle/M1903A3, Handling, Cycling Bolt, MKH416.wav"), 560.0, 50.0, gap=180.0)
+    m91_k98_hdl  = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/Mosin Bolt Cycle WAV.wav", 520.0, 50.0)
+    m91_m38_hdl  = TS("Snake's Authentic Gun Sounds/Reloads, Cycling & More/WAV/308 Bolt Cycle WAV.wav", 520.0, 50.0)
+    m91_1903_blt = T(5095, 560.0, 50.0)
     web_rfl_hvy   = TW("rifle_heavy_british.wav", 920.0, 28.0, gap=380.0)
     web_rfl_30    = TW("rifle_3030.wav", 900.0, 28.0, gap=380.0)
     web_rfl_ck    = L(W("rifle_fire_cocked.wav"), 42.0, 2100.0, 42.0, gap=380.0) or TW("rifle_fire_cocked.wav", 1200.0, 42.0, gap=380.0)
     web_bolt      = TW("mech_bolt_action.wav", 620.0, 55.0, gap=240.0)
     web_clip      = TW("mech_stripper_clip.wav", 700.0, 55.0, gap=280.0)
     web_rfl_dry   = TW("mech_dry_fire_rifle.wav", 320.0, 90.0, gap=180.0)
-    # NEW AAA Mauser 1891-12 (Kar98k) pack WAVs — 48 kHz stereo, user-supplied, zero clipping
-    def _pk_wav(fn):
-        _sr, _bits, _a = read_wav_float32(os.path.join(PACK_AUDIO_DIR, fn))
-        return resample_48k(_a, _sr) if _sr != SR else _a
-    pk_fire = [_pk_wav("fire_indoor_%02d.wav" % i) for i in range(1, 5)]
-    pk_outdoor = [_pk_wav("fire_outdoor_%02d.wav" % i) for i in range(1, 4)]
-    pk_supp = [_pk_wav("fire_suppressed_01.wav")]
-    pk_bolt_open = [_pk_wav(f) for f in ("bolt_open.wav", "bolt_open_01.wav", "bolt_open_02.wav")]
-    pk_bolt_pull = [_pk_wav(f) for f in ("bolt_pull.wav", "bolt_pull_01.wav", "bolt_pull_02.wav", "bolt_open_and_pull_raw.wav")]
-    pk_bolt_push = [_pk_wav(f) for f in ("bolt_push.wav", "bolt_push_01.wav", "bolt_push_02.wav")]
-    pk_bolt_cycle = [_pk_wav("bolt_cycle_full.wav")]
-    pk_bolt_close = [_pk_wav(f) for f in ("bolt_close.wav", "bolt_close_01.wav", "bolt_close_02.wav", "bolt_push_and_close_raw.wav")]
-    pk_clip = [_pk_wav(f) for f in ("clip_insert.wav", "reload_full_master.wav")]
-    pk_dry = [_pk_wav("dry_fire_click.wav")]
-    pk_equip = [_pk_wav("equip_foley.wav")]
+
+    # Fallback real bolt/sniper WAVs from .local/audio_src/web + GDC + Snake (no deleted special-weapon paths!)
+    pk_fire = (
+        TW("m91_shot_85.wav", 950.0, 26.0, gap=360.0) +
+        TW("m91_shot_87.wav", 950.0, 26.0, gap=360.0) +
+        TW("m91_shot_98k.wav", 950.0, 26.0, gap=360.0) +
+        snk_762x54r_f
+    )
+    pk_outdoor = (
+        L(W("m91_tail_distant.wav"), 42.0, 1800.0, 32.0, gap=320.0) or TW("m91_tail_distant.wav", 1400.0, 32.0, gap=320.0)
+    ) + (
+        L(W("m91_tail_sniper_echo.wav"), 42.0, 1800.0, 32.0, gap=320.0) or TW("m91_tail_sniper_echo.wav", 1400.0, 32.0, gap=320.0)
+    ) + snk_t_54r
+    pk_supp = supp_snp + ffx_sup300
+    pk_bolt_open = TW("m91_bolt_98k.wav", 520.0, 50.0, gap=180.0)
+    pk_bolt_pull = snk_blt_mos + TW("m91_bolt_cycle.wav", 620.0, 50.0, gap=220.0)
+    pk_bolt_push = web_bolt + m91_1903_blt
+    pk_bolt_cycle = snk_blt_mos
+    pk_bolt_close = m91_1903_blt + web_bolt
+    pk_clip = TW("m91_clip_load.wav", 700.0, 50.0, gap=240.0) + web_clip
+    pk_dry = TW("m91_dry_fire.wav", 320.0, 75.0, gap=160.0) + web_rfl_dry
+    pk_equip = m91_k98_hdl + m91_m38_hdl
     # Studio 192 kHz & 96 kHz/24-bit Mauser C96 M712 (7.63x25mm) pools — zero clipping
     c96_ppq_crk   = T(F("Walther PPQ/X_29.wav"), 640.0, 28.0, gap=280.0)
     c96_ppq_whp   = T(F("Walther PPQ/X_43.wav"), 640.0, 28.0, gap=250.0)
@@ -1342,8 +1410,8 @@ def build_all_clips():
     c96_vp70_on   = T(1006, 560.0, 34.0, gap=220.0)
     c96_p38_tl    = L(5148, 35.0, 1450.0, 36.0, gap=280.0)
     c96_g18_tl    = L(1046, 36.0, 1300.0, 36.0, gap=220.0)
-    c96_tt33_cl   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Tokarev TT-33 semi-automatic pistol/TT33, Handling, Clearing, MK012.wav"), 420.0, 50.0, gap=160.0)
-    c96_p38_mag   = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Walther P38 semi automatic pistol/P38, Handling, Removing Magazine, 1m, Right, MKH8060.wav"), 560.0, 50.0, gap=160.0)
+    c96_tt33_cl   = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Rack Part 1.wav", 420.0, 50.0)
+    c96_p38_mag   = TS("Snake's SECOND Authentic Gun Sounds/& More/Pistol/WAV/9mm Pistol Reload 1.wav", 560.0, 50.0)
     c96_ppq_m1    = T(F("Walther PPQ/X_3.wav"), 420.0, 55.0, gap=160.0) + T(F("Walther PPQ/X_4.wav"), 420.0, 55.0, gap=160.0)
     c96_dry_96    = T(4936, 260.0, 85.0, gap=160.0)
     web_pst_brc   = TW("mech_pistol_breech.wav", 420.0, 65.0, gap=200.0)
@@ -1371,33 +1439,33 @@ def build_all_clips():
     # =========================================================================
     # 1. ALL 18 BASE WEAPONS + FLAMETHROWER — 100% UNIQUE PRIMARY RECORDINGS!
     # =========================================================================
-    # PST (SP-9mm Service Pistol): صوتيات Modern_Firearms Pistol + Luger + VP70
+    # PST (SP-9mm Service Pistol): Snake Authentic 9mm + صوتيات Modern_Firearms Pistol + Luger + VP70
     eq_pst = [(115, 1.3, 2.2), (2700, 1.5, 2.0), (7000, 1.4, 1.2)]
     for i in range(4):
-        add("PST_FIRE", f"Sotiyat Pistol9mm + Luger + GDC1005 VP70 #{i+1}",
-            align_mix([(pick(mf_pst, i), 0.78, 0), (pick(luger_c, i), 0.42, 0), (pick(vp70_c, i), 0.34, 1)], 650),
-            "sotiyat:Gun_Pistol_9mm+Luger+1005", eq_bands=eq_pst, comp_ratio=2.2, width_pct=96)
+        add("PST_FIRE", f"Snake 9mm + Sotiyat Pistol9mm + Luger + GDC1005 VP70 #{i+1}",
+            align_mix([(pick(snk_9mm_f, i), 0.72, 0), (pick(mf_pst, i), 0.56, 0), (pick(luger_c, i), 0.36, 0), (pick(vp70_c, i), 0.28, 1)], 720),
+            "snake:9mm+sotiyat:Gun_Pistol_9mm+1005", eq_bands=eq_pst, comp_ratio=2.2, width_pct=98)
 
-    # GK1 (Glock 19): GDC6202 Glock 17 Stereo + GDC6963 Room + GDC1089 P229
+    # GK1 (Glock 19): GDC6202 Glock 17 Stereo + Snake 9mm Isolated + GDC6963 Room + GDC1089 P229
     eq_gk1 = [(130, 1.3, 2.0), (2100, 1.5, 2.2), (6200, 1.3, 1.6)]
     for i in range(4):
-        add("GK1_FIRE", f"GDC6202 Glock 17 Stereo + GDC6963 + P229 #{i+1}",
-            align_mix([(pick(glock_c, i), 0.74, 0), (pick(glock_rm, i), 0.40, 0), (pick(p229_c, i), 0.28, 2)], 700),
-            "6202+6963+1089", eq_bands=eq_gk1, comp_ratio=2.2, width_pct=96)
+        add("GK1_FIRE", f"GDC6202 Glock 17 Stereo + Snake 9mm + GDC6963 + P229 #{i+1}",
+            align_mix([(pick(glock_c, i), 0.68, 0), (pick(snk_9mm_f, i + 1), 0.54, 0), (pick(glock_rm, i), 0.36, 0), (pick(p229_c, i), 0.24, 2)], 720),
+            "6202+snake:9mm+6963+1089", eq_bands=eq_gk1, comp_ratio=2.2, width_pct=98)
 
-    # MGN (.44/.357 Magnum Revolver): Desert Eagle Stereo + Colt Python Stereo + Dan Wesson + M29
+    # MGN (.44/.357 Magnum Revolver): Snake 7.62x54R / .308 Cannon Crack + Desert Eagle Stereo + Colt Python Stereo
     eq_mgn = [(70, 1.3, 4.2), (1450, 1.4, 2.4), (4400, 1.5, 1.6)]
     for i in range(4):
-        add("MGN_FIRE", f"GDC6881 DEagle + 6875 Python + 6879 DW445 + 1095 M29 #{i+1}",
-            align_mix([(pick(deagle_c, i), 0.62, 0), (pick(python_c, i), 0.52, 0), (pick(dw445_c, i), 0.36, 1), (pick(mag44_c, i), 0.34, 3)], 950),
-            "6881+6875+6879+1095", eq_bands=eq_mgn, comp_ratio=2.1, width_pct=105)
+        add("MGN_FIRE", f"Snake 308/54R Punch + GDC6881 DEagle + 6875 Python + 6879 DW445 #{i+1}",
+            align_mix([(pick(deagle_c, i), 0.58, 0), (pick(python_c, i), 0.48, 0), (pick(snk_308_f, i), 0.44, 0), (pick(dw445_c, i), 0.34, 1), (pick(mag44_c, i), 0.30, 3)], 950),
+            "6881+6875+snake:308+1095", eq_bands=eq_mgn, comp_ratio=2.1, width_pct=106)
 
-    # SMG (Uzi 9mm): صوتيات M3 Grease Gun + GDC1111 Uzi + GDC1075 Mini Uzi + صوتيات TT33
+    # SMG (Uzi 9mm): Snake 9mm + M3 Grease Gun + GDC1111 Uzi + GDC1075 Mini Uzi + TT33
     eq_smg = [(135, 1.4, 1.8), (2400, 1.5, 2.4), (6400, 1.3, 1.8)]
     for i in range(4):
-        add("SMG_FIRE", f"Sotiyat M3GG + GDC1111 Uzi + 1075 MiniUzi + TT33 #{i+1}",
-            align_mix([(pick(uzi_c, i), 0.64, 0), (pick(tt33_c, i), 0.44, 0), (pick(m3gg_c, i * 3), 0.36, 0), (pick(muzi_d, i), 0.36, 2)], 560),
-            "1111+sotiyat:TT33+M3GG+1075", eq_bands=eq_smg, comp_ratio=2.2, width_pct=96)
+        add("SMG_FIRE", f"Snake 9mm + GDC1111 Uzi + TT33 + M3GG + 1075 #{i+1}",
+            align_mix([(pick(uzi_c, i), 0.58, 0), (pick(snk_9mm_f, i + 2), 0.54, 0), (pick(tt33_c, i), 0.40, 0), (pick(m3gg_c, i * 3), 0.32, 0), (pick(muzi_d, i), 0.32, 2)], 600),
+            "snake:9mm+1111+TT33+1075", eq_bands=eq_smg, comp_ratio=2.2, width_pct=98)
 
     # SM3 (Ingram MAC-10 / Tommy .45): GDC852 Tommy Gun Stereo + GDC1055 M10 + GDC1056 + FFX PPSh Stereo
     eq_sm3 = [(155, 1.4, 1.6), (3100, 1.5, 2.6), (7200, 1.3, 2.0)]
@@ -1420,33 +1488,33 @@ def build_all_clips():
             align_mix([(pick(p90_c, i), 0.68, 0), (pick(fn57_c, i), 0.44, 0), (pick(mp7_c, i), 0.36, 1), (pick(t_smg, i)[:int(0.45*SR)], 0.25, 2)], 540),
             "1043+1041+1003", eq_bands=eq_p90, comp_ratio=2.2, width_pct=95)
 
-    # AK1 (AK-47/AKM 7.62x39mm — Iconic BLACK Hero Weapon): صوتيات AK-74 4ch + FFX AK-47 Stereo + GDC1007 AKM + GDC3086
+    # AK1 (AK-47/AKM 7.62x39mm — Iconic BLACK Hero Weapon): Snake 7.62x39 + AK-74 4ch + FFX AK-47 Stereo + GDC1007 AKM
     eq_ak1 = [(85, 1.3, 3.8), (1650, 1.5, 2.4), (3600, 1.4, 2.2)]
     for i in range(4):
-        add("AK1_FIRE", f"Sotiyat AK0405 4ch + FFX AK47 + GDC1007 AKM + 3086 #{i+1}",
-            align_mix([(pick(akm_c, i), 0.62, 0), (pick(ak0405_d, i), 0.50, 0), (pick(ffx_ak47, i), 0.44, 0), (pick(ak47_bt, i), 0.38, 3), (pick(akm_d, i), 0.26, 6)], 780),
-            "sotiyat:AK0405+ffx:C_25+1007+3086", eq_bands=eq_ak1, comp_ratio=2.1, width_pct=102)
+        add("AK1_FIRE", f"Snake 7.62x39 + Sotiyat AK0405 + FFX AK47 + GDC1007 AKM #{i+1}",
+            align_mix([(pick(snk_762_f, i), 0.68, 0), (pick(akm_c, i), 0.56, 0), (pick(ak0405_d, i), 0.44, 0), (pick(ffx_ak47, i), 0.42, 0), (pick(ak47_bt, i), 0.34, 3)], 840),
+            "snake:762x39+ffx:C_25+1007+3086", eq_bands=eq_ak1, comp_ratio=2.1, width_pct=104)
 
-    # ASR (G36C / Assault Rifle): صوتيات Modern_Firearms Assault Rifle Stereo + GDC1051 G36C + GDC1034 FAMAS
+    # ASR (G36C / Assault Rifle): Snake 5.56 + Modern_Firearms Assault Rifle + GDC1051 G36C + GDC1034 FAMAS
     eq_asr = [(110, 1.3, 2.6), (2600, 1.5, 2.6), (6200, 1.3, 1.8)]
     for i in range(4):
-        add("ASR_FIRE", f"Sotiyat AssaultRifle + GDC1051 G36C + GDC1034 FAMAS #{i+1}",
-            align_mix([(pick(mf_asr, i), 0.72, 0), (pick(g36_c, i), 0.48, 0), (pick(famas_c, i), 0.40, 1)], 690),
-            "sotiyat:Gun_Assault_Rifle+1051+1034", eq_bands=eq_asr, comp_ratio=2.2, width_pct=100)
+        add("ASR_FIRE", f"Snake 5.56 + Sotiyat AssaultRifle + GDC1051 G36C + FAMAS #{i+1}",
+            align_mix([(pick(snk_556_f, i), 0.66, 0), (pick(mf_asr, i), 0.60, 0), (pick(g36_c, i), 0.44, 0), (pick(famas_c, i), 0.36, 1)], 750),
+            "snake:556+sotiyat:Gun_Assault_Rifle+1051", eq_bands=eq_asr, comp_ratio=2.2, width_pct=102)
 
-    # M16 (M16A2 / M4A1): GDC67 M4 Stereo + FFX AR-15 192k Stereo + GDC997 HK416
+    # M16 (M16A2 / M4A1): Snake 5.56 Isolated/Full + GDC67 M4 Stereo + FFX AR-15 Stereo + GDC997 HK416
     eq_m16 = [(95, 1.3, 3.0), (2400, 1.5, 2.6), (6800, 1.3, 2.0)]
     for i in range(4):
-        add("M16_FIRE", f"GDC67 M4 Stereo + FFX AR-15 Stereo + GDC997 HK416 #{i+1}",
-            align_mix([(pick(m4_c, i), 0.70, 0), (pick(ffx_ar15, i), 0.46, 0), (pick(hk416_c, i), 0.42, 0)], 720),
-            "67+ffx:D_31+997", eq_bands=eq_m16, comp_ratio=2.1, width_pct=100)
+        add("M16_FIRE", f"Snake 5.56 + GDC67 M4 Stereo + FFX AR-15 Stereo + HK416 #{i+1}",
+            align_mix([(pick(m4_c, i), 0.64, 0), (pick(snk_556_f, i + 1), 0.58, 0), (pick(ffx_ar15, i), 0.42, 0), (pick(hk416_c, i), 0.38, 0)], 780),
+            "snake:556+67+ffx:D_31+997", eq_bands=eq_m16, comp_ratio=2.1, width_pct=102)
 
-    # BNS (Elite Battle Rifle): GDC730 HK416 Room + GDC1026 Enfield L85 + GDC995 HK G3 7.62 + GDC6989 AK5 Armor
+    # BNS (Elite Battle Rifle): Snake .308 (7.62x51) + GDC730 HK416 + GDC1026 L85 + GDC995 HK G3
     eq_bns = [(82, 1.3, 3.4), (1950, 1.5, 2.4), (5400, 1.4, 2.0)]
     for i in range(4):
-        add("BNS_FIRE", f"GDC730 Room416 + 1026 L85 + 995 G3 + 6989 #{i+1}",
-            align_mix([(pick(hk416_rm, i), 0.62, 0), (pick(l85_c, i), 0.44, 0), (pick(g3_c, i), 0.40, 1), (pick(ak5_arm, i), 0.28, 3)], 760),
-            "730+1026+995+6989", eq_bands=eq_bns, comp_ratio=2.1, width_pct=104)
+        add("BNS_FIRE", f"Snake .308 + GDC730 + 1026 L85 + 995 G3 7.62 #{i+1}",
+            align_mix([(pick(snk_308_f, i), 0.64, 0), (pick(hk416_rm, i), 0.54, 0), (pick(g3_c, i), 0.44, 1), (pick(l85_c, i), 0.38, 0)], 820),
+            "snake:308+730+995+1026", eq_bands=eq_bns, comp_ratio=2.1, width_pct=105)
 
     # BNS_M203 (Underbarrel 40mm): GDC5829 Smoke GRL Stereo + صوتيات Bluezone Tank Artillery
     eq_m203 = [(65, 1.2, 4.8), (420, 1.4, 2.2), (1600, 1.5, -1.5)]
@@ -1455,33 +1523,33 @@ def build_all_clips():
             align_mix([(pick(grl_smoke, i), 0.80, 0), (pick(tank_can, i), 0.48, 0)], 760),
             "5829+4441", eq_bands=eq_m203, transient_boost_db=2.0, width_pct=106)
 
-    # SHG (12g Pump Shotgun): صوتيات Modern_Firearms Shotgun + Wav Junction + GDC729 + GDC1303 Stereo
+    # SHG (12g Pump Shotgun): Snake 20ga Boom + Modern_Firearms Shotgun + GDC729 R870 + GDC1303
     eq_shg = [(65, 1.2, 4.8), (950, 1.4, 2.2), (3200, 1.4, 2.0)]
     for i in range(4):
-        add("SHG_FIRE", f"Sotiyat Shotgun + WavJunction + GDC729 R870 + GDC1303 #{i+1}",
-            align_mix([(pick(mf_shg, i), 0.68, 0), (pick(r870_c, i), 0.56, 0), (pick(ts_fire, i), 0.42, 0), (pick(wj_shg, i), 0.30, 1)], 920),
-            "sotiyat:Gun_Shotgun+WavJnc+729+1303", eq_bands=eq_shg, comp_ratio=2.1, width_pct=106)
+        add("SHG_FIRE", f"Snake 20ga + Sotiyat Shotgun + WavJunction + GDC729 R870 #{i+1}",
+            align_mix([(pick(snk_20ga_f, i), 0.62, 0), (pick(mf_shg, i), 0.60, 0), (pick(r870_c, i), 0.52, 0), (pick(ts_fire, i), 0.38, 0)], 940),
+            "snake:20ga+sotiyat:Gun_Shotgun+729", eq_bands=eq_shg, comp_ratio=2.1, width_pct=108)
 
-    # RM1 (Combat Semi-Auto 12g): GDC6660 Saiga DESIGNED Stereo + 6859 Beretta 1201F + 6902 SPAS + 6903 Semi
+    # RM1 (Combat Semi-Auto 12g): Snake 20ga + GDC6660 Saiga + 6859 Beretta + 6902 SPAS
     eq_rm1 = [(72, 1.3, 4.2), (1300, 1.5, 2.4), (4200, 1.4, 1.8)]
     for i in range(4):
-        add("RM1_FIRE", f"GDC6660 Saiga Stereo + 6859 Beretta + 6902 SPAS + 6903 #{i+1}",
-            align_mix([(pick(saiga_ds, i), 0.64, 0), (pick(ber1201_c, i), 0.46, 0), (pick(spas_c, i), 0.44, 0), (pick(spas_semi, i), 0.34, 1)], 860),
-            "6660+6859+6902+6903", eq_bands=eq_rm1, comp_ratio=2.1, width_pct=106)
+        add("RM1_FIRE", f"Snake 20ga + GDC6660 Saiga + 6859 Beretta + 6902 SPAS #{i+1}",
+            align_mix([(pick(saiga_ds, i), 0.58, 0), (pick(snk_20ga_f, i + 1), 0.52, 0), (pick(ber1201_c, i), 0.42, 0), (pick(spas_c, i), 0.40, 0)], 880),
+            "snake:20ga+6660+6859+6902", eq_bands=eq_rm1, comp_ratio=2.1, width_pct=108)
 
-    # SNR (Heavy Sniper Rifle): صوتيات Sniper + FFX Tikka 192k Stereo + M98B .338 + Lynx .50 + SVD Stereo
+    # SNR (Heavy Sniper Rifle): Snake 7.62x54R + .308 + Sniper + FFX Tikka + M98B .338 + Lynx .50
     eq_snr = [(58, 1.2, 5.0), (1400, 1.4, 2.4), (3500, 1.4, 2.2)]
     for i in range(4):
-        add("SNR_FIRE", f"Sotiyat Sniper + FFX Tikka + M98B .338 + Lynx .50 + SVD #{i+1}",
-            align_mix([(pick(mf_snr, i), 0.56, 0), (pick(ffx_tikka, i), 0.48, 0), (pick(m98b_c, i), 0.54, 0), (pick(lynx50_c, i), 0.40, 2), (pick(svd_c, i), 0.30, 3)], 1040),
-            "sotiyat:Gun_Sniper+ffx:W_27+1012+6909+6663", eq_bands=eq_snr, transient_boost_db=2.2, comp_ratio=2.0, width_pct=110)
+        add("SNR_FIRE", f"Snake 7.62x54R + 308 + FFX Tikka + M98B + Lynx .50 #{i+1}",
+            align_mix([(pick(snk_762x54r_f, i), 0.62, 0), (pick(mf_snr, i), 0.48, 0), (pick(ffx_tikka, i), 0.44, 0), (pick(m98b_c, i), 0.48, 0), (pick(lynx50_c, i), 0.36, 2)], 1060),
+            "snake:54r+sotiyat:Gun_Sniper+ffx:W_27+1012+6909", eq_bands=eq_snr, transient_boost_db=2.2, comp_ratio=2.0, width_pct=110)
 
-    # HVY (M249 SAW / LMG): GDC1067 M1919A4 ORTF Stereo + صوتيات M1919 + L110A2 + L7A2 + MG4
+    # HVY (M249 SAW / LMG): Snake 7.62x54R + GDC1067 M1919A4 + M1919 + L110A2
     eq_hvy = [(82, 1.3, 3.6), (1800, 1.4, 2.6), (4800, 1.4, 2.0)]
     for i in range(5):
-        add("HVY_FIRE", f"GDC1067 M1919A4 ORTF + Sotiyat M1919 + 1060 L110 + 1062 L7A2 #{i+1}",
-            align_mix([(pick(m1919a4_c, i), 0.56, 0), (pick(m1919_d, i), 0.52, 0), (pick(l110_c, i), 0.48, 0), (pick(l7a2_c, i), 0.36, 1), (pick(mg4_c, i), 0.28, 0)], 660),
-            "1067+sotiyat:M1919+1060+1062", eq_bands=eq_hvy, comp_ratio=2.2, width_pct=102)
+        add("HVY_FIRE", f"Snake 7.62x54R + GDC1067 M1919A4 + Sotiyat M1919 + L110 #{i+1}",
+            align_mix([(pick(snk_762x54r_f, i), 0.56, 0), (pick(m1919a4_c, i), 0.54, 0), (pick(m1919_d, i), 0.46, 0), (pick(l110_c, i), 0.44, 0)], 720),
+            "snake:54r+1067+sotiyat:M1919+1060", eq_bands=eq_hvy, comp_ratio=2.2, width_pct=104)
 
     # RPG (RPG-7): GDC2894 Rocket Launcher Stereo + GDC6991 RPG + صوتيات Shell Trajectory
     eq_rpg = [(62, 1.2, 4.5), (420, 1.3, 2.0), (2600, 1.4, 1.5)]
@@ -1529,20 +1597,20 @@ def build_all_clips():
     eq_fly  = [(2600, 1.4, 2.8), (6200, 1.3, 2.2)]
 
     for i in range(5):
-        add("TAIL_PISTOL_OUTDOOR", f"GDC4935/6203/6881 Pistol Outdoor Roll #{i+1}",
-            pick(t_m1911 + t_glk100, i), "4935+6203+6881", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
+        add("TAIL_PISTOL_OUTDOOR", f"Snake 9mm + GDC4935/6203 Pistol Outdoor Roll #{i+1}",
+            pick(snk_t_9mm + t_m1911 + t_glk100, i), "snake:9mm+4935+6203", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
     for i in range(5):
-        add("TAIL_SMG_OUTDOOR", f"GDC3089/1056/1002 SMG Outdoor Tail #{i+1}",
-            pick(t_smg, i), "3089+1056", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
+        add("TAIL_SMG_OUTDOOR", f"Snake 9mm + GDC3089/1056 SMG Outdoor Tail #{i+1}",
+            pick(snk_t_9mm + t_smg, i), "snake:9mm+3089+1056", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
     for i in range(6):
-        add("TAIL_RIFLE_MATTAK", f"GDC2783/3086/1008 Rifle Valley Mattak #{i+1}",
-            pick(t_mattak, i), "2783+3086", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=180.0, width_pct=120)
+        add("TAIL_RIFLE_MATTAK", f"Snake 7.62x39/5.56 + GDC2783/3086 Rifle Mattak #{i+1}",
+            pick(snk_t_762 + snk_t_556 + t_mattak, i), "snake:762+556+2783", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=180.0, width_pct=120)
     for i in range(6):
-        add("TAIL_HEAVY_MATTAK", f"GDC5034/1852/1063 Heavy Mountain Mattak #{i+1}",
-            pick(t_heavy, i), "5034+1852", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=200.0, width_pct=122)
+        add("TAIL_HEAVY_MATTAK", f"Snake 7.62x54R/308 + GDC5034 Heavy Mountain Mattak #{i+1}",
+            pick(snk_t_54r + snk_t_308 + t_heavy, i), "snake:54r+308+5034", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=200.0, width_pct=122)
     for i in range(5):
-        add("TAIL_SHOTGUN_OUTDOOR", f"GDC6660/6902/1304 12g Outdoor Boom Tail #{i+1}",
-            pick(t_shotgun, i), "6660+6902", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=160.0, width_pct=118)
+        add("TAIL_SHOTGUN_OUTDOOR", f"Snake 20ga + GDC6660/6902 12g Outdoor Boom Tail #{i+1}",
+            pick(snk_t_20g + t_shotgun, i), "snake:20g+6660+6902", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=160.0, width_pct=118)
     for i in range(6):
         add("TAIL_INDOOR_ECHO", f"GDC2780/2779/6964/6965 Corridor Reflections #{i+1}",
             pick(t_indoor, i), "2780+2779", eq_bands=eq_echo, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=150.0, width_pct=118)
@@ -1587,27 +1655,27 @@ def build_all_clips():
     # =========================================================================
     # 5. ALL MECHANICALS, RELOADS & CASINGS (27..73 + 96 — صوتيات + FFX 192k + GDC)
     # =========================================================================
-    k98_h = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mauser Karabiner 98 kurz K98k bolt-action rifle/K98k, Handling, Various, t2, 1m, Right, MKH8060.wav"), 600, 50.0, gap=300.0)
-    m38_h = T(S("Sonniss.com - GDC 2020 - Game Audio Bundle/Pole Position - Mosin-Nagant M38 bolt-action rifle/M38, Handling, Various, t2, 1m, Above, Right, MKH8060.wav"), 600, 50.0, gap=300.0)
+    k98_h = m91_k98_hdl
+    m38_h = m91_m38_hdl
     eq_f = [(220, 1.3, 1.0), (3400, 1.4, 2.2), (7600, 1.3, 1.8)]
     foley_defs = {
-        "PST_UNLD": (p38_mag + mf_mage, "5149+sotiyat"), "PST_LD": (deag_mag + mf_magi, "6883+sotiyat"), "PST_COCK": (ffx_19_h + tmp_f, "ffx:A+1116"),
-        "GK1_UNLD": (deag_mag + ffx_ppq_h, "6883+ffx:X"), "GK1_LD": (mf_magi + p38_mag, "sotiyat+5149"), "GK1_COCK": (semi_ck + mf_bolt, "1624+sotiyat"),
-        "MGN_UNLD": (rev_cyl, "1115+ffx:V"), "MGN_LD": (rev_ld, "6877"),
-        "SMG_UNLD": (mf_mage + p38_mag, "sotiyat+5149"), "SMG_LD": (deag_mag + mf_magi, "6883+sotiyat"), "SMG_COCK": (ppsh_ck + mf_bolt, "5118+sotiyat"),
+        "PST_UNLD": (snk_pst_rld + p38_mag + mf_mage, "snake:pst_rld+5149"), "PST_LD": (snk_pst_rld + deag_mag + mf_magi, "snake:pst_rld+6883"), "PST_COCK": (snk_pst_rck + snk_pst_rel + ffx_19_h, "snake:pst_rack+ffx:A"),
+        "GK1_UNLD": (snk_pst_rld + deag_mag + ffx_ppq_h, "snake:pst_rld+6883"), "GK1_LD": (snk_pst_rld + mf_magi + p38_mag, "snake:pst_rld+5149"), "GK1_COCK": (snk_pst_rel + semi_ck + mf_bolt, "snake:pst_rel+1624"),
+        "MGN_UNLD": (snk_44_ejc + rev_cyl, "snake:44_ejc+1115"), "MGN_LD": (snk_44_sld + rev_ld, "snake:44_sld+6877"),
+        "SMG_UNLD": (mf_mage + p38_mag, "sotiyat+5149"), "SMG_LD": (deag_mag + mf_magi, "6883+sotiyat"), "SMG_COCK": (snk_pst_rck + ppsh_ck + mf_bolt, "snake:rack+5118"),
         "MP1_UNLD": (g36_mag + ffx_cg_h, "1113+ffx:G"), "MP1_LD": (g36_mag[1:] + ffx_cg_h, "1113+ffx:G"), "MP1_COCK": (mp40_ck + tt33_clr, "5042+TT33"),
         "P90_UNLD": (m4_unld, "70"), "P90_LD": (g36_mag, "1113"), "P90_COCK": (tmp_f[1:] + mf_bolt, "1116"),
-        "AK1_UNLD": (ffx_ak_h + svd_mag, "ffx:C+6662"), "AK1_LD": (svd_mag[2:] + ak74_asmb, "6662+AK0709"), "AK1_COCK": (mf_bolt + k98_hdl, "sotiyat+5024"),
-        "ASR_UNLD": (g36_mag + mf_mage, "1113+sotiyat"), "ASR_LD": (mf_magi + m4_chrg, "sotiyat+69"), "ASR_COCK": (ffx_ar_h + m4_chrg[1:], "ffx:D+69"),
-        "M16_UNLD": (m4_unld + ffx_ar_h, "70+ffx:D"), "M16_LD": (m4_chrg + mf_magi, "69"), "M16_COCK": (m4_chrg[2:] + mf_bolt, "69+sotiyat"),
-        "SHG_COCK": (wj_pump + ts_pump + spas_pmp, "WavJnc+1305"), "RM1_LD": (ffx_m12_h + ffx_nov_h + ts_load + sg_load, "ffx:K/O+1302"), "RM1_COCK": (spas_pmp + wj_pump + ts_pump, "6904+WavJnc"),
-        "SNR_UNLD": (svd_mag[1:] + ffx_tik_h + m38_h, "6662+ffx:W+M38"), "SNR_LD": (m1903_ck + ffx_tik_h + k98_h, "5095+ffx:W+K98"), "SNR_COCK": (m1903_ck + lynx_ej, "5095+6910"),
+        "AK1_UNLD": (snk_ak_rld + ffx_ak_h + svd_mag, "snake:ak_rld+ffx:C"), "AK1_LD": (snk_ak_rld + svd_mag + ak74_asmb, "snake:ak_rld+AK0709"), "AK1_COCK": (snk_ak_rack + mf_bolt + k98_hdl, "snake:ak_rack+sotiyat"),
+        "ASR_UNLD": (snk_ar_rld + g36_mag + mf_mage, "snake:ar_rld+1113"), "ASR_LD": (snk_ar_rld + mf_magi + m4_chrg, "snake:ar_rld+69"), "ASR_COCK": (snk_ar_chg + snk_ar_rel + ffx_ar_h, "snake:ar_chg+ffx:D"),
+        "M16_UNLD": (snk_ar_rld + m4_unld + ffx_ar_h, "snake:ar_rld+70"), "M16_LD": (snk_ar_rld + m4_chrg + mf_magi, "snake:ar_rld+69"), "M16_COCK": (snk_ar_rel + snk_ar_chg + m4_chrg, "snake:ar_rel+69"),
+        "SHG_COCK": (wj_pump + ts_pump + spas_pmp, "WavJnc+1305"), "RM1_LD": (snk_shg_pmp + ffx_m12_h + ts_load, "snake:pump_ld+ffx:K"), "RM1_COCK": (spas_pmp + wj_pump + ts_pump, "6904+WavJnc"),
+        "SNR_UNLD": (snk_blt_mos + svd_mag + ffx_tik_h, "snake:bolt+6662"), "SNR_LD": (m1903_ck + ffx_tik_h + k98_h, "5095+ffx:W+K98"), "SNR_COCK": (snk_blt_mos + m1903_ck + lynx_ej, "snake:bolt+5095"),
         "HVY_UNLD": (mg42_cvr + m38_h, "5035+M38"), "HVY_LD": (sh_hand + m4_chrg, "5826+69"), "HVY_COCK": (mg42_cvr + ppsh_ck, "5035+5118"),
         "RPG_LD": (lynx_ej, "6910"), "RPG_ATTACH": (m1903_ck, "5095"),
         "GRL_OPEN": (rev_cyl, "1115"), "GRL_CASE": (lynx_ej, "6910"), "GRL_COCK": (ts_pump + wj_pump, "1305"),
         "FIRE_SELECT": (wj_safe + tmp_f, "WavJnc+1116"), "SILENCER_ON": (sil_scrw, "2537"), "SILENCER_OFF": (sil_scrw[1:], "2537"),
         "SILENCER_CASE": (cas_9mm, "5195"),
-        "DEAD_CLICK": (dry_m1911 + ffx_19_h, "4936+ffx:A"), "CHNG_WPN": (m4_chrg + ak74_asmb + k98_h, "69+AK0709+K98"),
+        "DEAD_CLICK": (snk_pst_dry + dry_m1911 + ffx_19_h, "snake:dry+4936"), "CHNG_WPN": (snk_ar_chg + m4_chrg + ak74_asmb, "snake:chg+AK0709"),
         "CASING_BRASS": (cas_ak + cas_9mm + cas_50, "SculpTunes+5195+3088"),
         "CASING_SHELL": (cas_shg + cas_wd, "1273+2534"),
     }
@@ -1988,6 +2056,7 @@ def main():
             sigs[key] = (SLOTS[slot_name], flags, entry["name"])
 
     os.makedirs(os.path.dirname(OUT_PAK), exist_ok=True)
+    os.makedirs(os.path.dirname(OUT_MANIFEST), exist_ok=True)
     pcm_chunks = []
     clip_recs = []
     cur_pcm_offset = 0  # Offset in int16 samples!
@@ -2074,104 +2143,8 @@ def main():
 
 
 def build_m91_pack_clips(master_fn):
-    """Master all 27 Mauser 1891-12 WAVs cleanly into their dedicated BWAR v3 slots."""
-    def _pk_wav(fn):
-        _sr, _bits, _a = read_wav_float32(os.path.join(PACK_AUDIO_DIR, fn))
-        return resample_48k(_a, _sr) if _sr != SR else _a
-    eq_f = [(220, 1.3, 1.0), (3400, 1.4, 2.2), (7600, 1.3, 1.8)]
-    pk_fire = [_pk_wav("fire_indoor_%02d.wav" % i) for i in range(1, 5)]
-    pk_outdoor = [_pk_wav("fire_outdoor_%02d.wav" % i) for i in range(1, 4)]
-    pk_supp = [_pk_wav("fire_suppressed_01.wav")]
-    pk_bolt_open = [_pk_wav(f) for f in ("bolt_open.wav", "bolt_open_01.wav", "bolt_open_02.wav")]
-    pk_bolt_pull = [_pk_wav(f) for f in ("bolt_pull.wav", "bolt_pull_01.wav", "bolt_pull_02.wav", "bolt_open_and_pull_raw.wav")]
-    pk_bolt_push = [_pk_wav(f) for f in ("bolt_push.wav", "bolt_push_01.wav", "bolt_push_02.wav")]
-    pk_bolt_cycle = [_pk_wav("bolt_cycle_full.wav")]
-    pk_bolt_close = [_pk_wav(f) for f in ("bolt_close.wav", "bolt_close_01.wav", "bolt_close_02.wav", "bolt_push_and_close_raw.wav")]
-    pk_clip = [_pk_wav(f) for f in ("clip_insert.wav", "reload_full_master.wav")]
-    pk_dry = [_pk_wav("dry_fire_click.wav")]
-    pk_equip = [_pk_wav("equip_foley.wav")]
-
-    for i, a in enumerate(pk_fire):
-        master_fn("M91_FIRE", f"AAA Kar98k indoor firing #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/fire_indoor",
-                  eq_bands=[(68, 1.2, 4.4), (1750, 1.4, 2.6), (5600, 1.4, 1.9)],
-                  in_room_punch=True, ceil_db=-0.75, transient_boost_db=1.4, comp_ratio=2.2, width_pct=106)
-    for i, a in enumerate(pk_bolt_open + pk_bolt_pull + pk_bolt_cycle):
-        master_fn("M91_BOLT", f"AAA Kar98k bolt open/pull manipulation #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/bolt_open_pull", eq_bands=eq_f, transient_boost_db=1.2, width_pct=98)
-    for i, a in enumerate(pk_bolt_push + pk_bolt_close):
-        master_fn("M91_CHAMBER_CLOSE", f"AAA Kar98k bolt push/close #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/bolt_push_close", eq_bands=eq_f,
-                  transient_boost_db=1.3, width_pct=98)
-    for i, a in enumerate(pk_clip):
-        master_fn("M91_CLIP", f"AAA Kar98k stripper clip #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/clip_insert", eq_bands=eq_f,
-                  transient_boost_db=1.2, width_pct=98)
-    for i, a in enumerate(pk_dry):
-        master_fn("M91_DRY", f"AAA Kar98k dry fire #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/dry_fire_click", eq_bands=eq_f,
-                  transient_boost_db=1.3, width_pct=98)
-    for i, a in enumerate(pk_outdoor):
-        master_fn("TAIL_M91_OUTDOOR", f"AAA Kar98k outdoor tail #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/fire_outdoor",
-                  eq_bands=[(95, 1.2, 2.8), (1500, 1.3, 1.4), (5800, 1.2, -1.8)],
-                  transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=170.0, width_pct=114)
-    for i, a in enumerate(pk_equip):
-        master_fn("M91_EQUIP", f"AAA Kar98k equip foley #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/equip_foley", eq_bands=eq_f,
-                  transient_boost_db=1.1, width_pct=98)
-    for i, a in enumerate(pk_supp):
-        master_fn("M91_SUPP", f"AAA Kar98k suppressed firing #{i+1}", a,
-                  "pack:Mauser 1891-12/audio/fire_suppressed",
-                  eq_bands=[(85, 1.2, 3.2), (2200, 1.4, 2.0), (5400, 1.3, -1.5)],
-                  supp_punch=True, ceil_db=-1.05, transient_boost_db=1.1, comp_ratio=2.0, width_pct=100)
-
-    # Also master new Mauser C96 audio pack if present
-    c96_aud_dir = os.path.join(REPO, "الاسلحه الخاصه", "Mauser C96", "mauser_c96", "audio")
-    if os.path.isdir(c96_aud_dir):
-        def _c96_wav(fn):
-            _sr, _bits, _a = read_wav_float32(os.path.join(c96_aud_dir, fn))
-            return resample_48k(_a, _sr) if _sr != SR else _a
-        for i in range(1, 5):
-            master_fn("C96_FIRE", f"AAA Mauser C96 7.63x25mm firing #{i}", _c96_wav(f"fire_indoor_{i:02d}.wav"),
-                      "pack:Mauser C96/audio/fire_indoor",
-                      eq_bands=[(95, 1.2, 3.6), (2100, 1.4, 2.4), (6200, 1.4, 1.8)],
-                      in_room_punch=True, ceil_db=-0.85, transient_boost_db=1.4, comp_ratio=2.2, width_pct=106)
-        for i, fn in enumerate(("bolt_open_01.wav", "bolt_pull_01.wav", "bolt_close_01.wav")):
-            master_fn("C96_BREECH", f"AAA Mauser C96 breech bolt clack #{i+1}", _c96_wav(fn),
-                      "pack:Mauser C96/audio/breech", eq_bands=eq_f, transient_boost_db=1.3, width_pct=98)
-        for i, fn in enumerate(("clip_insert.wav", "reload_full_master.wav")):
-            master_fn("C96_CLIP", f"AAA Mauser C96 stripper clip reload #{i+1}", _c96_wav(fn),
-                      "pack:Mauser C96/audio/clip_insert", eq_bands=eq_f, transient_boost_db=1.2, width_pct=98)
-        master_fn("C96_DRY", "AAA Mauser C96 dry fire click", _c96_wav("dry_fire_click.wav"),
-                  "pack:Mauser C96/audio/dry_fire", eq_bands=eq_f, transient_boost_db=1.3, width_pct=98)
-        master_fn("C96_LOCKOPEN", "AAA Mauser C96 follower bolt lock open", _c96_wav("bolt_open.wav"),
-                  "pack:Mauser C96/audio/bolt_lockopen", eq_bands=eq_f, transient_boost_db=1.3, width_pct=98)
-        for i in range(1, 4):
-            master_fn("TAIL_C96_OUTDOOR", f"AAA Mauser C96 outdoor echo tail #{i}", _c96_wav(f"fire_outdoor_{i:02d}.wav"),
-                      "pack:Mauser C96/audio/fire_outdoor",
-                      eq_bands=[(110, 1.2, 2.4), (1650, 1.3, 1.3), (5800, 1.2, -1.6)],
-                      transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=150.0, width_pct=112)
-
-    # Also master new M2A1 Flamethrower audio pack if present
-    flm_aud_dir = os.path.join(REPO, "الاسلحه الخاصه", "قاذف لهب", "flamethrower", "audio")
-    if os.path.isdir(flm_aud_dir):
-        def _flm_wav(fn):
-            _sr, _bits, _a = read_wav_float32(os.path.join(flm_aud_dir, fn))
-            return resample_48k(_a, _sr) if _sr != SR else _a
-        for i in range(1, 4):
-            master_fn("FLM_IGNITE_SQUIB", f"AAA M2A1 Flamethrower pressurized napalm ignition #{i}",
-                      _flm_wav(f"fire_indoor_{i:02d}.wav"), "pack:flamethrower/audio/fire_indoor",
-                      eq_bands=[(65, 1.1, 4.2), (1450, 1.3, 2.2), (5200, 1.4, 1.8)],
-                      in_room_punch=True, ceil_db=-0.85, transient_boost_db=1.3, comp_ratio=2.2, width_pct=110)
-        for i, fn in enumerate(("bolt_close_01.wav", "bolt_close_02.wav")):
-            master_fn("FLM_VALVE_SHUTOFF", f"AAA M2A1 Flamethrower nozzle valve shutoff #{i+1}",
-                      _flm_wav(fn), "pack:flamethrower/audio/valve_shutoff",
-                      eq_bands=eq_f, transient_boost_db=1.3, width_pct=100)
-        for i, fn in enumerate(("reload_full_master.wav", "clip_insert.wav")):
-            master_fn("FLM_TANK_RELOAD", f"AAA M2A1 Flamethrower nitrogen & fuel tank reload #{i+1}",
-                      _flm_wav(fn), "pack:flamethrower/audio/tank_reload",
-                      eq_bands=eq_f, transient_boost_db=1.2, width_pct=102)
+    """Unused standalone helper (special weapons removed); main() builds all 155 slots cleanly."""
+    return
 
 
 def patch_m91_slots():

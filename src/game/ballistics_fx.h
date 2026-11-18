@@ -104,6 +104,8 @@ void EmitPilotFlameGlow(const float pilot_world[3], float intensity);
 void EmitBurnVictimFlames(const float world_pos[3], float ground_y, float fire_intensity,
                           bool emit_fire, bool emit_smoke, bool is_dying);
 void EmitWoundDrip(const float pos[3], float ground_y);
+void EmitExplosionDismemberment(const float victim_pos[3], const float blast_pos[3],
+                                float blast_radius, uint8_t limbs_mask);
 void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3],
                                    const float hit_end[3], float caliber_scale,
                                    bool spawn_smoke, bool spark_impact);

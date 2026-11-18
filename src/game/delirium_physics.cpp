@@ -23,7 +23,11 @@ using namespace layout;
 X86_EXTERN_FUNC(__imp__sub_000DC960);
 X86_EXTERN_FUNC(__imp__sub_0017F270);
 X86_EXTERN_FUNC(__imp__sub_00195920);
+X86_EXTERN_FUNC(__imp__sub_001B6AA0);
+X86_EXTERN_FUNC(__imp__sub_001C6150);
+X86_EXTERN_FUNC(__imp__sub_001DA240);
 X86_EXTERN_FUNC(__imp__sub_001DB910);
+X86_EXTERN_FUNC(__imp__sub_001E68B0);
 
 namespace game::delirium_phys {
 namespace {
@@ -54,9 +58,39 @@ struct WoundDripSlot {
 };
 constexpr size_t kMaxDripSlots = 32;
 WoundDripSlot g_drip_slots[kMaxDripSlots]{};
-constexpr size_t kMaxRecentSoldiers = 32;
+constexpr size_t kMaxRecentSoldiers = 96;
 uint32_t g_recent_soldiers[kMaxRecentSoldiers]{};
 size_t g_recent_soldier_cursor = 0;
+
+struct DismemberedSoldier {
+    uint32_t soldier_ea = 0;
+    uint8_t limbs_mask = 0;
+};
+constexpr size_t kMaxDismembered = 128;
+DismemberedSoldier g_dismembered[kMaxDismembered]{};
+size_t g_dismember_cursor = 0;
+
+uint8_t LookupDismemberedLocked(uint32_t who) noexcept {
+    if (!who) return 0u;
+    for (size_t i = 0; i < kMaxDismembered; ++i) {
+        if (g_dismembered[i].soldier_ea == who) return g_dismembered[i].limbs_mask;
+    }
+    return 0u;
+}
+
+uint8_t ApplyDismemberedLocked(uint32_t who, uint8_t add_mask) noexcept {
+    if (!who || !add_mask) return 0u;
+    for (size_t i = 0; i < kMaxDismembered; ++i) {
+        if (g_dismembered[i].soldier_ea == who) {
+            const uint8_t fresh = add_mask & uint8_t(~g_dismembered[i].limbs_mask);
+            g_dismembered[i].limbs_mask |= add_mask;
+            return fresh;
+        }
+    }
+    g_dismembered[g_dismember_cursor % kMaxDismembered] = {who, add_mask};
+    g_dismember_cursor = (g_dismember_cursor + 1u) % kMaxDismembered;
+    return add_mask;
+}
 
 void RememberSoldier(uint32_t who) noexcept {
     if (!who) return;
@@ -287,17 +321,57 @@ void OnExplosionShockwave(const float blast_pos[3], float blast_radius,
                           float blast_force) noexcept {
     if (!blast_pos) return;
     const auto cfg = ReadConfigFromLab();
-    if (!cfg.enabled) return;
 
-    std::lock_guard<std::mutex> lock(g_sim_mutex);
-    g_sim.SetConfig(cfg);
-    for (size_t i = 0; i < kMaxRecentSoldiers; ++i) {
-        const uint32_t who = g_recent_soldiers[i];
-        if (!IsNonPlayerSoldier(who)) continue;
-        if (R32(who + kCharDyingOffset) != 0u) continue;
-        if (!IsValidGuestAddr(who + kCharPosOffset, 12u)) continue;
-        const float* sp = &G<float>(who + kCharPosOffset);
-        g_sim.OnExplosionShockwave(who, blast_pos, sp, blast_radius, blast_force);
+    struct PendingGib {
+        float pos[3];
+        uint8_t mask;
+    };
+    PendingGib pending_gibs[kMaxRecentSoldiers]{};
+    size_t pending_count = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(g_sim_mutex);
+        if (cfg.enabled) {
+            g_sim.SetConfig(cfg);
+        }
+        const float sever_reach = std::max(blast_radius * 1.10f, 5.2f);
+        for (size_t i = 0; i < kMaxRecentSoldiers; ++i) {
+            const uint32_t who = g_recent_soldiers[i];
+            if (!IsNonPlayerSoldier(who)) continue;
+            if (!IsValidGuestAddr(who + kCharPosOffset, 12u)) continue;
+            const float* sp = &G<float>(who + kCharPosOffset);
+            if (!std::isfinite(sp[0]) || !std::isfinite(sp[1]) || !std::isfinite(sp[2])) continue;
+            const uint32_t state = R32(who + kCharDyingOffset);
+            if (cfg.enabled && state == 0u) {
+                g_sim.OnExplosionShockwave(who, blast_pos, sp, blast_radius, blast_force);
+            }
+            const float dx = sp[0] - blast_pos[0];
+            const float dy = sp[1] - blast_pos[1];
+            const float dz = sp[2] - blast_pos[2];
+            const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist <= sever_reach && state <= 1u) {
+                uint8_t want = 0u;
+                if (dist < 2.85f) {
+                    want = 0x1Fu; // Close blast: head + all limbs torn away
+                } else {
+                    const uint32_t h = (who >> 4) ^ uint32_t(dist * 100.0f);
+                    want = (h & 1u) ? 0x15u : 0x0Eu; // Partial head/arm/leg dismemberment
+                }
+                const uint8_t newly_severed = ApplyDismemberedLocked(who, want);
+                if (newly_severed != 0u && pending_count < kMaxRecentSoldiers) {
+                    pending_gibs[pending_count].pos[0] = sp[0];
+                    pending_gibs[pending_count].pos[1] = sp[1];
+                    pending_gibs[pending_count].pos[2] = sp[2];
+                    pending_gibs[pending_count].mask = newly_severed;
+                    pending_count++;
+                }
+            }
+        }
+    }
+
+    for (size_t i = 0; i < pending_count; ++i) {
+        game::ballistics::EmitExplosionDismemberment(
+            pending_gibs[i].pos, blast_pos, blast_radius, pending_gibs[i].mask);
     }
 }
 
@@ -336,20 +410,30 @@ void OnEnemyFrameStep(X86Context& ctx, uint8_t* base, uint32_t who,
             StepWoundBloodDrip(who, clamped_dt,
                                step.apply_stumble_vel ? 0.85f : 0.45f);
         }
-    } else if (cfg.agony_duration > 1e-3f) {
-        const uint32_t body = R32(who + kCharBodyOffset);
-        if (!IsValidGuestAddr(body, 0x94u) || R32(body + 0x90u) != 2u) {
-            return;
-        }
-        game::delirium::AgonyPulse pulse{};
+    } else {
+        uint8_t sever_mask = 0u;
         {
             std::lock_guard<std::mutex> lock(g_sim_mutex);
-            g_sim.SetConfig(cfg);
-            pulse = g_sim.StepAgony(who, clamped_dt);
+            sever_mask = LookupDismemberedLocked(who);
         }
-        if (pulse.active) {
-            DriveAgonyPulse(ctx, base, who, pulse);
-            StepWoundBloodDrip(who, clamped_dt, 0.55f);
+        if (sever_mask != 0u) {
+            StepWoundBloodDrip(who, clamped_dt, 0.95f);
+        }
+        if (cfg.agony_duration > 1e-3f) {
+            const uint32_t body = R32(who + kCharBodyOffset);
+            if (!IsValidGuestAddr(body, 0x94u) || R32(body + 0x90u) != 2u) {
+                return;
+            }
+            game::delirium::AgonyPulse pulse{};
+            {
+                std::lock_guard<std::mutex> lock(g_sim_mutex);
+                g_sim.SetConfig(cfg);
+                pulse = g_sim.StepAgony(who, clamped_dt);
+            }
+            if (pulse.active) {
+                DriveAgonyPulse(ctx, base, who, pulse);
+                StepWoundBloodDrip(who, clamped_dt, 0.55f);
+            }
         }
     }
 }
@@ -400,11 +484,24 @@ bool ApplyDeathCollapseVariation(uint32_t approx_owner,
     return true;
 }
 
+uint8_t GetDismemberMask(uint32_t soldier_ea) noexcept {
+    std::lock_guard<std::mutex> lock(g_sim_mutex);
+    return LookupDismemberedLocked(soldier_ea);
+}
+
+void TrackSoldierPtr(uint32_t soldier_ea) noexcept {
+    if (!IsNonPlayerSoldier(soldier_ea)) return;
+    std::lock_guard<std::mutex> lock(g_sim_mutex);
+    RememberSoldier(soldier_ea);
+}
+
 void ResetAll() noexcept {
     std::lock_guard<std::mutex> lock(g_sim_mutex);
     g_sim.Reset();
     g_last_lethal_victim = 0;
     std::memset(g_drip_slots, 0, sizeof(g_drip_slots));
+    std::memset(g_dismembered, 0, sizeof(g_dismembered));
+    g_dismember_cursor = 0;
 }
 
 }  // namespace game::delirium_phys
@@ -481,5 +578,115 @@ X86_FUNC(sub_001DB910) {
     __imp__sub_001DB910(ctx, base);
     if (redirected) {
         ctx.edi = orig_edi;
+    }
+}
+
+namespace {
+inline uint32_t ReadWorldTimeBits() noexcept {
+    if (!game::delirium_phys::IsValidGuestAddr(0x2D45D4u, 4u)) return 0u;
+    const uint32_t mgr = R32(0x2D45D4u);
+    if (!game::delirium_phys::IsValidGuestAddr(mgr, 0x24u)) return 0u;
+    return R32(mgr + 0x20u);
+}
+
+void ExpandCorpseQueue(uint8_t* base, uint32_t queue_ea, uint32_t backing_buf_ea,
+                       uint32_t new_cap) noexcept {
+    if (!base || !backing_buf_ea || new_cap == 0u ||
+        !game::delirium_phys::IsValidGuestAddr(queue_ea, 0x10u)) {
+        return;
+    }
+    const uint32_t cur_cap = R32(queue_ea + 0x04u);
+    const uint32_t cur_buf = R32(queue_ea + 0x0Cu);
+    if (cur_cap > 0u && (cur_buf != backing_buf_ea || cur_cap < new_cap)) {
+        uint32_t* dst = X86_PTR(uint32_t, backing_buf_ea);
+        std::memset(dst, 0, new_cap * 4u);
+        if (cur_buf && game::delirium_phys::IsValidGuestAddr(cur_buf, cur_cap * 4u)) {
+            const uint32_t copy_n = std::min(cur_cap, new_cap);
+            std::memcpy(dst, X86_PTR(const uint32_t, cur_buf), copy_n * 4u);
+        }
+        W32(queue_ea + 0x0Cu, backing_buf_ea);
+        W32(queue_ea + 0x04u, new_cap);
+    }
+}
+}  // namespace
+
+// Submesh LOD visibility mask hook: hides blown-off head/gear/upper-body
+// submesh groups when a soldier is dismembered by an explosion (preserving core torso bit 0).
+X86_FUNC(sub_001B6AA0) {
+    const uint32_t soldier = ctx.eax;
+    const uint32_t model = ctx.edx;
+    __imp__sub_001B6AA0(ctx, base);
+    const uint8_t dmask = game::delirium_phys::GetDismemberMask(soldier);
+    if (dmask != 0u &&
+        game::delirium_phys::IsValidGuestAddr(soldier + 0x368u, 8u) &&
+        game::delirium_phys::IsValidGuestAddr(model + 0x24u, 4u)) {
+        const uint32_t submesh_count = R32(model + 0x24u);
+        if (submesh_count > 1u && submesh_count <= 32u) {
+            uint32_t vis0 = R32(soldier + 0x368u);
+            // Always preserve bit 0 (core torso/body) so body never vanishes;
+            // clear upper accessory/head/limb submesh bits according to dismember mask.
+            for (uint32_t s = 1u; s < submesh_count; ++s) {
+                if ((dmask & 0x01u) && (s == 1u || s == submesh_count - 1u)) {
+                    vis0 &= ~(1u << s);
+                } else if (s >= 2u && ((dmask >> ((s - 1u) & 3u)) & 1u)) {
+                    vis0 &= ~(1u << s);
+                }
+            }
+            if ((vis0 & 1u) != 0u) {
+                W32(soldier + 0x368u, vis0);
+            }
+        }
+    }
+}
+
+// Enemy character render wrapper: tracks all soldiers and prevents corpses
+// in state 1 from timing out and fading into invisibility.
+X86_FUNC(sub_001C6150) {
+    const uint32_t soldier = ctx.ecx;
+    if (soldier && game::delirium_phys::IsValidGuestAddr(soldier, 0x390u)) {
+        game::delirium_phys::TrackSoldierPtr(soldier);
+        if (R32(soldier + 0x384u) == 1u) {
+            const uint32_t tbits = ReadWorldTimeBits();
+            if (tbits != 0u) {
+                W32(soldier + 0x2F8u, tbits);
+            }
+            W32(soldier + 0x254u, 0x3F800000u); // 1.0f permanent full opacity
+        }
+    }
+    __imp__sub_001C6150(ctx, base);
+}
+
+// Dead corpse queue enqueue: expand queue [+0x79C0] from 8 to 24 slots
+// (safe under the 32-entry sub_001CCA60 sort limit) so corpses do not evict.
+X86_FUNC(sub_001DA240) {
+    static const uint32_t kCorpseQueueCBuf = mem::AllocSystem(24u * 4u, 16u);
+    const uint32_t mgr = ctx.ecx;
+    const uint32_t soldier = ctx.eax;
+    if (mgr && game::delirium_phys::IsValidGuestAddr(mgr + 0x79C0u, 0x10u)) {
+        ExpandCorpseQueue(base, mgr + 0x79C0u, kCorpseQueueCBuf, 24u);
+    }
+    if (soldier) {
+        game::delirium_phys::TrackSoldierPtr(soldier);
+    }
+    __imp__sub_001DA240(ctx, base);
+}
+
+// Settled ragdoll retire: expand queue [+0x79D0] from 8 to 96 slots and keep
+// settled corpses in render state 1 so killed enemies remain on the battlefield forever.
+X86_FUNC(sub_001E68B0) {
+    static const uint32_t kCorpseQueueDBuf = mem::AllocSystem(96u * 4u, 16u);
+    const uint32_t mgr = ctx.ecx;
+    const uint32_t soldier = ctx.eax;
+    if (mgr && game::delirium_phys::IsValidGuestAddr(mgr + 0x79D0u, 0x10u)) {
+        ExpandCorpseQueue(base, mgr + 0x79D0u, kCorpseQueueDBuf, 96u);
+    }
+    __imp__sub_001E68B0(ctx, base);
+    if (soldier && game::delirium_phys::IsValidGuestAddr(soldier, 0x390u)) {
+        W32(soldier + 0x384u, 1u); // stay visible static corpse instead of state 2 hidden
+        const uint32_t tbits = ReadWorldTimeBits();
+        if (tbits != 0u) {
+            W32(soldier + 0x2F8u, tbits);
+        }
+        W32(soldier + 0x254u, 0x3F800000u);
     }
 }

@@ -23,6 +23,9 @@ void TriggerExternalAgony(X86Context& ctx, uint8_t* base, uint32_t who,
 bool ApplyDeathCollapseVariation(uint32_t approx_owner,
                                  X86Xmm& vel_inout) noexcept;
 
+uint8_t GetDismemberMask(uint32_t soldier_ea) noexcept;
+void TrackSoldierPtr(uint32_t soldier_ea) noexcept;
+
 void ResetAll() noexcept;
 
 }  // namespace game::delirium_phys

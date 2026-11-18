@@ -192,127 +192,138 @@ uint32_t SampleVfxAtlasTexelBgra(uint32_t tx, uint32_t ty, float u_tile, float v
     const float rgb_guard = Clamp01(env * 3.5f);
 
     if (ty == 0u) {
-        // Row 0: Volumetric Self-Shadowed Smoke Billows (Smooth Multi-Lobe Optical
-        // Density Integration + Beer-Lambert Directional Light Extinction + Mie Silver Lining).
-        const float qx = (RotatedFbm2D(ux * 1.55f + float(tx) * 2.3f,
-                                       uy * 1.55f + 0.9f, tile_seed, 4) - 0.5f) * 0.42f;
+        // Row 0: Brand-New Volumetric Pyrocumulus Smoke Billows
+        // 2-stage curl-advected domain warp + 9 overlapping buoyant cauliflower lobes
+        // + stronger Beer-Lambert cavity self-shadowing & crisp Mie rim scattering.
+        const float eps_c = 0.06f;
+        const float curl_base_a = RotatedFbm2D(ux * 1.45f + float(tx) * 2.1f,
+                                               uy * 1.45f + 0.7f, tile_seed, 4);
+        const float curl_dx = RotatedFbm2D((ux + eps_c) * 1.45f + float(tx) * 2.1f,
+                                           uy * 1.45f + 0.7f, tile_seed, 3) - curl_base_a;
+        const float curl_dy = RotatedFbm2D(ux * 1.45f + float(tx) * 2.1f,
+                                           (uy + eps_c) * 1.45f + 0.7f, tile_seed, 3) - curl_base_a;
+        const float qx = (curl_base_a - 0.5f) * 0.34f + curl_dy * 1.65f;
         const float qy = (RotatedFbm2D(ux * 1.55f - 1.4f,
-                                       uy * 1.55f + float(tx) * 3.1f, tile_seed + 41u, 4) - 0.5f) * 0.42f;
+                                       uy * 1.55f + float(tx) * 3.1f, tile_seed + 41u, 4) - 0.5f) * 0.34f - curl_dx * 1.65f;
         const float wx = ux + qx;
         const float wy = uy + qy;
-        const float turb_low = RotatedFbm2D(wx * 2.15f + float(tx) * 1.7f,
-                                            wy * 2.15f - 0.8f, tile_seed + 101u, 4);
-        const float turb_mid = RotatedFbm2D(wx * 3.85f - qy * 1.6f,
-                                            wy * 3.85f + qx * 1.6f, tile_seed + 173u, 4);
-        const float turb_fine = RotatedFbm2D(wx * 6.80f + qx * 2.1f,
-                                             wy * 6.80f - qy * 2.1f, tile_seed + 257u, 3);
+        const float turb_low = RotatedFbm2D(wx * 2.05f + float(tx) * 1.7f,
+                                            wy * 2.05f - 0.8f, tile_seed + 101u, 4);
+        const float turb_mid = RotatedFbm2D(wx * 4.20f - qy * 1.8f,
+                                            wy * 4.20f + qx * 1.8f, tile_seed + 173u, 4);
+        const float turb_fine = RotatedFbm2D(wx * 8.10f + qx * 2.4f,
+                                             wy * 8.10f - qy * 2.4f, tile_seed + 257u, 3);
+        const float ridged_crevice = 1.0f - std::abs(2.0f * turb_mid - 1.0f);
 
-        // Smoothly integrated volumetric density across 7 buoyant cauliflower smoke lobes
+        // Smoothly integrated volumetric density across 9 varied pyrocumulus lobes
         auto sample_cloud_field = [&](float px, float py) -> float {
             float sum = 0.0f;
-            for (int k = 0; k < 7; ++k) {
-                float cx = 0.0f, cy = 0.0f, rad_lobe = 0.56f, weight = 0.66f;
+            for (int k = 0; k < 9; ++k) {
+                float cx = 0.0f, cy = -0.04f, rad_lobe = 0.54f, weight = 0.62f;
                 if (k > 0) {
-                    const float ang = float(k - 1) * 1.04719755f + float(tx) * 0.73f +
-                                      0.32f * std::sin(float(k * 3u + tx * 5u));
-                    const float dist = 0.27f + 0.08f * std::cos(float(k * 7u + tx * 2u));
+                    const float ang = float(k - 1) * 0.785398f + float(tx) * 0.85f +
+                                      0.38f * std::sin(float(k * 3u + tx * 5u));
+                    const float dist = 0.22f + 0.14f * std::cos(float(k * 7u + tx * 3u));
                     cx = std::cos(ang) * dist;
-                    cy = std::sin(ang) * dist;
-                    rad_lobe = 0.44f + 0.06f * std::sin(float(k * 5u + tx));
-                    weight = 0.40f;
+                    cy = std::sin(ang) * dist - 0.02f;
+                    rad_lobe = 0.36f + 0.09f * std::sin(float(k * 5u + tx));
+                    weight = 0.33f;
                 }
                 const float dx = (px - cx) / rad_lobe;
                 const float dy = (py - cy) / rad_lobe;
                 const float d2 = dx * dx + dy * dy;
                 if (d2 < 1.0f) {
                     const float fall = 1.0f - d2;
-                    sum += weight * fall * fall * (1.0f + 0.5f * d2);
+                    sum += weight * fall * fall * (1.0f + 0.55f * d2);
                 }
             }
-            return Clamp01(sum * 0.94f);
+            return Clamp01(sum * 0.88f);
         };
 
         const float base_field = sample_cloud_field(wx, wy);
-        // Sample optical thickness towards upper-left key light L=(-0.07, -0.11) for Beer-Lambert self-shadowing
-        const float lit_field = sample_cloud_field(wx - 0.07f, wy - 0.11f);
-        const float lit_turb = RotatedFbm2D((wx - 0.05f) * 2.15f + float(tx) * 1.7f,
-                                            (wy - 0.08f) * 2.15f - 0.8f, tile_seed + 101u, 3);
+        // Sample optical thickness towards upper-left key light L=(-0.09, -0.13)
+        const float lit_field = sample_cloud_field(wx - 0.09f, wy - 0.13f);
+        const float lit_turb = RotatedFbm2D((wx - 0.07f) * 2.05f + float(tx) * 1.7f,
+                                            (wy - 0.10f) * 2.05f - 0.8f, tile_seed + 101u, 3);
 
-        const float fbm_billow = 0.52f * turb_low + 0.32f * turb_mid + 0.16f * turb_fine;
+        const float fbm_billow = 0.48f * turb_low + 0.34f * ridged_crevice + 0.18f * turb_fine;
+        const float edge_soft = (tx >= 2u) ? 0.64f : 0.54f;
         const float density = Clamp01(
-            SmoothStep(0.05f, 0.58f, base_field * (0.54f + 0.78f * fbm_billow)) * rim_mask);
-        const float wisp_scale = (tx >= 2u) ? 0.88f : 0.96f;
-        const float alpha_f = Clamp01(std::pow(density, 1.05f) * wisp_scale);
+            SmoothStep(0.06f, edge_soft, base_field * (0.52f + 0.84f * fbm_billow)) * rim_mask);
+        const float wisp_scale = (tx >= 2u) ? 0.86f : 0.96f;
+        const float alpha_f = Clamp01(std::pow(density, 1.02f) * wisp_scale);
 
-        // Beer-Lambert self-shadowing: optical depth along light ray attenuates interior/underbelly
-        const float shadow_ray_depth = Clamp01((lit_field - base_field) * 2.35f +
-                                               (lit_turb - turb_low) * 1.30f +
-                                               (uy + 0.35f) * 0.40f);
-        const float beer_transmittance = std::exp(-1.55f * shadow_ray_depth);
-        // Mie forward-scattered silver-lining at thin wispy edges facing the light
+        // Strong Beer-Lambert volumetric self-shadowing across billow folds & crevices
+        const float shadow_ray_depth = Clamp01((lit_field - base_field) * 2.65f +
+                                               (lit_turb - turb_low) * 1.45f +
+                                               (1.0f - ridged_crevice) * 0.24f +
+                                               (uy + 0.30f) * 0.42f);
+        const float beer_transmittance = std::exp(-1.85f * shadow_ray_depth);
+        // Mie forward-scattered bright rim on sunlit upper puffs
         const float silver_lining =
-            Clamp01(density * (1.0f - density) * 1.45f * beer_transmittance);
+            Clamp01(density * (1.0f - density * 0.82f) * 1.65f * beer_transmittance);
 
         const float lum = Clamp01(
-            (0.20f + 0.54f * beer_transmittance * (0.68f + 0.32f * fbm_billow) +
-             0.16f * silver_lining) *
+            (0.18f + 0.60f * beer_transmittance * (0.64f + 0.36f * fbm_billow) +
+             0.18f * silver_lining) *
             rgb_guard);
         return PackBgra(lum, lum, lum, alpha_f);
     }
 
     if (ty == 1u) {
-        // Row 1: Coherent Laminar-to-Turbulent Diffusion Flame Tongues & Vortex Ribbons
-        // with true Planck Blackbody Radiation spectrum (White-Gold 2300K -> Amber 1700K -> Crimson-Red 1150K).
+        // Row 1: Brand-New Turbulent Cellular Diffusion Fire & Buoyant Flame Ribbons
+        // Combines ridged turbulence plasma veins with Kelvin-Helmholtz flame sheets & Blackbody emission.
         const float sign_x = (tx == 0u || tx == 2u) ? 1.0f : -1.0f;
-        const float reach = Clamp01((0.65f - uy) * 0.78f);
+        const float reach = Clamp01((0.72f - uy) * 0.82f);
 
-        // Smooth S-curve Kelvin-Helmholtz vortex wave along vertical axis
-        const float wave_phase = uy * 3.2f + float(tx) * 1.57f;
-        const float s_curve = sign_x * std::sin(wave_phase) * (0.14f + 0.22f * reach);
+        // Multi-harmonic sinuous shear wave driving natural flickering flame motion
+        const float wave_phase = uy * 3.8f + float(tx) * 1.57f;
+        const float s_curve = sign_x * (std::sin(wave_phase) * (0.12f + 0.24f * reach) +
+                                        std::sin(wave_phase * 2.1f + 0.7f) * 0.06f * reach);
 
-        // Low-frequency coherent domain warp preserves smooth liquid-like flame sheets
-        const float qx = RotatedFbm2D(ux * 1.35f + float(tx) * 2.7f,
-                                      uy * 1.15f - 0.9f, tile_seed, 3) - 0.5f;
-        const float qy = RotatedFbm2D(ux * 1.35f - 1.9f,
-                                      uy * 1.15f + float(tx) * 3.3f, tile_seed + 47u, 3) - 0.5f;
+        const float qx = RotatedFbm2D(ux * 1.55f + float(tx) * 2.9f,
+                                      uy * 1.25f - 0.8f, tile_seed, 4) - 0.5f;
+        const float qy = RotatedFbm2D(ux * 1.55f - 1.7f,
+                                      uy * 1.25f + float(tx) * 3.4f, tile_seed + 47u, 4) - 0.5f;
 
-        const float taper = 0.82f + 0.95f * reach * reach;
-        const float sy_scale = 0.96f + 0.18f * uy;
-        const float fx = (ux - s_curve + qx * (0.38f + 0.32f * reach)) * taper;
-        const float fy = (uy - 0.08f + qy * 0.34f) * sy_scale;
+        const float taper = 0.78f + 1.05f * reach * reach;
+        const float sy_scale = 0.92f + 0.22f * uy;
+        const float fx = (ux - s_curve + qx * (0.42f + 0.38f * reach)) * taper;
+        const float fy = (uy - 0.06f + qy * 0.36f) * sy_scale;
         const float flame_r = std::sqrt(fx * fx + fy * fy) / kMaxTileRadius;
 
-        // Secondary licking tongues & carved cool air entrainment eddies (Rayleigh-Taylor fingers)
-        const float tongue_fbm = RotatedFbm2D(fx * 2.15f + qx * 1.2f,
-                                              fy * 1.65f - 0.6f, tile_seed + 109u, 3);
-        const float lick_fbm = RotatedFbm2D(fx * 3.60f - qy * 1.1f,
-                                            fy * 2.40f + 1.1f, tile_seed + 181u, 3);
-        const float eddy_carve = SmoothStep(0.28f, 0.68f, tongue_fbm * 0.68f + lick_fbm * 0.32f);
+        // Ridged cellular flame veins + fine tearing diffusion tongues
+        const float tongue_fbm = RotatedFbm2D(fx * 2.25f + qx * 1.4f,
+                                              fy * 1.55f - 0.6f, tile_seed + 109u, 4);
+        const float lick_raw = RotatedFbm2D(fx * 4.40f - qy * 1.5f,
+                                            fy * 2.60f + 1.1f, tile_seed + 181u, 3);
+        const float ridge_veins = 1.0f - std::abs(2.0f * lick_raw - 1.0f);
+        const float eddy_carve = SmoothStep(0.24f, 0.74f, tongue_fbm * 0.58f + ridge_veins * 0.42f);
 
         const float sheet_body =
-            SmoothStep(1.02f, 0.18f, flame_r - (eddy_carve - 0.45f) * 0.42f);
+            SmoothStep(1.04f, 0.14f, flame_r - (eddy_carve - 0.44f) * 0.46f);
         const float outer_licks =
-            SmoothStep(0.42f, 0.78f, lick_fbm) * SmoothStep(1.05f, 0.35f, flame_r);
+            SmoothStep(0.38f, 0.82f, ridge_veins) * SmoothStep(1.06f, 0.30f, flame_r);
 
-        // Compact incandescent reaction heart anchored in lower-middle fuel zone
-        const float core_dx = (ux - s_curve * 0.4f) * 1.35f;
-        const float core_dy = (uy - 0.10f) * 1.30f;
+        // Hot luminous fuel reaction core + turbulent incandescent veins
+        const float core_dx = (ux - s_curve * 0.35f) * 1.30f;
+        const float core_dy = (uy - 0.08f) * 1.25f;
         const float core_d = std::sqrt(core_dx * core_dx + core_dy * core_dy) / kMaxTileRadius;
-        const float heart = SmoothStep(0.72f, 0.0f, core_d) * (0.75f + 0.25f * tongue_fbm);
+        const float heart = SmoothStep(0.76f, 0.0f, core_d) * (0.72f + 0.28f * ridge_veins);
 
-        const float flame_density = Clamp01(sheet_body * (0.25f + 0.85f * eddy_carve) +
-                                            outer_licks * 0.48f + heart * 0.65f);
-        const float alpha_f = Clamp01(flame_density * rim_mask * 1.18f);
+        const float flame_density = Clamp01(sheet_body * (0.28f + 0.88f * eddy_carve) +
+                                            outer_licks * 0.54f + heart * 0.68f);
+        const float alpha_f = Clamp01(flame_density * rim_mask * 1.24f);
 
-        // Planck Blackbody radiation spectrum mapped across normalized temperature T in [0..1]
-        const float temp = Clamp01(heart * 0.68f + sheet_body * eddy_carve * 0.58f +
-                                   outer_licks * 0.28f - rn * 0.18f);
+        // Rich Blackbody Planck curve: hot white-gold core -> amber orange -> deep carmine rim
+        const float temp = Clamp01(heart * 0.72f + sheet_body * eddy_carve * 0.60f +
+                                   outer_licks * 0.32f - rn * 0.20f);
         const float r_f =
-            Clamp01(SmoothStep(0.02f, 0.24f, temp) * (0.88f + 0.12f * temp)) * rgb_guard;
+            Clamp01(SmoothStep(0.02f, 0.22f, temp) * (0.86f + 0.14f * temp)) * rgb_guard;
         const float g_f =
-            Clamp01(std::pow(Clamp01((temp - 0.12f) / 0.88f), 1.42f) * 0.94f) * rgb_guard;
+            Clamp01(std::pow(Clamp01((temp - 0.14f) / 0.86f), 1.62f) * 0.90f) * rgb_guard;
         const float b_f =
-            Clamp01(std::pow(Clamp01((temp - 0.46f) / 0.54f), 2.15f) * 0.72f) * rgb_guard;
+            Clamp01(std::pow(Clamp01((temp - 0.52f) / 0.48f), 2.35f) * 0.64f) * rgb_guard;
         return PackBgra(r_f, g_f, b_f, alpha_f);
     }
 
@@ -363,14 +374,14 @@ uint32_t SampleVfxAtlasTexelBgra(uint32_t tx, uint32_t ty, float u_tile, float v
             thick = Clamp01(0.52f + 0.36f * main_splat + 0.15f * meniscus);
         }
         const float opt_depth = Clamp01(1.12f - 0.88f * thick);
-        const float beer_r = std::exp(-1.15f * opt_depth);
-        const float beer_g = std::exp(-4.80f * opt_depth);
-        const float beer_b = std::exp(-5.40f * opt_depth);
-        const float glint = meniscus * meniscus * 0.14f;
+        const float beer_r = std::exp(-1.10f * opt_depth);
+        const float beer_g = std::exp(-6.40f * opt_depth);
+        const float beer_b = std::exp(-7.00f * opt_depth);
+        const float glint = meniscus * meniscus * 0.10f;
         return PackBgra(
             Clamp01(0.42f + 0.56f * beer_r + glint) * rgb_guard,
-            Clamp01(0.022f + 0.085f * beer_g + glint * 0.65f) * rgb_guard,
-            Clamp01(0.026f + 0.088f * beer_b + glint * 0.70f) * rgb_guard,
+            Clamp01(0.012f + 0.036f * beer_g + glint * 0.45f) * rgb_guard,
+            Clamp01(0.014f + 0.038f * beer_b + glint * 0.50f) * rgb_guard,
             alpha_f);
     }
 
