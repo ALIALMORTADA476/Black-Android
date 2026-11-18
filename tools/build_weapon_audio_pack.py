@@ -2126,9 +2126,56 @@ def build_m91_pack_clips(master_fn):
                   eq_bands=[(85, 1.2, 3.2), (2200, 1.4, 2.0), (5400, 1.3, -1.5)],
                   supp_punch=True, ceil_db=-1.05, transient_boost_db=1.1, comp_ratio=2.0, width_pct=100)
 
+    # Also master new Mauser C96 audio pack if present
+    c96_aud_dir = os.path.join(REPO, "الاسلحه الخاصه", "Mauser C96", "mauser_c96", "audio")
+    if os.path.isdir(c96_aud_dir):
+        def _c96_wav(fn):
+            _sr, _bits, _a = read_wav_float32(os.path.join(c96_aud_dir, fn))
+            return resample_48k(_a, _sr) if _sr != SR else _a
+        for i in range(1, 5):
+            master_fn("C96_FIRE", f"AAA Mauser C96 7.63x25mm firing #{i}", _c96_wav(f"fire_indoor_{i:02d}.wav"),
+                      "pack:Mauser C96/audio/fire_indoor",
+                      eq_bands=[(95, 1.2, 3.6), (2100, 1.4, 2.4), (6200, 1.4, 1.8)],
+                      in_room_punch=True, ceil_db=-0.85, transient_boost_db=1.4, comp_ratio=2.2, width_pct=106)
+        for i, fn in enumerate(("bolt_open_01.wav", "bolt_pull_01.wav", "bolt_close_01.wav")):
+            master_fn("C96_BREECH", f"AAA Mauser C96 breech bolt clack #{i+1}", _c96_wav(fn),
+                      "pack:Mauser C96/audio/breech", eq_bands=eq_f, transient_boost_db=1.3, width_pct=98)
+        for i, fn in enumerate(("clip_insert.wav", "reload_full_master.wav")):
+            master_fn("C96_CLIP", f"AAA Mauser C96 stripper clip reload #{i+1}", _c96_wav(fn),
+                      "pack:Mauser C96/audio/clip_insert", eq_bands=eq_f, transient_boost_db=1.2, width_pct=98)
+        master_fn("C96_DRY", "AAA Mauser C96 dry fire click", _c96_wav("dry_fire_click.wav"),
+                  "pack:Mauser C96/audio/dry_fire", eq_bands=eq_f, transient_boost_db=1.3, width_pct=98)
+        master_fn("C96_LOCKOPEN", "AAA Mauser C96 follower bolt lock open", _c96_wav("bolt_open.wav"),
+                  "pack:Mauser C96/audio/bolt_lockopen", eq_bands=eq_f, transient_boost_db=1.3, width_pct=98)
+        for i in range(1, 4):
+            master_fn("TAIL_C96_OUTDOOR", f"AAA Mauser C96 outdoor echo tail #{i}", _c96_wav(f"fire_outdoor_{i:02d}.wav"),
+                      "pack:Mauser C96/audio/fire_outdoor",
+                      eq_bands=[(110, 1.2, 2.4), (1650, 1.3, 1.3), (5800, 1.2, -1.6)],
+                      transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=150.0, width_pct=112)
+
+    # Also master new M2A1 Flamethrower audio pack if present
+    flm_aud_dir = os.path.join(REPO, "الاسلحه الخاصه", "قاذف لهب", "flamethrower", "audio")
+    if os.path.isdir(flm_aud_dir):
+        def _flm_wav(fn):
+            _sr, _bits, _a = read_wav_float32(os.path.join(flm_aud_dir, fn))
+            return resample_48k(_a, _sr) if _sr != SR else _a
+        for i in range(1, 4):
+            master_fn("FLM_IGNITE_SQUIB", f"AAA M2A1 Flamethrower pressurized napalm ignition #{i}",
+                      _flm_wav(f"fire_indoor_{i:02d}.wav"), "pack:flamethrower/audio/fire_indoor",
+                      eq_bands=[(65, 1.1, 4.2), (1450, 1.3, 2.2), (5200, 1.4, 1.8)],
+                      in_room_punch=True, ceil_db=-0.85, transient_boost_db=1.3, comp_ratio=2.2, width_pct=110)
+        for i, fn in enumerate(("bolt_close_01.wav", "bolt_close_02.wav")):
+            master_fn("FLM_VALVE_SHUTOFF", f"AAA M2A1 Flamethrower nozzle valve shutoff #{i+1}",
+                      _flm_wav(fn), "pack:flamethrower/audio/valve_shutoff",
+                      eq_bands=eq_f, transient_boost_db=1.3, width_pct=100)
+        for i, fn in enumerate(("reload_full_master.wav", "clip_insert.wav")):
+            master_fn("FLM_TANK_RELOAD", f"AAA M2A1 Flamethrower nitrogen & fuel tank reload #{i+1}",
+                      _flm_wav(fn), "pack:flamethrower/audio/tank_reload",
+                      eq_bands=eq_f, transient_boost_db=1.2, width_pct=102)
+
 
 def patch_m91_slots():
-    """Patch M91 slots (132..135, 145, 149, 153, 154) cleanly inside existing black_weapon_audio.pak."""
+    """Patch M91, C96, and FLM slots cleanly inside existing black_weapon_audio.pak."""
     with open(OUT_PAK, "rb") as f:
         raw = f.read()
     magic, ver, sr, slot_count, clip_count, sig_count = struct.unpack_from("<4s5I", raw, 0)
@@ -2141,7 +2188,9 @@ def patch_m91_slots():
     old_pcm = np.frombuffer(raw, dtype="<i2", offset=off)
 
     m91_sids = {SLOTS[k] for k in ("M91_FIRE", "M91_BOLT", "M91_CLIP", "M91_DRY", "TAIL_M91_OUTDOOR",
-                                    "M91_CHAMBER_CLOSE", "M91_EQUIP", "M91_SUPP")}
+                                    "M91_CHAMBER_CLOSE", "M91_EQUIP", "M91_SUPP",
+                                    "C96_FIRE", "C96_BREECH", "C96_CLIP", "C96_DRY", "C96_LOCKOPEN", "TAIL_C96_OUTDOOR",
+                                    "FLM_IGNITE_SQUIB", "FLM_VALVE_SHUTOFF", "FLM_TANK_RELOAD")}
     new_recs = []
     pcm_chunks = []
     cur_off = 0

@@ -223,19 +223,36 @@ inline bool IsRtl() {
 
 void Section(const char *title) {
   float em = ImGui::GetFontSize();
-  ImGui::Dummy(ImVec2(0, em * 0.5f));
-  ImGui::PushStyleColor(ImGuiCol_Text, CurrentTheme().heading);
+  TacticalTheme theme = CurrentTheme();
+  ImGui::Dummy(ImVec2(0, em * 0.45f));
+  ImDrawList *dl = ImGui::GetWindowDrawList();
+  ImVec2 p0 = ImGui::GetCursorScreenPos();
+  float avail_w = ImGui::GetContentRegionAvail().x;
+  float bar_h = ImGui::GetTextLineHeight() + em * 0.35f;
+  dl->AddRectFilled(p0, ImVec2(p0.x + avail_w, p0.y + bar_h),
+                    IM_COL32(16, 24, 38, 195), 5.0f);
+  if (IsRtl()) {
+    dl->AddRectFilled(ImVec2(p0.x + avail_w - 4.0f, p0.y + 2.0f),
+                      ImVec2(p0.x + avail_w, p0.y + bar_h - 2.0f),
+                      ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
+  } else {
+    dl->AddRectFilled(ImVec2(p0.x, p0.y + 2.0f),
+                      ImVec2(p0.x + 4.0f, p0.y + bar_h - 2.0f),
+                      ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
+  }
+  ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
   std::string shaped_title = Ui(title);
   if (IsRtl()) {
     float text_w = ImGui::CalcTextSize(shaped_title.c_str()).x;
-    float avail_w = ImGui::GetContentRegionAvail().x;
-    if (avail_w > text_w)
-      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail_w - text_w);
+    if (avail_w > text_w + em * 0.6f)
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail_w - text_w - em * 0.5f);
+  } else {
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + em * 0.5f);
   }
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + em * 0.16f);
   ImGui::TextUnformatted(shaped_title.c_str());
   ImGui::PopStyleColor();
-  ImGui::Separator();
-  ImGui::Dummy(ImVec2(0, em * 0.2f));
+  ImGui::Dummy(ImVec2(0, em * 0.18f));
 }
 
 constexpr float kValueEms = 12.0f; // the value column's width
@@ -272,13 +289,13 @@ void RowLabel(const RowBox &box, const char *label) {
   if (IsRtl()) {
     // Mirrored RTL layout: right-aligned label on the right side
     float text_w = ImGui::CalcTextSize(text.c_str()).x;
-    float pos_x = box.row_x + box.row_w - text_w - style.ItemInnerSpacing.x;
+    float pos_x = box.row_x + box.row_w - text_w - style.ItemInnerSpacing.x - box.em * 0.35f;
     ImGui::SetCursorPos(
         ImVec2(std::max(pos_x, box.row_x + box.block_w), box.row_y + y_offset));
   } else {
     // Standard LTR layout: left-aligned label on the left side
     ImGui::SetCursorPos(
-        ImVec2(box.row_x + style.ItemInnerSpacing.x, box.row_y + y_offset));
+        ImVec2(box.row_x + style.ItemInnerSpacing.x + box.em * 0.35f, box.row_y + y_offset));
   }
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(text.c_str());
@@ -293,19 +310,46 @@ void EndRow(const RowBox &box) {
 void FillItem() {
   ImGui::GetWindowDrawList()->AddRectFilled(
       ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
-      ImGui::GetColorU32(ImGuiCol_Header));
+      ImGui::GetColorU32(ImGuiCol_Header), 6.0f);
 }
 
 // label left/right, arrows and value right/left, the row is the only nav stop
 int OptionRow(const char *label, const char *value) {
   const ImGuiStyle &style = ImGui::GetStyle();
   RowBox box = MeasureRow();
+  TacticalTheme theme = CurrentTheme();
   ImGui::PushID(label);
   int step = 0;
   ImGui::Selectable("##row", false, ImGuiSelectableFlags_AllowOverlap,
                     ImVec2(box.row_w, box.row_h));
-  if (ImGui::IsItemFocused()) {
-    FillItem();
+  const bool row_hovered = ImGui::IsItemHovered();
+  const bool row_focused = ImGui::IsItemFocused();
+  ImDrawList *dl = ImGui::GetWindowDrawList();
+  const ImVec2 rmin = ImGui::GetItemRectMin();
+  const ImVec2 rmax = ImGui::GetItemRectMax();
+  dl->AddRectFilled(
+      rmin, rmax,
+      (row_hovered || row_focused) ? IM_COL32(28, 39, 59, 215)
+                                   : IM_COL32(17, 23, 35, 165),
+      6.0f);
+  dl->AddRect(
+      rmin, rmax,
+      (row_hovered || row_focused)
+          ? ImGui::ColorConvertFloat4ToU32(theme.border)
+          : IM_COL32(48, 64, 92, 95),
+      6.0f, 0, 1.0f);
+  if (row_hovered || row_focused) {
+    if (IsRtl()) {
+      dl->AddRectFilled(ImVec2(rmax.x - 3.5f, rmin.y + 3.0f),
+                        ImVec2(rmax.x, rmax.y - 3.0f),
+                        ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
+    } else {
+      dl->AddRectFilled(ImVec2(rmin.x, rmin.y + 3.0f),
+                        ImVec2(rmin.x + 3.5f, rmax.y - 3.0f),
+                        ImGui::ColorConvertFloat4ToU32(theme.heading), 2.0f);
+    }
+  }
+  if (row_focused) {
     if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) ||
         ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft))
       step = -1;
@@ -329,12 +373,45 @@ int OptionRow(const char *label, const char *value) {
 
   float value_x = block_x + btn_sz + style.ItemSpacing.x;
   std::string shaped_value = Ui(value);
+
+  // Status pill badge for ON / OFF / ENHANCED / ORIGINAL states
+  const bool is_on_state =
+      (std::strcmp(value, "ON") == 0 || std::strcmp(value, "ENHANCED") == 0 ||
+       std::strcmp(value, "ALWAYS") == 0 ||
+       std::strncmp(value, "ON (", 4) == 0);
+  const bool is_off_state =
+      (std::strcmp(value, "OFF") == 0 || std::strcmp(value, "ORIGINAL") == 0 ||
+       std::strncmp(value, "OFF (", 5) == 0);
+  const ImVec2 win_pos = ImGui::GetWindowPos();
+  const ImVec2 win_scroll(ImGui::GetScrollX(), ImGui::GetScrollY());
+  const ImVec2 pill_min(win_pos.x - win_scroll.x + value_x + 2.0f,
+                        win_pos.y - win_scroll.y + box.row_y + 3.0f);
+  const ImVec2 pill_max(win_pos.x - win_scroll.x + value_x + box.value_w - 2.0f,
+                        win_pos.y - win_scroll.y + box.row_y + box.row_h - 3.0f);
+  if (is_on_state) {
+    dl->AddRectFilled(pill_min, pill_max, IM_COL32(14, 96, 72, 185), 5.0f);
+    dl->AddRect(pill_min, pill_max, IM_COL32(46, 232, 168, 225), 5.0f, 0, 1.2f);
+  } else if (is_off_state) {
+    dl->AddRectFilled(pill_min, pill_max, IM_COL32(26, 32, 46, 175), 5.0f);
+    dl->AddRect(pill_min, pill_max, IM_COL32(72, 86, 112, 120), 5.0f, 0, 1.0f);
+  } else {
+    dl->AddRectFilled(pill_min, pill_max, IM_COL32(20, 28, 44, 155), 5.0f);
+  }
+
   float pad =
       (box.value_w - ImGui::CalcTextSize(shaped_value.c_str()).x) * 0.5f;
   ImGui::SetCursorPos(
       ImVec2(value_x + std::max(pad, 0.0f), box.row_y + y_offset));
   ImGui::AlignTextToFramePadding();
+  if (is_on_state) {
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.32f, 0.98f, 0.74f, 1.0f));
+  } else if (is_off_state) {
+    ImGui::PushStyleColor(ImGuiCol_Text, kDim);
+  } else {
+    ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
+  }
   ImGui::TextUnformatted(shaped_value.c_str());
+  ImGui::PopStyleColor();
 
   ImGui::SetCursorPos(
       ImVec2(value_x + box.value_w + style.ItemSpacing.x, box.row_y));
@@ -1239,97 +1316,12 @@ void DrawRows(int page) {
 // any level); the one given goes in the slot not in hand and the game switches
 // to it Level weapons and arsenal manager: allows equipping any player weapon
 // and replenishing supplies
-void DrawSpecialArsenalSection(const TacticalTheme &theme, float btn_h,
-                               float gap) {
-  Section("SPECIAL ARSENAL");
-  const auto ft = game::flamethrower::GetHudState();
-  const float avail = ImGui::GetContentRegionAvail().x;
-  const float w2 = (avail - gap) * 0.5f;
-
-  for (uint8_t i = 0; i < 4; ++i) {
-    if (i % 2)
-      ImGui::SameLine();
-    const bool selected = ft.active && (ft.weapon_id == i);
-    ImGui::PushID(int(i) + 910);
-    if (selected) {
-      ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
-      ImGui::PushStyleColor(ImGuiCol_Button, theme.highlight);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.52f, 0.14f, 0.95f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.5f);
-    } else {
-      ImGui::PushStyleColor(ImGuiCol_Button, kTab);
-      ImGui::PushStyleColor(ImGuiCol_Text, kText);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.85f, 0.42f, 0.12f, 0.65f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.3f);
-    }
-    const char *nm = game::flamethrower::GetSpecialWeaponName(i);
-    if (ImGui::Button(Ui(nm, false).c_str(), ImVec2(w2, btn_h))) {
-      if (selected)
-        game::flamethrower::ForceDeactivate();
-      else
-        game::flamethrower::SelectSpecialWeapon(i);
-    }
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor(3);
-    ImGui::PopID();
-  }
-
-  // Action row + live telemetry
-  if (ft.active) {
-    const bool has_mode = (ft.weapon_id == 2);
-    const int cols = has_mode ? 3 : 2;
-    const float aw = (avail - gap * float(cols - 1)) / float(cols);
-    if (ImGui::Button(Ui("UNEQUIP SPECIAL", false).c_str(), ImVec2(aw, btn_h))) {
-      game::flamethrower::ForceDeactivate();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(Ui("REFILL SPECIAL", false).c_str(), ImVec2(aw, btn_h))) {
-      game::flamethrower::RefillFuel();
-    }
-    if (has_mode) {
-      ImGui::SameLine();
-      const char *mlbl = ft.full_auto_mode ? "MODE: FULL-AUTO" : "MODE: SEMI-AUTO";
-      if (ImGui::Button(Ui(mlbl, false).c_str(), ImVec2(aw, btn_h))) {
-        game::flamethrower::ToggleFireMode();
-      }
-    }
-
-    char stats[128]{};
-    if (ft.weapon_id == 0) {
-      std::snprintf(stats, sizeof(stats), "FUEL: %u%%  |  SQUIBS: %d  |  BURNING: %u",
-                    unsigned(std::lround(ft.fuel_pct)), ft.ignition_cartridges,
-                    ft.active_burning_enemies);
-    } else if (ft.weapon_id == 3) {
-      std::snprintf(stats, sizeof(stats), "7.62x54R BELT: %d/%d  |  RES: %d  |  COOLANT: %dC%s",
-                    ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
-                    int(std::lround(ft.water_temp_c)),
-                    ft.water_boiling ? " (BOIL!)" : "");
-    } else if (ft.weapon_id == 2) {
-      std::snprintf(stats, sizeof(stats), "7.63x25 MAG: %d/%d  |  RES: %d  |  %s%s",
-                    ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo,
-                    ft.full_auto_mode ? "AUTO 950RPM" : "SEMI",
-                    ft.bolt_locked_open ? " (BOLT OPEN)" : "");
-    } else {
-      std::snprintf(stats, sizeof(stats), "7.65x53 CLIP: %d/%d  |  RES: %d  |  ADS: 1.85x",
-                    ft.mag_ammo, ft.max_mag_ammo, ft.reserve_ammo);
-    }
-    ImGui::PushStyleColor(
-        ImGuiCol_Text,
-        ft.water_boiling ? ImVec4(1.0f, 0.35f, 0.25f, 1.0f)
-                         : ImVec4(1.0f, 0.72f, 0.30f, 1.0f));
-    ImGui::TextUnformatted(stats);
-    ImGui::PopStyleColor();
-  }
-}
-
 void DrawWeapons() {
   weapons::View v = weapons::Current();
   float em = ImGui::GetFontSize();
   float btn_h = std::max(ImGui::GetFrameHeight(), em * 2.2f);
   float gap = ImGui::GetStyle().ItemSpacing.x;
   TacticalTheme theme = CurrentTheme();
-
-  DrawSpecialArsenalSection(theme, btn_h, gap);
 
   Section("LEVEL WEAPON ARSENAL");
 
@@ -4021,6 +4013,7 @@ void DrawCategorySidebar(float width, float height, float em) {
   btn_h = std::max(btn_h, em * 2.2f);
 
   float target_w = (width > 0) ? width : ImGui::GetContentRegionAvail().x;
+  ImDrawList *dl = ImGui::GetWindowDrawList();
 
   for (int idx = 0; idx < kNumCats; idx++) {
     const auto &c = kCategories[idx];
@@ -4039,23 +4032,36 @@ void DrawCategorySidebar(float width, float height, float em) {
                   display_label.c_str(), int(c.cat));
 
     if (is_active) {
-      ImGui::PushStyleColor(ImGuiCol_Button, theme.highlight);
+      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.25f, 0.38f, 0.96f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme.button_hovered);
       ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme.button_hovered);
       ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
       ImGui::PushStyleColor(ImGuiCol_Border, theme.heading);
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.5f);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.2f);
     } else {
-      ImGui::PushStyleColor(ImGuiCol_Button, kTab);
+      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.10f, 0.14f, 0.21f, 0.92f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kTabHovered);
       ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme.highlight);
       ImGui::PushStyleColor(ImGuiCol_Text, kDim);
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.25f, 0.35f, 0.50f, 0.6f));
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.2f);
+      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.24f, 0.34f, 0.50f, 0.55f));
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.1f);
     }
 
     if (ImGui::Button(btn_id, ImVec2(target_w, btn_h))) {
       g_active_category = c.cat;
+    }
+    if (is_active && dl) {
+      const ImVec2 bmin = ImGui::GetItemRectMin();
+      const ImVec2 bmax = ImGui::GetItemRectMax();
+      if (IsRtl()) {
+        dl->AddRectFilled(ImVec2(bmax.x - 5.0f, bmin.y + 4.0f),
+                          ImVec2(bmax.x - 1.0f, bmax.y - 4.0f),
+                          ImGui::ColorConvertFloat4ToU32(theme.heading), 2.5f);
+      } else {
+        dl->AddRectFilled(ImVec2(bmin.x + 1.0f, bmin.y + 4.0f),
+                          ImVec2(bmin.x + 5.0f, bmax.y - 4.0f),
+                          ImGui::ColorConvertFloat4ToU32(theme.heading), 2.5f);
+      }
     }
 
     ImGui::PopStyleVar();
@@ -4233,11 +4239,13 @@ void DrawPanel() {
       {ImGuiCol_TabUnfocusedActive, theme.highlight}};
   for (const auto &[col, color] : panel_colors)
     ImGui::PushStyleColor(col, color);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.5f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.2f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 5.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
-                      ImVec2(em * 1.2f, em * 0.9f));
+                      ImVec2(em * 1.15f, em * 0.85f));
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
                       ImVec2(em * 0.6f, em * 0.45f));
 
@@ -4250,16 +4258,23 @@ void DrawPanel() {
     float close_btn_w = em * 3.4f;
     float close_btn_h = em * 2.0f;
 
-    // Tactical Header with Prominent Close [X] Button
+    const uint32_t live_res =
+        game::Opt().dynamic_resolution ? dynres::Percent() : app::Get().render_percent;
+    const float live_fps = std::clamp(game::g_fps.load(), 0.0f, 999.0f);
+    char telemetry_badge[96];
+    std::snprintf(telemetry_badge, sizeof(telemetry_badge),
+                  "[ %.0f FPS  |  RES %u%% ]", live_fps, live_res);
+
+    // Tactical Header with Prominent Close [X] Button & Live Telemetry Badge
     if (!IsRtl()) {
-      // LTR Header: Title on Left, Version + Close [X] on Right
+      // LTR Header: Title on Left, Live Telemetry + Close [X] on Right
       ImGui::PushStyleColor(ImGuiCol_Text, theme.heading);
       ImGui::TextUnformatted(
           Ui("BLACK ENHANCED EDITION — TACTICAL OPS CONSOLE").c_str());
       ImGui::PopStyleColor();
       ImGui::SameLine();
-      ImGui::PushStyleColor(ImGuiCol_Text, kDim);
-      ImGui::TextUnformatted(Ui("v1.3.0-enhanced (BUILD 34)", false).c_str());
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.32f, 0.94f, 0.82f, 1.0f));
+      ImGui::TextUnformatted(telemetry_badge);
       ImGui::PopStyleColor();
 
       ImGui::SameLine();
@@ -4268,9 +4283,9 @@ void DrawPanel() {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad_x);
 
       ImGui::PushStyleColor(ImGuiCol_Button,
-                            ImVec4(0.70f, 0.15f, 0.12f, 0.95f));
+                            ImVec4(0.72f, 0.14f, 0.14f, 0.96f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                            ImVec4(0.88f, 0.20f, 0.16f, 1.0f));
+                            ImVec4(0.90f, 0.20f, 0.18f, 1.0f));
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
       ImGui::PushStyleColor(ImGuiCol_Border, theme.heading);
       ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
@@ -4281,11 +4296,11 @@ void DrawPanel() {
       ImGui::PopStyleVar();
       ImGui::PopStyleColor(4);
     } else {
-      // RTL Header: Close [X] on Left, Title + Version on Right
+      // RTL Header: Close [X] on Left, Live Telemetry + Title on Right
       ImGui::PushStyleColor(ImGuiCol_Button,
-                            ImVec4(0.70f, 0.15f, 0.12f, 0.95f));
+                            ImVec4(0.72f, 0.14f, 0.14f, 0.96f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                            ImVec4(0.88f, 0.20f, 0.16f, 1.0f));
+                            ImVec4(0.90f, 0.20f, 0.18f, 1.0f));
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
       ImGui::PushStyleColor(ImGuiCol_Border, theme.heading);
       ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.5f);
@@ -4299,7 +4314,7 @@ void DrawPanel() {
       ImGui::SameLine();
       std::string shaped_title =
           Ui("BLACK ENHANCED EDITION — TACTICAL OPS CONSOLE");
-      std::string build_tag = Ui("v1.3.0-enhanced (BUILD 34)", false) + " ";
+      std::string build_tag = std::string(telemetry_badge) + "  ";
       float title_w = ImGui::CalcTextSize(shaped_title.c_str()).x;
       float build_w = ImGui::CalcTextSize(build_tag.c_str()).x;
       float total_w = title_w + build_w + ImGui::GetStyle().ItemSpacing.x;
@@ -4308,7 +4323,7 @@ void DrawPanel() {
       if (pad_x > 0)
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad_x);
 
-      ImGui::PushStyleColor(ImGuiCol_Text, kDim);
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.32f, 0.94f, 0.82f, 1.0f));
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(build_tag.c_str());
       ImGui::PopStyleColor();
@@ -4381,7 +4396,7 @@ void DrawPanel() {
     DrawTacticalFooter(em);
   }
   ImGui::End();
-  ImGui::PopStyleVar(5);
+  ImGui::PopStyleVar(7);
   ImGui::PopStyleColor(int(std::size(panel_colors)));
 }
 

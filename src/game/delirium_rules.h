@@ -68,6 +68,9 @@ public:
     Config GetConfig() const noexcept { return cfg_; }
 
     void OnBulletHit(const HitEvent& ev) noexcept;
+    void OnExplosionShockwave(uint32_t soldier_ea, const float blast_pos[3],
+                              const float soldier_pos[3], float blast_radius,
+                              float blast_force) noexcept;
     StepOutput StepAlive(uint32_t soldier_ea, float dt) noexcept;
     bool ApplyBlindFireScatter(uint32_t soldier_ea, float in_out_target[3]) noexcept;
     CollapseProfile ConsumeCollapseProfile(uint32_t soldier_ea) noexcept;

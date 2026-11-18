@@ -50,8 +50,9 @@ CoagulationVisual EvaluatePoolCoagulation(float age_sec, float base_opacity) noe
     // Hemoglobin deoxygenation + edge drying curve over ~18 seconds, then permanently stable.
     const float coag = std::clamp(1.0f - std::exp(-age / 5.5f), 0.0f, 1.0f);
 
-    const float fresh_r = 0.260f, fresh_g = 0.014f, fresh_b = 0.019f;
-    const float dried_r = 0.125f, dried_g = 0.008f, dried_b = 0.011f;
+    // Vivid oxyhemoglobin arterial crimson when fresh -> rich dark claret when coagulated (never pitch black!)
+    const float fresh_r = 0.860f, fresh_g = 0.095f, fresh_b = 0.115f;
+    const float dried_r = 0.540f, dried_g = 0.052f, dried_b = 0.068f;
 
     CoagulationVisual v{};
     v.spread_scale = std::clamp(spread, 0.45f, 1.0f);

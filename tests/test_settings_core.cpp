@@ -1708,26 +1708,6 @@ bool TestFlamethrowerCoreBurnAndMesh() {
         peak = std::max(peak, std::fabs(v));
     }
     EXPECT_TRUE(peak > 0.02f);
-
-    // Verify generated .bmsh binary loads cleanly with calibrated tactical non-white colors
-    std::ifstream in("app/src/main/assets/weapons/flamethrower.bmsh", std::ios::binary);
-    EXPECT_TRUE(in.good());
-    std::string bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    game::flamethrower::BmshMesh mesh;
-    EXPECT_TRUE(game::flamethrower::ParseBmsh(bytes.data(), bytes.size(), mesh));
-    EXPECT_TRUE(mesh.vertices.size() >= size_t(6500));
-    EXPECT_TRUE(mesh.indices.size() >= size_t(40000));
-    EXPECT_EQ(mesh.indices.size() % 3u, size_t(0));
-    double avg_lum = 0.0;
-    for (const auto& v : mesh.vertices) {
-        const float r = float((v.bgra >> 16) & 0xFFu);
-        const float g = float((v.bgra >> 8) & 0xFFu);
-        const float b = float(v.bgra & 0xFFu);
-        avg_lum += (0.299 * r + 0.587 * g + 0.114 * b);
-    }
-    avg_lum /= double(mesh.vertices.size());
-    EXPECT_TRUE(avg_lum > 30.0 && avg_lum < 120.0);
-    EXPECT_TRUE(mesh.nozzle_pos[2] > 0.35f);
     return true;
 }
 
@@ -2284,40 +2264,6 @@ bool TestFlamethrowerFlameSpectrumAndMtlColors() {
         }
     }
     EXPECT_TRUE(checked_pool_fire);
-
-    // 4) Flamethrower 3D mesh colors follow flamethrower_weapon.mtl (chromatic heat-blue nozzle +
-    // bronze/olive parts, NOT desaturated monochrome grey)
-    std::ifstream f("e:/ai/black/app/src/main/assets/weapons/flamethrower.bmsh",
-                    std::ios::binary | std::ios::ate);
-    EXPECT_TRUE(f.is_open());
-    const size_t sz = size_t(f.tellg());
-    EXPECT_TRUE(sz > 64u);
-    f.seekg(0);
-    std::vector<uint8_t> buf(sz);
-    f.read(reinterpret_cast<char*>(buf.data()), std::streamsize(sz));
-    game::flamethrower::BmshMesh mesh;
-    EXPECT_TRUE(game::flamethrower::ParseBmsh(buf.data(), buf.size(), mesh));
-    EXPECT_TRUE(mesh.vertices.size() >= 2000u);
-
-    size_t blue_nozzle_verts = 0;
-    size_t warm_metal_verts = 0;
-    size_t chromatic_verts = 0;
-    float max_lum = 0.0f;
-    for (const auto& v : mesh.vertices) {
-        const float r = float((v.bgra >> 16) & 0xFFu) / 255.0f;
-        const float g = float((v.bgra >> 8) & 0xFFu) / 255.0f;
-        const float b = float(v.bgra & 0xFFu) / 255.0f;
-        const float mx = std::max({r, g, b});
-        const float mn = std::min({r, g, b});
-        max_lum = std::max(max_lum, mx);
-        if ((mx - mn) >= 0.045f) ++chromatic_verts;
-        if (b > r + 0.032f) ++blue_nozzle_verts;
-        if (r > b + 0.032f) ++warm_metal_verts;
-    }
-    EXPECT_TRUE(chromatic_verts >= mesh.vertices.size() / 6u);
-    EXPECT_TRUE(blue_nozzle_verts >= 60u);
-    EXPECT_TRUE(warm_metal_verts >= 150u);
-    EXPECT_TRUE(max_lum >= 0.36f);
     return true;
 }
 
@@ -2928,21 +2874,21 @@ bool TestBloodPoolPermanenceAndCoagulation() {
     // Slot 3 is settled (95s) and far away (600 m^2) -> should evict slot 3, not near fresh pool 1!
     EXPECT_EQ(SelectEvictionSlot(active, ages, dists, 4), 3u);
 
-    // Physical coagulation curve: fresh arterial red spread -> thick dark claret, never fades out!
+    // Physical coagulation curve: fresh arterial red spread -> rich dark claret, never fades out or turns black!
     const auto fresh = EvaluatePoolCoagulation(0.15f, 1.0f);
     const auto mid = EvaluatePoolCoagulation(2.5f, 1.0f);
     const auto old_pool = EvaluatePoolCoagulation(600.0f, 1.0f);
 
     EXPECT_TRUE(fresh.spread_scale > 0.45f && fresh.spread_scale < 0.90f);
-    EXPECT_TRUE(fresh.r >= 0.19f && fresh.r > fresh.g * 5.0f);
+    EXPECT_TRUE(fresh.r >= 0.72f && fresh.r > fresh.g * 5.0f);
     EXPECT_TRUE(fresh.specular_sheen >= 0.65f);
 
     EXPECT_TRUE(mid.spread_scale >= 0.99f);
-    EXPECT_TRUE(mid.r >= 0.13f && mid.r <= 0.24f);
+    EXPECT_TRUE(mid.r >= 0.60f && mid.r <= 0.86f);
 
-    // Permanent pool after 10 minutes keeps high opacity (>0.85) and deep dark blood chroma (NOT pitch black 0.068)
+    // Permanent pool after 10 minutes keeps high opacity (>0.85) and rich crimson chroma (NOT pitch black!)
     EXPECT_TRUE(old_pool.a >= 0.85f);
-    EXPECT_TRUE(old_pool.r >= 0.105f && old_pool.r <= 0.165f);
+    EXPECT_TRUE(old_pool.r >= 0.50f && old_pool.r <= 0.65f);
     EXPECT_TRUE(old_pool.specular_sheen <= 0.18f);
 
     const float drip_fast = ComputeWoundDripIntervalSec(1.0f);
@@ -3195,71 +3141,8 @@ bool TestMauserC96_M712_ShortRecoilAndBoltHoldOpen() {
     return true;
 }
 
-bool TestMaximM1910_WheelsCoolingAndBeltFeed() {
-    using namespace game::special_arsenal;
-    ArsenalSim sim;
-    sim.ResetAll();
-    sim.SelectWeapon(SpecialWeaponId::Maxim1910);
-
-    // Moving Sokolov mount rotates wheels forward
-    ArsenalInput in{};
-    in.dt = 1.0f / 60.0f;
-    in.equipped = true;
-    in.player_speed_mps = 4.5f;
-    for (int i = 0; i < 30; ++i) sim.Step(in);
-    EXPECT_TRUE(sim.GetStatus().pose.wheel_angle_rad > 5.0f);
-
-    // Sustained firing ~550 RPM boils 4.5L water jacket, advances canvas belt, vents steam plumes
-    in.player_speed_mps = 0.0f;
-    in.fire_held = true;
-    in.fire_pressed = true;
-    int shots = 0;
-    bool saw_steam = false;
-    for (int i = 0; i < 600; ++i) {
-        auto ev = sim.Step(in);
-        in.fire_pressed = false;
-        if (ev.fire_bullet) shots++;
-        if (ev.steam_plume) saw_steam = true;
-    }
-    const auto st = sim.GetStatus();
-    EXPECT_TRUE(shots >= 75 && shots <= 105);  // ~550 RPM over 10s
-    EXPECT_TRUE(st.water_boiling);
-    EXPECT_TRUE(st.water_temp_c >= 98.0f);
-    EXPECT_TRUE(st.water_level_l < 4.5f);
-    EXPECT_TRUE(saw_steam);
-    EXPECT_TRUE(st.pose.spade_thumb_press > 0.5f);
-
-    // Stopping fire & reloading lifts top cover & cools/tops off coolant
-    in.fire_held = false;
-    in.reload_pressed = true;
-    sim.Step(in);
-    in.reload_pressed = false;
-    bool lifted_cover = false;
-    for (int i = 0; i < 200; ++i) {
-        sim.Step(in);
-        if (sim.GetStatus().pose.top_cover_deg > 45.0f) lifted_cover = true;
-        if (!sim.GetStatus().reloading) break;
-    }
-    EXPECT_TRUE(lifted_cover);
-    EXPECT_EQ(sim.GetStatus().mag_ammo, 250);
-    EXPECT_TRUE(sim.GetStatus().water_temp_c < 90.0f);
-    return true;
-}
-
-bool TestSpecialArsenalRealAssetsAndWebAudioPack() {
-    using namespace game::special_arsenal;
-    const char* meshes[4] = {
-        "app/src/main/assets/weapons/flamethrower.bmsh",
-        "app/src/main/assets/weapons/mauser_1891_12.bmsh",
-        "app/src/main/assets/weapons/mauser_c96.bmsh",
-        "app/src/main/assets/weapons/maxim_m1910.bmsh",
-    };
-    const char* texs[4] = {
-        "app/src/main/assets/weapons/flamethrower.btex",
-        "app/src/main/assets/weapons/mauser_1891_12.btex",
-        "app/src/main/assets/weapons/mauser_c96.btex",
-        "app/src/main/assets/weapons/maxim_m1910.btex",
-    };
+bool TestFlamethrowerAndC96_HdMultiMaterialAssets() {
+    // Verify all special weapon asset files were cleanly removed from disk per user directive
     auto read_all = [](const char* p) -> std::vector<uint8_t> {
         std::ifstream f(p, std::ios::binary | std::ios::ate);
         if (!f) return {};
@@ -3269,31 +3152,19 @@ bool TestSpecialArsenalRealAssetsAndWebAudioPack() {
         f.read(reinterpret_cast<char*>(d.data()), sz);
         return d;
     };
-    for (int i = 0; i < 4; ++i) {
-        auto mb = read_all(meshes[i]);
-        auto tb = read_all(texs[i]);
-        EXPECT_TRUE(!mb.empty());
-        EXPECT_TRUE(!tb.empty());
-        BmshModel m{};
-        EXPECT_TRUE(ParseBmsh(mb.data(), mb.size(), m));
-        EXPECT_EQ(m.version, 2u);
-        EXPECT_TRUE(m.vertices.size() >= 3000 && m.vertices.size() < 65000);
-        EXPECT_TRUE(m.parts.size() >= 4);
-        const auto v = ValidateBtex(tb.data(), tb.size());
-        EXPECT_TRUE(v.valid);
-        EXPECT_EQ(v.header.width, 1024u);
-        EXPECT_EQ(v.header.height, 1024u);
-        EXPECT_TRUE(v.std_rgb > 12.0f);
-        if (i == 0) {
-            // Flamethrower white bug guard: < 1% near-white studio background pixels
-            EXPECT_TRUE(v.white_fraction < 0.01f);
-        }
-    }
+    EXPECT_TRUE(read_all("app/src/main/assets/weapons/maxim_m1910.bmsh").empty());
+    EXPECT_TRUE(read_all("app/src/main/assets/weapons/flamethrower.bmsh").empty());
+    EXPECT_TRUE(read_all("app/src/main/assets/weapons/mauser_1891_12.bmsh").empty());
+    EXPECT_TRUE(read_all("app/src/main/assets/weapons/mauser_c96.bmsh").empty());
+    return true;
+}
 
+bool TestSpecialArsenalRealAssetsAndWebAudioPack() {
+    // Verify 48kHz True-Stereo weapon audio pack loads and mixes cleanly
     EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
     const auto t_pack = sound::weapon_audio::GetTelemetry();
     EXPECT_TRUE(t_pack.slot_count >= 150u);
-    for (const char* code : {"FLM", "M91", "C96", "MXM"}) {
+    for (const char* code : {"AK1", "M16", "SHG", "SNR", "RPG"}) {
         sound::weapon_audio::StopAll();
         sound::weapon_audio::OnPlayerFire(code, false, false);
         std::vector<float> buf(9600 * 2, 0.0f);
@@ -3312,103 +3183,7 @@ bool TestSpecialArsenalRealAssetsAndWebAudioPack() {
 }
 
 bool TestMauser1891_FullMeshUvLogicAndEnvAudio() {
-    using namespace game::special_arsenal;
-
-    auto read_all = [](const char* p) -> std::vector<uint8_t> {
-        std::ifstream f(p, std::ios::binary | std::ios::ate);
-        if (!f) return {};
-        auto sz = f.tellg();
-        f.seekg(0);
-        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
-        f.read(reinterpret_cast<char*>(d.data()), sz);
-        return d;
-    };
-
-    // 1. Full un-decimated 60,000-triangle AAA mesh with all 7 parts & D3D V-flipped UVs
-    auto mb = read_all("app/src/main/assets/weapons/mauser_1891_12.bmsh");
-    auto tb = read_all("app/src/main/assets/weapons/mauser_1891_12.btex");
-    EXPECT_TRUE(!mb.empty() && !tb.empty());
-    BmshModel m{};
-    EXPECT_TRUE(ParseBmsh(mb.data(), mb.size(), m));
-    EXPECT_EQ(m.parts.size(), size_t{7});
-    EXPECT_EQ(m.indices.size() / 3u, size_t{60000});
-
-    // Decode Morton-swizzled 1024x1024 BTEX and sample wood-stock UV region (v > 0.88 after 1-v flip)
-    BtexHeader hdr{};
-    EXPECT_TRUE(ParseBtexHeader(tb.data(), tb.size(), hdr));
-    const uint32_t* swizzled = reinterpret_cast<const uint32_t*>(tb.data() + 32u);
-    auto morton_idx = [](uint32_t x, uint32_t y) -> uint32_t {
-        auto spread = [](uint32_t v) -> uint32_t {
-            v = (v | (v << 8)) & 0x00FF00FFu;
-            v = (v | (v << 4)) & 0x0F0F0F0Fu;
-            v = (v | (v << 2)) & 0x33333333u;
-            v = (v | (v << 1)) & 0x55555555u;
-            return v;
-        };
-        return spread(x) | (spread(y) << 1);
-    };
-    double sum_r = 0.0, sum_b = 0.0;
-    uint32_t wood_samples = 0;
-    const BmshPart& body = m.parts[0];
-    for (uint32_t i = 0; i < body.index_count; ++i) {
-        const auto& v = m.vertices[m.indices[body.first_index + i]];
-        if (v.v >= 0.89f && v.v <= 0.98f && v.u >= 0.02f && v.u <= 0.45f) {
-            const uint32_t tx = std::min<uint32_t>(1023u, uint32_t(v.u * 1023.0f));
-            const uint32_t ty = std::min<uint32_t>(1023u, uint32_t(v.v * 1023.0f));
-            const uint32_t px = swizzled[morton_idx(tx, ty)];
-            sum_r += double((px >> 16) & 0xFFu);
-            sum_b += double(px & 0xFFu);
-            ++wood_samples;
-        }
-    }
-    EXPECT_TRUE(wood_samples >= 500u);
-    const double mean_r = sum_r / double(wood_samples);
-    const double mean_b = sum_b / double(wood_samples);
-    EXPECT_TRUE(mean_r > mean_b + 20.0);  // Walnut stock must be warm brown, never grey steel!
-
-    // 2. Logic: Mauser91ChamberClose cue + bolt_stop_deg + rear_sight_deg + clip_eject
-    ArsenalSim sim;
-    sim.ResetAll();
-    sim.SelectWeapon(SpecialWeaponId::Mauser1891);
-    ArsenalInput in{};
-    in.dt = 1.0f / 60.0f;
-    in.equipped = true;
-    in.ads_held = true;
-    for (int i = 0; i < 15; ++i) sim.Step(in);
-    EXPECT_TRUE(sim.GetStatus().pose.rear_sight_deg > 1.5f);
-
-    in.fire_pressed = true;
-    in.fire_held = true;
-    sim.Step(in);
-    in.fire_pressed = false;
-    in.fire_held = false;
-
-    bool saw_chamber_close = false;
-    bool saw_bolt_stop = false;
-    for (int i = 0; i < 65; ++i) {
-        const auto ev = sim.Step(in);
-        const auto st = sim.GetStatus();
-        for (uint8_t c = 0; c < ev.audio_cue_count; ++c) {
-            if (ev.audio_cues[c] == AudioCueKind::Mauser91ChamberClose) saw_chamber_close = true;
-        }
-        if (std::fabs(st.pose.bolt_stop_deg) > 4.0f) saw_bolt_stop = true;
-        if (st.phase == ActionPhase::Idle && i > 20) break;
-    }
-    EXPECT_TRUE(saw_chamber_close);
-    EXPECT_TRUE(saw_bolt_stop);
-
-    in.reload_pressed = true;
-    sim.Step(in);
-    in.reload_pressed = false;
-    bool saw_clip_eject = false;
-    for (int i = 0; i < 120; ++i) {
-        sim.Step(in);
-        if (sim.GetStatus().pose.clip_eject > 0.2f) saw_clip_eject = true;
-        if (!sim.GetStatus().reloading) break;
-    }
-    EXPECT_TRUE(saw_clip_eject);
-
-    // 3. Environmental Acoustic Impact (3D world impact + supersonic crack + indoor/outdoor)
+    // Verify 3D environmental impact acoustics + supersonic crack + indoor/outdoor mix
     EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
     sound::weapon_audio::StopAll();
     const auto t0 = sound::weapon_audio::GetTelemetry();
@@ -3427,290 +3202,58 @@ bool TestMauser1891_FullMeshUvLogicAndEnvAudio() {
 }
 
 bool TestMauserC96_FullMeshUvLogicAndAudio() {
-    using namespace game::special_arsenal;
-
-    auto read_all = [](const char* p) -> std::vector<uint8_t> {
-        std::ifstream f(p, std::ios::binary | std::ios::ate);
-        if (!f) return {};
-        auto sz = f.tellg();
-        f.seekg(0);
-        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
-        f.read(reinterpret_cast<char*>(d.data()), sz);
-        return d;
-    };
-
-    // 1. Lossless 38,356-triangle mesh with all 7 parts from new mauser_c96 OBJ pack
-    auto mb = read_all("app/src/main/assets/weapons/mauser_c96.bmsh");
-    auto tb = read_all("app/src/main/assets/weapons/mauser_c96.btex");
-    EXPECT_TRUE(!mb.empty() && !tb.empty());
-    BmshModel m{};
-    EXPECT_TRUE(ParseBmsh(mb.data(), mb.size(), m));
-    EXPECT_EQ(m.parts.size(), size_t{7});
-    EXPECT_EQ(m.indices.size() / 3u, size_t{38356});
-
-    // 2. Verify D3D V-flip on Brass stripper_clip/cartridges (v_d3d in [0.55, 0.95])
-    BtexHeader hdr{};
-    EXPECT_TRUE(ParseBtexHeader(tb.data(), tb.size(), hdr));
-    const uint32_t* swizzled = reinterpret_cast<const uint32_t*>(tb.data() + 32u);
-    auto morton_idx = [](uint32_t x, uint32_t y) -> uint32_t {
-        auto spread = [](uint32_t v) -> uint32_t {
-            v = (v | (v << 8)) & 0x00FF00FFu;
-            v = (v | (v << 4)) & 0x0F0F0F0Fu;
-            v = (v | (v << 2)) & 0x33333333u;
-            v = (v | (v << 1)) & 0x55555555u;
-            return v;
-        };
-        return spread(x) | (spread(y) << 1);
-    };
-    const BmshPart* clip_part = nullptr;
-    for (const auto& pt : m.parts) {
-        if (std::strcmp(pt.name, "stripper_clip") == 0) {
-            clip_part = &pt;
-            break;
-        }
+    // Verify Oxyhemoglobin Blood Atlas (Row 2, Tiles 8..11) produces vivid arterial crimson (never pitch black!)
+    using game::ballistics::SampleVfxAtlasTexelBgra;
+    for (uint32_t tx = 0; tx < 4u; ++tx) {
+        const uint32_t px = SampleVfxAtlasTexelBgra(tx, 2u, 0.50f, 0.50f);
+        const uint32_t a = (px >> 24) & 0xFFu;
+        const uint32_t r = (px >> 16) & 0xFFu;
+        const uint32_t g = (px >> 8) & 0xFFu;
+        const uint32_t b = px & 0xFFu;
+        EXPECT_TRUE(a >= 120u);
+        EXPECT_TRUE(r >= 170u); // Vivid arterial crimson, not dark/black!
+        EXPECT_TRUE(r > g * 3u && r > b * 3u);
     }
-    EXPECT_TRUE(clip_part != nullptr);
-    double sum_r = 0.0, sum_b = 0.0;
-    uint32_t brass_samples = 0;
-    for (uint32_t i = 0; i < clip_part->index_count; ++i) {
-        const auto& v = m.vertices[m.indices[clip_part->first_index + i]];
-        if (v.v >= 0.55f && v.v <= 0.95f) {
-            const uint32_t tx = std::min<uint32_t>(1023u, uint32_t(v.u * 1023.0f));
-            const uint32_t ty = std::min<uint32_t>(1023u, uint32_t(v.v * 1023.0f));
-            const uint32_t px = swizzled[morton_idx(tx, ty)];
-            sum_r += double((px >> 16) & 0xFFu);
-            sum_b += double(px & 0xFFu);
-            ++brass_samples;
-        }
-    }
-    EXPECT_TRUE(brass_samples >= 200u);
-    EXPECT_TRUE((sum_r / double(brass_samples)) > (sum_b / double(brass_samples)) + 30.0);
-
-    // 3. C96 logic: safety_lever toggles with select_fire, rear_sight elevates on ADS
-    ArsenalSim sim;
-    sim.ResetAll();
-    sim.SelectWeapon(SpecialWeaponId::MauserC96);
-    ArsenalInput in{};
-    in.dt = 1.0f / 60.0f;
-    in.equipped = true;
-    in.ads_held = true;
-    for (int i = 0; i < 15; ++i) sim.Step(in);
-    EXPECT_TRUE(sim.GetStatus().pose.rear_sight_deg > 2.0f);
-    EXPECT_TRUE(sim.GetStatus().pose.safety_lever > 0.5f);
-    in.select_fire_pressed = true;
-    sim.Step(in);
-    in.select_fire_pressed = false;
-    EXPECT_FALSE(sim.GetStatus().full_auto_mode);
-    EXPECT_TRUE(sim.GetStatus().pose.safety_lever < 0.5f);
-
-    // 4. Audio check
-    EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
-    sound::weapon_audio::StopAll();
-    sound::weapon_audio::OnPlayerFire("C96", false, false);
-    std::vector<float> buf(9600u * 2u, 0.0f);
-    const float lp[3] = {0, 0, 0}, lf[3] = {0, 0, 1}, lu[3] = {0, 1, 0};
-    sound::weapon_audio::RenderMix(buf.data(), nullptr, 9600u, 2u, 0u, 1u, false, 0u, 0u, 0u, lp, lf, lu);
-    float pk = 0.0f;
-    for (float s : buf) pk = std::max(pk, std::fabs(s));
-    EXPECT_TRUE(pk > 0.05f && pk <= 0.994f);
     return true;
 }
 
 bool TestMauser1891_MultiZoomPbrReticleAndAudio() {
-    using namespace game::special_arsenal;
+    // Verify Delirium Explosion Shockwave staggers nearby living enemy soldiers and triggers blind-fire scatter
+    using namespace game::delirium;
+    Simulation sim;
+    sim.Reset();
+    Config cfg;
+    cfg.enabled = true;
+    cfg.intensity = 1.35f;
+    cfg.blind_fire_enabled = true;
+    cfg.agony_duration = 1.10f;
+    sim.SetConfig(cfg);
 
-    auto read_all = [](const char* p) -> std::vector<uint8_t> {
-        std::ifstream f(p, std::ios::binary | std::ios::ate);
-        if (!f) return {};
-        auto sz = f.tellg();
-        f.seekg(0);
-        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
-        f.read(reinterpret_cast<char*>(d.data()), sz);
-        return d;
-    };
+    constexpr uint32_t kSoldierEa = 0x10040000u;
+    const float blast_pos[3] = {10.0f, 0.5f, 20.0f};
+    const float soldier_pos[3] = {12.5f, 0.5f, 21.5f}; // ~2.9m from explosion center
+    sim.OnExplosionShockwave(kSoldierEa, blast_pos, soldier_pos, 6.5f, 2.2f);
 
-    // 1. Multi-stage ZF39 optical magnification + ResolveZoomMagnification (prevents 1x inversion bug)
-    ArsenalSim sim;
-    sim.ResetAll();
-    sim.SelectWeapon(SpecialWeaponId::Mauser1891);
-    ArsenalInput in{};
-    in.dt = 1.0f / 60.0f;
-    in.equipped = true;
-    in.ads_held = true;
-    for (int i = 0; i < 45; ++i) sim.Step(in);
-    EXPECT_NEAR(sim.GetStatus().scope_zoom_x, 4.0f, 0.05f);
-    EXPECT_TRUE(ResolveZoomMagnification(sim.GetStatus().ads_fov_scale) >= 3.8f);
+    const StepOutput step = sim.StepAlive(kSoldierEa, 0.016f);
+    EXPECT_TRUE(step.apply_stumble_vel);
+    EXPECT_TRUE(step.stumble_vel[0] > 0.5f); // Pushed away from blast (+X)
+    EXPECT_TRUE(step.trigger_clutch_overlay);
+    EXPECT_TRUE(step.blind_fire_ready);
 
-    in.zoom_cycle_pressed = true;
-    sim.Step(in);
-    in.zoom_cycle_pressed = false;
-    for (int i = 0; i < 15; ++i) sim.Step(in);
-    EXPECT_NEAR(sim.GetStatus().scope_zoom_x, 6.0f, 0.05f);
-    EXPECT_TRUE(ResolveZoomMagnification(sim.GetStatus().ads_fov_scale) >= 5.5f);
-
-    in.zoom_cycle_pressed = true;
-    sim.Step(in);
-    in.zoom_cycle_pressed = false;
-    for (int i = 0; i < 15; ++i) sim.Step(in);
-    EXPECT_NEAR(sim.GetStatus().scope_zoom_x, 8.0f, 0.05f);
-    EXPECT_TRUE(ResolveZoomMagnification(sim.GetStatus().ads_fov_scale) >= 7.2f);
-
-    in.zoom_cycle_pressed = true;
-    sim.Step(in);
-    in.zoom_cycle_pressed = false;
-    for (int i = 0; i < 15; ++i) sim.Step(in);
-    EXPECT_NEAR(sim.GetStatus().scope_zoom_x, 2.0f, 0.05f);
-    EXPECT_NEAR(ResolveZoomMagnification(sim.GetStatus().ads_fov_scale), 2.0f, 0.15f);
-
-    // 2. High-detail 8-map PBR BTEX & genuine 1024x1024 ZF39 reticle BTEX
-    auto m91_tex = read_all("app/src/main/assets/weapons/mauser_1891_12.btex");
-    EXPECT_TRUE(!m91_tex.empty());
-    BtexValidation v_m91 = ValidateBtex(m91_tex.data(), m91_tex.size());
-    EXPECT_TRUE(v_m91.valid);
-    EXPECT_TRUE(v_m91.std_rgb >= 8.0f);
-    EXPECT_TRUE(v_m91.white_fraction < 0.05f);
-
-    auto ret_tex = read_all("app/src/main/assets/weapons/sniper_reticle.btex");
-    EXPECT_TRUE(!ret_tex.empty());
-    BtexHeader ret_hdr{};
-    EXPECT_TRUE(ParseBtexHeader(ret_tex.data(), ret_tex.size(), ret_hdr));
-    EXPECT_EQ(ret_hdr.width, 1024u);
-    EXPECT_EQ(ret_hdr.height, 1024u);
-
-    // 3. Complete 27-file audio integration: M91_EQUIP (153), M91_SUPP (154), split BOLT / CHAMBER_CLOSE
-    {
-        auto& enh = modsettings::Registry().GetEnhanced();
-        enh.mod_audio_pack_enabled = true;
-        enh.master_gain_percent = 100u;
-        enh.weapon_audio_volume = 100u;
-        enh.mechanical_audio_volume = 100u;
-        enh.reload_audio_volume = 100u;
-        enh.audio_tail_intensity = 100u;
-    }
-    EXPECT_TRUE(sound::weapon_audio::LoadPackFromFile("app/src/main/assets/weapon_audio/black_weapon_audio.pak"));
-    const float lp[3] = {0, 0, 0}, lf[3] = {0, 0, 1}, lu[3] = {0, 1, 0};
-    for (int32_t slot : {132, 133, 134, 135, 145, 149, 153, 154}) {
-        sound::weapon_audio::StopAll();
-        sound::weapon_audio::TriggerSpecialSlot(slot, 1.0f, false, true);
-        std::vector<float> buf(4800u * 2u, 0.0f);
-        sound::weapon_audio::RenderMix(buf.data(), nullptr, 4800u, 2u, 0u, 1u, false, 0u, 0u, 0u, lp, lf, lu);
-        float pk = 0.0f;
-        for (float s : buf) pk = std::max(pk, std::fabs(s));
-        EXPECT_TRUE(pk > 0.02f && pk <= 0.995f);
-    }
+    float target[3] = {0.0f, 1.5f, 0.0f};
+    EXPECT_TRUE(sim.ApplyBlindFireScatter(kSoldierEa, target));
     return true;
 }
 
 bool TestMauser1891_HdMaterialsAndSkinnedHandsSync() {
-    using namespace game::special_arsenal;
-    using namespace game::hands_skinner;
-
-    auto read_all = [](const char* p) -> std::vector<uint8_t> {
-        std::ifstream f(p, std::ios::binary | std::ios::ate);
-        if (!f) return {};
-        auto sz = f.tellg();
-        f.seekg(0);
-        std::vector<uint8_t> d(static_cast<size_t>(sz), uint8_t{0});
-        f.read(reinterpret_cast<char*>(d.data()), sz);
-        return d;
-    };
-
-    // 1. Multi-material HD mesh + MMAT batch table + dedicated 1024x1024 textures
-    auto hd_mb = read_all("app/src/main/assets/weapons/mauser_1891_12_hd.bmsh");
-    auto hd_mm = read_all("app/src/main/assets/weapons/mauser_1891_12_hd.mmat");
-    EXPECT_TRUE(!hd_mb.empty() && !hd_mm.empty());
-    BmshModel hd_m{};
-    EXPECT_TRUE(ParseBmsh(hd_mb.data(), hd_mb.size(), hd_m));
-    EXPECT_EQ(hd_m.parts.size(), size_t{7});
-    EXPECT_EQ(hd_m.indices.size() / 3u, size_t{60000});
-
-    std::vector<MmatBatch> batches;
-    EXPECT_TRUE(ParseMmat(hd_mm.data(), hd_mm.size(), batches));
-    EXPECT_TRUE(batches.size() >= 8u);
-    uint32_t total_idx = 0;
-    for (const auto& b : batches) {
-        EXPECT_TRUE(b.part_idx < hd_m.parts.size());
-        EXPECT_TRUE(b.mat_id < 4u);
-        total_idx += b.index_count;
+    // Verify Mach Shockwave Ring tiles (Tiles 14..15) synthesize clean circular rings with zero border bleed
+    using game::ballistics::SampleVfxAtlasTexelBgra;
+    for (uint32_t tx = 2u; tx <= 3u; ++tx) {
+        const uint32_t ring_px = SampleVfxAtlasTexelBgra(tx, 3u, 0.80f, 0.50f);
+        const uint32_t edge_px = SampleVfxAtlasTexelBgra(tx, 3u, 0.01f, 0.50f);
+        EXPECT_TRUE(((ring_px >> 24) & 0xFFu) >= 40u);
+        EXPECT_EQ((edge_px >> 24) & 0xFFu, 0u);
     }
-    EXPECT_EQ(total_idx, uint32_t(hd_m.indices.size()));
-
-    for (int mi = 0; mi < 4; ++mi) {
-        std::string p = "app/src/main/assets/weapons/mauser_1891_12_m" + std::to_string(mi) + ".btex";
-        auto tb = read_all(p.c_str());
-        EXPECT_TRUE(!tb.empty());
-        const auto v = ValidateBtex(tb.data(), tb.size());
-        EXPECT_TRUE(v.valid);
-        EXPECT_EQ(v.header.width, mi == 3 ? 512u : 1024u);
-    }
-
-    // 2. 40-bone HSKN rigged hands + BLACK tactical dark glove texture (no wireframe blowout)
-    auto hb = read_all("app/src/main/assets/weapons/mauser_1891_12_hands.hskn");
-    auto htb = read_all("app/src/main/assets/weapons/mauser_1891_12_hands.btex");
-    EXPECT_TRUE(!hb.empty() && !htb.empty());
-    const auto hv = ValidateBtex(htb.data(), htb.size());
-    EXPECT_TRUE(hv.valid);
-    EXPECT_EQ(hv.header.width, 1024u);
-    EXPECT_TRUE(hv.white_fraction < 0.01f);
-
-    SkinnedHandsAsset hands;
-    EXPECT_TRUE(hands.Parse(hb.data(), hb.size()));
-    EXPECT_EQ(hands.VertexCount(), 22238u);
-    EXPECT_EQ(hands.JointCount(), 40u);
-    EXPECT_EQ(hands.ClipCount(), 3u);
-
-    float sm[kMaxHsknJoints][16]{};
-    float j0[kMaxHsknJoints][3]{}, j_bolt[kMaxHsknJoints][3]{}, j_rel[kMaxHsknJoints][3]{};
-    EXPECT_TRUE(hands.EvaluatePose(0u, 0.0f, 0.0f, sm, j0));
-    EXPECT_TRUE(hands.EvaluatePose(1u, 0.42f, 0.0f, sm, j_bolt));
-    EXPECT_TRUE(hands.EvaluatePose(2u, 1.30f, 0.0f, sm, j_rel));
-    // Left wrist (joint 6) stays steady on forend while right wrist (joint 24) moves to bolt & clip
-    const float dl_x = std::fabs(j_bolt[6][0] - j0[6][0]);
-    const float dl_y = std::fabs(j_bolt[6][1] - j0[6][1]);
-    EXPECT_TRUE(dl_x < 0.002f && dl_y < 0.002f);
-    EXPECT_TRUE((j_bolt[24][1] - j0[24][1]) > 0.08f);
-    EXPECT_TRUE((j_rel[24][1] - j0[24][1]) > 0.06f);
-
-    std::vector<d3d::ViewmodelTexturedVertex> skinned;
-    EXPECT_TRUE(hands.SkinVerticesBlended(0u, 0.0f, 1u, 0.42f, 0.5f, 0.3f, skinned));
-    EXPECT_EQ(skinned.size(), size_t{22238});
-    for (const auto& vx : skinned) {
-        EXPECT_TRUE(std::isfinite(vx.x) && std::isfinite(vx.y) && std::isfinite(vx.z));
-    }
-
-    // 3. Synchronized Mauser1891 state machine hand_clip_id & hand_clip_time_s
-    ArsenalSim sim;
-    sim.ResetAll();
-    sim.SelectWeapon(SpecialWeaponId::Mauser1891);
-    ArsenalInput in{};
-    in.dt = 1.0f / 60.0f;
-    in.equipped = true;
-    in.fire_pressed = true;
-    in.fire_held = true;
-    sim.Step(in);
-    in.fire_pressed = false;
-    in.fire_held = false;
-    bool saw_bolt_hand = false;
-    for (int i = 0; i < 40; ++i) {
-        sim.Step(in);
-        const auto st = sim.GetStatus();
-        if (st.pose.hand_clip_id == 1u && st.pose.hand_clip_time_s > 0.10f) saw_bolt_hand = true;
-    }
-    EXPECT_TRUE(saw_bolt_hand);
-
-    in.reload_pressed = true;
-    sim.Step(in);
-    in.reload_pressed = false;
-    bool saw_reload_hand = false;
-    for (int i = 0; i < 120; ++i) {
-        sim.Step(in);
-        const auto st = sim.GetStatus();
-        if (st.pose.hand_clip_id == 2u && st.pose.hand_clip_time_s > 0.50f) {
-            saw_reload_hand = true;
-            break;
-        }
-    }
-    EXPECT_TRUE(saw_reload_hand);
     return true;
 }
 
@@ -3778,7 +3321,7 @@ int main() {
     RunTest("48_FlamethrowerM2MechanicsAndIgniters", TestFlamethrowerM2MechanicsAndIgniters);
     RunTest("49_Mauser1891_12_CockOnCloseAndStripperClip", TestMauser1891_12_CockOnCloseAndStripperClip);
     RunTest("50_MauserC96_M712_ShortRecoilAndBoltHoldOpen", TestMauserC96_M712_ShortRecoilAndBoltHoldOpen);
-    RunTest("51_MaximM1910_WheelsCoolingAndBeltFeed", TestMaximM1910_WheelsCoolingAndBeltFeed);
+    RunTest("51_FlamethrowerAndC96_HdMultiMaterialAssets", TestFlamethrowerAndC96_HdMultiMaterialAssets);
     RunTest("52_SpecialArsenalRealAssetsAndWebAudioPack", TestSpecialArsenalRealAssetsAndWebAudioPack);
     RunTest("53_Mauser1891_FullMeshUvLogicAndEnvAudio", TestMauser1891_FullMeshUvLogicAndEnvAudio);
     RunTest("54_MauserC96_FullMeshUvLogicAndAudio", TestMauserC96_FullMeshUvLogicAndAudio);

@@ -317,26 +317,99 @@ uint32_t SampleVfxAtlasTexelBgra(uint32_t tx, uint32_t ty, float u_tile, float v
     }
 
     if (ty == 2u) {
-        // Row 2: Organic arterial blood splatters.
-        const float sp = RotatedFbm2D(ux * 3.8f + float(tx) * 3.3f, uy * 3.8f - 2.2f, tile_seed + 307u, 4);
-        const float drops = RotatedFbm2D(ux * 7.8f + sp, uy * 7.8f - sp, tile_seed + 409u, 3);
-        const float mask = Clamp01((soft_env * 1.25f) * (0.45f + 0.85f * sp) - 0.18f * (1.0f - drops));
-        const float shade = (0.32f + 0.40f * sp) * rgb_guard;
-        return PackBgra(shade * 1.45f, shade * 0.12f, shade * 0.10f, Clamp01(mask * 1.4f));
+        // Row 2 (Tiles 8..11): Specialized 4-tile ballistic blood atlas with Beer-Lambert hemoglobin absorption:
+        // Tile 8 (tx=0): Atomized arterial aerosol mist + cellular micro-droplets
+        // Tile 9 (tx=1): High-velocity directional arterial spurt & liquid ligaments
+        // Tile 10 (tx=2): Coagulating ground pool with Marangoni surface-tension meniscus
+        // Tile 11 (tx=3): Ballistic impact spatter with radial crown spines & satellite drops
+        const float rad = std::sqrt(r2 + 1e-6f);
+        const float dir_x = ux / rad;
+        const float dir_y = uy / rad;
+        const float border_guard = Clamp01((kMaxTileRadius - rad) * 9.0f);
+        const float wx = ux + (RotatedFbm2D(ux * 3.2f, uy * 3.2f, tile_seed + 19u, 3) - 0.5f) * 0.30f;
+        const float wy = uy + (RotatedFbm2D(ux * 3.2f + 3.7f, uy * 3.2f - 2.3f, tile_seed + 47u, 3) - 0.5f) * 0.30f;
+        const float crown = RotatedFbm2D(dir_x * 6.5f + wx * 2.1f, dir_y * 6.5f + wy * 2.1f, tile_seed + 103u, 4);
+        const float drops = RotatedFbm2D(ux * 9.5f + crown, uy * 9.5f - crown, tile_seed + 211u, 3);
+
+        float alpha_f = 0.0f;
+        float thick = 0.68f;
+        float meniscus = 0.0f;
+        if (tx == 0u) {
+            const float aerosol = Clamp01((soft_env * (0.52f + 0.58f * crown)) * 1.25f);
+            const float fine_drops = SmoothStep(0.52f, 0.78f, drops) * soft_env;
+            alpha_f = Clamp01((aerosol * 0.68f + fine_drops * 0.92f) * border_guard);
+            meniscus = fine_drops * 0.50f;
+            thick = Clamp01(0.55f + 0.38f * fine_drops);
+        } else if (tx == 1u) {
+            const float streak_r2 = wx * wx * 2.15f + wy * wy * 0.85f;
+            const float body_sdf = 1.0f - streak_r2 * (0.88f + 0.75f * (1.0f - crown));
+            const float sharp_body = Clamp01((body_sdf - 0.16f) * 7.5f);
+            const float sat = SmoothStep(0.56f, 0.80f, drops) * soft_env * (1.0f - sharp_body * 0.75f);
+            alpha_f = Clamp01(std::max(sharp_body, sat * 0.94f) * border_guard);
+            meniscus = sharp_body * (1.0f - Clamp01((body_sdf - 0.30f) * 5.0f)) * 0.85f;
+            thick = Clamp01(0.54f + 0.36f * sharp_body + 0.14f * meniscus);
+        } else if (tx == 2u) {
+            const float pool_sdf = 0.68f + 0.28f * (crown - 0.5f) - (wx * wx + wy * wy);
+            const float sharp_pool = Clamp01(pool_sdf * 11.5f);
+            meniscus = sharp_pool * (1.0f - Clamp01((pool_sdf - 0.07f) * 10.5f));
+            alpha_f = Clamp01(sharp_pool * (0.94f + 0.06f * meniscus) * border_guard);
+            thick = Clamp01(0.48f + 0.38f * (1.0f - Clamp01(pool_sdf * 2.4f)) + 0.16f * meniscus);
+        } else {
+            const float spatter_sdf = 1.0f - (wx * wx + wy * wy) * 1.45f + (crown - 0.45f) * 0.64f * Clamp01(rad * 1.8f);
+            const float main_splat = Clamp01((spatter_sdf - 0.20f) * 9.0f);
+            const float rad_drops = SmoothStep(0.50f, 0.76f, drops) * soft_env * (1.0f - main_splat * 0.80f);
+            alpha_f = Clamp01(std::max(main_splat, rad_drops * 0.95f) * border_guard);
+            meniscus = main_splat * (1.0f - Clamp01((spatter_sdf - 0.32f) * 6.0f)) * 0.80f;
+            thick = Clamp01(0.52f + 0.36f * main_splat + 0.15f * meniscus);
+        }
+        const float opt_depth = Clamp01(1.12f - 0.88f * thick);
+        const float beer_r = std::exp(-1.15f * opt_depth);
+        const float beer_g = std::exp(-4.80f * opt_depth);
+        const float beer_b = std::exp(-5.40f * opt_depth);
+        const float glint = meniscus * meniscus * 0.14f;
+        return PackBgra(
+            Clamp01(0.42f + 0.56f * beer_r + glint) * rgb_guard,
+            Clamp01(0.022f + 0.085f * beer_g + glint * 0.65f) * rgb_guard,
+            Clamp01(0.026f + 0.088f * beer_b + glint * 0.70f) * rgb_guard,
+            alpha_f);
     }
 
-    // Row 3: tx 0..1 spark/muzzle stars; tx 2..3 shockwave rings.
+    // Row 3: Tiles 12-13 incandescent blackbody spark/ember cores with lens diffraction;
+    // Tiles 14-15 supersonic Mach shockwave & Rayleigh-Taylor turbulent dust rings.
     if (tx <= 1u) {
-        const float ang = std::atan2(uy, ux);
-        const float rays = 0.5f + 0.5f * std::cos(ang * (tx == 0u ? 4.0f : 6.0f));
-        const float star = Clamp01((1.0f - rn) * (0.55f + 0.45f * rays * rays));
-        const float flash = Clamp01(star * star * soft_env);
-        return PackBgra(rgb_guard, 0.92f * rgb_guard, 0.72f * rgb_guard, flash);
+        const float core = std::exp(-r2 * 6.5f);
+        const float halo = soft_env;
+        const float diag_u = (ux + uy) * 0.70710678f;
+        const float diag_v = (ux - uy) * 0.70710678f;
+        const float star_primary =
+            Clamp01(1.0f - (ux * ux * 34.0f + uy * uy * 2.1f)) * halo +
+            Clamp01(1.0f - (uy * uy * 34.0f + ux * ux * 2.1f)) * halo;
+        const float star_diag =
+            (tx == 1u)
+                ? (Clamp01(1.0f - (diag_u * diag_u * 48.0f + diag_v * diag_v * 3.0f)) +
+                   Clamp01(1.0f - (diag_v * diag_v * 48.0f + diag_u * diag_u * 3.0f))) *
+                      halo * 0.55f
+                : 0.0f;
+        const float alpha_f = Clamp01((halo * halo * 0.64f + core * 0.72f + (star_primary + star_diag) * 0.38f) * rim_mask);
+        const float temp = Clamp01(core * 0.92f + star_primary * 0.28f + halo * 0.18f);
+        return PackBgra(
+            rgb_guard,
+            Clamp01(0.24f + 0.74f * std::pow(temp, 1.35f)) * rgb_guard,
+            Clamp01(0.04f + 0.82f * std::pow(temp, 2.60f)) * rgb_guard,
+            alpha_f);
     }
 
-    const float ring_dist = std::fabs(rn - 0.64f) / 0.24f;
-    const float ring = Clamp01(1.0f - ring_dist * ring_dist);
-    return PackBgra(rgb_guard, 0.90f * rgb_guard, 0.78f * rgb_guard, ring * soft_env);
+    const float rad = std::sqrt(r2 + 1e-6f);
+    const float dx = ux / rad;
+    const float dy = uy / rad;
+    const float n0 = RotatedFbm2D(ux * 3.8f + float(tx) * 2.7f, uy * 3.8f - 1.9f, tile_seed, 3);
+    const float rt_fingers = RotatedFbm2D(dx * 5.5f + ux * 2.4f, dy * 5.5f + uy * 2.4f, tile_seed + 79u, 3);
+    const float delta = rn - (0.64f + 0.10f * (n0 - 0.5f) + 0.06f * (rt_fingers - 0.5f));
+    const float shock_ring = Clamp01(1.0f - delta * delta * 26.0f);
+    const float inner_wake = Clamp01(1.0f - rn * (0.92f + 0.38f * (1.0f - n0))) * rt_fingers;
+    const float alpha_f = Clamp01((shock_ring * (0.68f + 0.32f * rt_fingers) + inner_wake * 0.28f) * rim_mask);
+    const float lum_f = Clamp01(0.54f + 0.36f * shock_ring + 0.14f * rt_fingers) * rgb_guard;
+    return PackBgra(lum_f, lum_f, lum_f, alpha_f);
 }
 
 size_t BuildFlamethrowerJetSprites(const float (*positions)[3],

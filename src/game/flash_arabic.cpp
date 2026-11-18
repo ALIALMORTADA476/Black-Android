@@ -638,8 +638,268 @@ constexpr DictPair kFlashDict[] = {
     {"black intel: you can carry 3 health packs at once", "معلومات BLACK: يمكنك حمل 3 حقائب إسعاف في آن واحد"},
     {"black intel: silver weapons have unlimited ammunition", "معلومات BLACK: الأسلحة الفضية تملك ذخيرة لا نهائية"},
     {"black intel: silver weapons unlock after beating hard", "معلومات BLACK: تفتح الأسلحة الفضية بعد إنهاء الصعوبة الصعبة"},
+    {"black intel: headshots drop your enemy with one shot", "معلومات BLACK: إصابات الرأس تردي العدو بطلقة واحدة"},
+    {"black intel: shoot hand grenades mid air to kill nearby enemies.", "معلومات BLACK: أطلق النار على القنابل في الجو لقتل الأعداء القريبين"},
+    {"black intel: shoot hand grenades mid air to kill nearby enemies", "معلومات BLACK: أطلق النار على القنابل في الجو لقتل الأعداء القريبين"},
+    {"black intel: the walther 2000 has a 1000m range", "معلومات BLACK: بندقية Walther 2000 مداها 1000 متر"},
+    {"black intel: the walther 2000 kills with one shot", "معلومات BLACK: بندقية Walther 2000 تقتل بطلقة واحدة"},
+    {"black intel: the walther 2000 has two zoom levels", "معلومات BLACK: بندقية Walther 2000 تملك مستويين للتقريب"},
+    {"black intel: the dc3 elite is best used at close range", "معلومات BLACK: مسدس DC3 Elite مثالي للمسافات القريبة"},
+    {"black intel: the dc3 elite is accurate at close range", "معلومات BLACK: مسدس DC3 Elite دقيق في المسافات القريبة"},
+    {"black intel: the spas 12 is an ultra close range weapon", "معلومات BLACK: بندقية SPAS-12 سلاح للمسافات القريبة جداً"},
+    {"black intel: use the spas12 to blast open locked doors", "معلومات BLACK: استخدم SPAS-12 لتفجير الأبواب المقفلة"},
+    {"black intel: the remington is a close range weapon", "معلومات BLACK: بندقية Remington سلاح للمسافات القريبة"},
+    {"black intel: the m203 is a medium to long range grenade launcher", "معلومات BLACK: قاذف M203 فعال في المدى المتوسط والبعيد"},
+    {"black intel: the m203 is a medium range weapon", "معلومات BLACK: قاذف M203 سلاح للمدى المتوسط"},
+    {"black intel: the g36c is a medium range rifle", "معلومات BLACK: بندقية G36C فعالة في المدى المتوسط"},
+    {"black intel: the mac 10 is a close range weapon", "معلومات BLACK: رشاش MAC-10 سلاح للمسافات القريبة"},
+    {"black intel: the mac 10 is inaccurate at long range", "معلومات BLACK: رشاش MAC-10 غير دقيق في المدى البعيد"},
+    {"black intel: use the uzi at close range", "معلومات BLACK: استخدم رشاش Uzi في المسافات القريبة"},
+    {"black intel: the uzi is inaccurate at long range", "معلومات BLACK: رشاش Uzi غير دقيق في المدى البعيد"},
+    {"black intel: use the uzi to clear rooms of multiple enemies", "معلومات BLACK: استخدم Uzi لتطهير الغرف من عدة أعداء"},
+    {"black intel: use the glock for close range headshots", "معلومات BLACK: استخدم مسدس Glock لإصابات الرأس القريبة"},
+    {"black intel: suppressed weapons are quieter but less powerful", "معلومات BLACK: الأسلحة المكتومة أهدأ لكنها أقل قوة"},
+    {"black intel: use a suppressor to silence a weapon", "معلومات BLACK: استخدم كاتم الصوت لتخفيض صوت السلاح"},
+    {"black intel: use suppressed weapons to kill enemies without alerting others", "معلومات BLACK: استخدم الأسلحة المكتومة لقتل الأعداء دون تنبيه الآخرين"},
+    {"black intel: use suppressed weapons to stealthily kill enemies", "معلومات BLACK: استخدم الأسلحة المكتومة للقضاء على الأعداء بصمت"},
+    {"black intel: try suppressed headshots for one-shot stealth kills", "معلومات BLACK: جرب إصابات الرأس بسلاح مكتوم للقتل الصامت بطلقة واحدة"},
+    {"black intel: shoot off enemy helmets to take them down quickly", "معلومات BLACK: أسقط خوذات الأعداء بالرصاص للقضاء عليهم بسرعة"},
+    {"black intel: shoot through cover to hit hiding enemies", "معلومات BLACK: أطلق النار عبر السواتر لإصابة الأعداء المختبئين"},
+    {"black intel: shoot damaged walls and floors to open alternate routes", "معلومات BLACK: أطلق النار على الجدران والأرضيات المتضررة لفتح مسارات بديلة"},
+    {"black intel: blast walls in the underground gulag to find bunkers", "معلومات BLACK: فجّر الجدران في السجن الأرضي للعثور على المخابئ"},
+    {"black intel: blast walls in naszran town", "معلومات BLACK: فجّر الجدران في بلدة نصران"},
+    {"black intel: shoot through walls in tivliz", "معلومات BLACK: أطلق النار عبر الجدران في مصح تيفليز"},
+    {"black intel: destroy the crane in the dockyard", "معلومات BLACK: دمّر الرافعة في حوض السفن"},
+    {"black intel: destroy the gas tanks in the foundry", "معلومات BLACK: دمّر خزانات الغاز في المسبك"},
+    {"black intel: destroy the environment to take down enemies", "معلومات BLACK: دمّر البيئة المحيطة لإسقاط الأعداء"},
+    {"black intel: objects enemies use for cover can often be destroyed", "معلومات BLACK: السواتر التي يحتمي بها الأعداء يمكن تدميرها غالباً"},
+    {"black intel: shoot red objects to make them explode", "معلومات BLACK: أطلق النار على الأجسام الحمراء لتفجيرها"},
+    {"black intel: use the black reticle to find and complete destruction objectives", "معلومات BLACK: استخدم مؤشر بلاك الأسود لإيجاد وإكمال أهداف التدمير"},
+    {"black intel: use the black reticle to find explosive objects", "معلومات BLACK: استخدم مؤشر بلاك لإيجاد الأجسام القابلة للانفجار"},
+    {"black intel: search the area for health packs, ammo and grenades", "معلومات BLACK: فتش المنطقة للعثور على حقائب الإسعاف والذخيرة والقنابل"},
+    {"black intel: health packs can be carried and used when needed", "معلومات BLACK: يمكن حمل حقائب الإسعاف واستخدامها عند الحاجة"},
+    {"black intel: first aid kits instantly restore health", "معلومات BLACK: حقائب الإسعاف الأولية تستعيد الصحة فوراً"},
+    {"black intel: heartbeat sound indicates low health", "معلومات BLACK: صوت نبضات القلب ينذر بانخفاض مستوى الصحة"},
+    {"black intel: red crosshair indicates enemy in range", "معلومات BLACK: المؤشر الأحمر يدل على أن العدو ضمن المدى"},
+    {"black intel: take down enemies up close with a melee attack", "معلومات BLACK: أسقط الأعداء القريبين بالهجوم اليدوي"},
+    {"black intel: pick up weapons from fallen enemies", "معلومات BLACK: التقط الأسلحة من الأعداء الذين سقطوا"},
+    {"black intel: break windows near enemies to distract them", "معلومات BLACK: حطّم النوافذ قرب الأعداء لتشتيت انتباههم"},
+    {"black intel: use grenades to take down multiple enemies", "معلومات BLACK: استخدم القنابل اليدوية لإسقاط عدة أعداء معاً"},
+    {"black intel: use shotguns to take down enemies in body armour", "معلومات BLACK: استخدم الشوزن لإسقاط الأعداء ذوي الدروع الواقية"},
     {"black ops rating on all missions", "تقييم العمليات السوداء في جميع المهمات"},
     {"black mode complete", "اكتمل وضع العمليات السوداء"},
+
+    // All Mission Primary / Secondary / Destruction / Recon Objectives & HUD Prompts
+    {"objective target", "هدف المهمة"},
+    {"target", "الهدف"},
+    {"secondary objective target update", "تحديث هدف المهمة الثانوي"},
+    {"rendezvous with black cell", "الالتقاء بخلية بلاك"},
+    {"rendezvous with black cell member", "الالتقاء بعضو خلية بلاك"},
+    {"meet with black cell member", "الالتقاء بعضو خلية بلاك"},
+    {"rendezvous with 2nd black ops team", "الالتقاء بفريق العمليات السوداء الثاني"},
+    {"meet with 2nd black ops team", "الالتقاء بفريق العمليات السوداء الثاني"},
+    {"assist 2nd black ops team", "مساندة فريق العمليات السوداء الثاني"},
+    {"find 2nd black ops team", "العثور على فريق العمليات السوداء الثاني"},
+    {"rendezvous with mccarver", "الالتقاء بماكارفر"},
+    {"meet mccarver", "الالتقاء بماكارفر"},
+    {"meet mccarver at the merjakni farm", "الالتقاء بماكارفر في مزرعة ميرجاكني"},
+    {"rendezvous with mccarver at the merjakni farm", "الالتقاء بماكارفر في مزرعة ميرجاكني"},
+    {"reach the farm rendezvous", "الوصول إلى نقطة الالتقاء في المزرعة"},
+    {"find the merjakni farm", "العثور على مزرعة ميرجاكني"},
+    {"search the farmhouse", "تفتيش بيت المزرعة"},
+    {"search the farm buildings", "تفتيش مباني المزرعة"},
+    {"clear all outbuildings", "تطهير جميع المباني الخارجية"},
+    {"clear all outbuildings without taking damage", "تطهير جميع المباني الخارجية دون تلقي أي ضرر"},
+    {"meet solomon at foundry entrance", "الالتقاء بسولومون عند مدخل المسبك"},
+    {"rendezvous with solomon at the foundry entrance", "الالتقاء بسولومون عند مدخل المسبك"},
+    {"find the naszran foundry", "العثور على مسبك نصران"},
+    {"go to the steel mill", "التوجه إلى مصنع الصلب"},
+    {"cross the treneska border crossing", "عبور نقطة تفتيش ترينيسكا الحدودية"},
+    {"cross the border at the treneska checkpoint", "عبور الحدود عند نقطة تفتيش ترينيسكا"},
+    {"cross the border", "عبور الحدود"},
+    {"find the border", "العثور على الحدود"},
+    {"find the treneska border", "العثور على حدود ترينيسكا"},
+    {"cross the vlodnik canal", "عبور قناة فلودنيك"},
+    {"find the river crossing", "العثور على معبر النهر"},
+    {"cross the minefield", "عبور حقل الألغام"},
+    {"pass through the minefield", "المرور عبر حقل الألغام"},
+    {"cross the cemetery", "عبور المقبرة"},
+    {"cross sniper alley", "عبور زقاق القناصة"},
+    {"cross naszran town", "عبور بلدة نصران"},
+    {"cross naszran town with mccarver", "عبور بلدة نصران برفقة ماكارفر"},
+    {"mccarver will give you sniper support", "سيوفر لك ماكارفر إسناد القنص"},
+    {"take sniper positions", "السيطرة على مواقع القناصة"},
+    {"secure sniper positions", "تأمين مواقع القناصة"},
+    {"eliminate all enemies", "القضاء على جميع الأعداء"},
+    {"eliminate all enemies in this area", "القضاء على جميع الأعداء في هذه المنطقة"},
+    {"find and eliminate all enemies", "العثور على جميع الأعداء والقضاء عليهم"},
+    {"find and eliminate all patrols", "العثور على جميع الدوريات والقضاء عليها"},
+    {"eliminate incoming patrol", "القضاء على الدورية القادمة"},
+    {"eliminate ambushing enemies", "القضاء على الأعداء الكامنين"},
+    {"eliminate reinforcements", "القضاء على التعزيزات المعادية"},
+    {"hold off enemy reinforcements", "صد تعزيزات العدو"},
+    {"eliminate all snipers", "القضاء على جميع القناصة"},
+    {"kill all snipers", "القضاء على جميع القناصة"},
+    {"eliminate the sniper", "القضاء على القناص"},
+    {"eliminate the rpg enemy", "القضاء على رامي RPG"},
+    {"eliminate all rpg enemies", "القضاء على جميع رماة RPG"},
+    {"eliminate the heavy machine gunners", "القضاء على رماة الرشاشات الثقيلة"},
+    {"destroy machine gun nests", "تدمير أعشاش الرشاشات"},
+    {"destroy the machine gun nest", "تدمير عش الرشاش"},
+    {"destroy mortar positions", "تدمير مواقع الهاون"},
+    {"destroy the troop truck", "تدمير شاحنة الجنود"},
+    {"destroy all working vehicles", "تدمير جميع المركبات العاملة"},
+    {"destroy the entrance gate", "تدمير بوابة الدخول"},
+    {"destroy the exit gate", "تدمير بوابة الخروج"},
+    {"destroy the fortified entry post", "تدمير نقطة الدخول المحصنة"},
+    {"destroy the main gulag doors", "تدمير البوابات الرئيسية للسجن"},
+    {"eliminate gulag entry defences", "القضاء على دفاعات مدخل السجن"},
+    {"enter the spetriniv 6 gulag", "الدخول إلى سجن سبيترينيف 6"},
+    {"reach the gulag", "الوصول إلى السجن"},
+    {"find lennox", "العثور على لينوكس"},
+    {"hunt down seventh wave suspect lennox", "ملاحقة المشتبه به في الموجة السابعة لينوكس"},
+    {"capture seventh wave suspects", "القبض على المشتبه بهم من الموجة السابعة"},
+    {"capture seventh wave suspect", "القبض على المشتبه به من الموجة السابعة"},
+    {"capture or eliminate operative suspect", "القبض على العميل المشتبه به أو تصفيته"},
+    {"eliminate 3 primary targets", "القضاء على 3 أهداف رئيسية"},
+    {"find and kill 6 primary targets", "العثور على 6 أهداف رئيسية والقضاء عليها"},
+    {"eliminate valencio's bodyguards", "القضاء على حراس فالنسيو الشخصيين"},
+    {"defeat valencio's guards", "هزيمة حراس فالنسيو"},
+    {"find the entrance to valencio's lair", "العثور على مدخل مخبأ فالنسيو"},
+    {"enter the asylum", "الدخول إلى المصح"},
+    {"enter the tivliz asylum interior", "الدخول إلى القسم الداخلي لمصح تيفليز"},
+    {"enter the museum", "الدخول إلى المتحف"},
+    {"storm the museum", "اقتحام المتحف"},
+    {"assault the enemy stronghold", "اقتحام معقل العدو"},
+    {"enter the building", "الدخول إلى المبنى"},
+    {"find a way into the basement", "العثور على طريق إلى القبو"},
+    {"find a way into the underground network", "العثور على مدخل إلى الشبكة الأرضية"},
+    {"enter the underground complex", "الدخول إلى المجمع الأرضي"},
+    {"enter the ressanov tunnel network", "الدخول إلى شبكة أنفاق ريسانوف"},
+    {"find the bunker entrance", "العثور على مدخل المخبأ المحصن"},
+    {"find the armoury", "العثور على مخزن الأسلحة"},
+    {"find the weapons cache", "العثور على مخبأ الأسلحة"},
+    {"find the shotgun", "العثور على بندقية الشوزن"},
+    {"find the m203", "العثور على قاذف M203"},
+    {"find tom & matt", "العثور على توم ومات"},
+    {"clear the junction", "تطهير التقاطع"},
+    {"go to the junction", "التوجه إلى التقاطع"},
+    {"disable weapons production capacity", "تعطيل قدرة إنتاج الأسلحة"},
+    {"destroy weapon manufacturing equipment", "تدمير معدات تصنيع الأسلحة"},
+    {"destroy the weapon machine tools", "تدمير آلات تصنيع الأسلحة"},
+    {"destroy 3 weapon presses", "تدمير 3 مكابس تصنيع أسلحة"},
+    {"destroy the ammunition machine", "تدمير آلة تصنيع الذخيرة"},
+    {"destroy the machinery", "تدمير الآلات"},
+    {"destroy metal smelter control panels", "تدمير لوحات التحكم في مصهر المعادن"},
+    {"destroy the control panels", "تدمير لوحات التحكم"},
+    {"destroy the gasometers", "تدمير خزانات الغاز"},
+    {"destroy both gasometers", "تدمير كلا خزاني الغاز"},
+    {"cross the vratska dry dock area", "عبور منطقة الحوض الجاف في فراتسكا"},
+    {"enter the main shipping area", "الدخول إلى منطقة الشحن الرئيسية"},
+    {"destroy the dry dock controls", "تدمير وحدات التحكم بالحوض الجاف"},
+    {"vratska dockyard weapons shipping facility", "منشأة شحن الأسلحة في حوض سفن فراتسكا"},
+    {"cross the graznei bridge", "عبور جسر غرازني"},
+    {"fight across the bridge", "القتال عبر الجسر"},
+    {"complete the level", "إكمال المرحلة"},
+    {"complete this section", "إكمال هذا القسم"},
+    {"destroy all targets", "تدمير جميع الأهداف"},
+    {"kill enemies with headshots", "اقتل الأعداء بإصابات الرأس"},
+    {"kill enemies for extra time", "اقتل الأعداء لكسب وقت إضافي"},
+    {"get 10 headshot kills", "حقق 10 قتلات بإصابة الرأس"},
+    {"get 10 sniper kills", "حقق 10 قتلات ببندقية القنص"},
+    {"get 10 mine kills", "حقق 10 قتلات بالألغام"},
+    {"get 3 mine kills", "حقق 3 قتلات بالألغام"},
+    {"get 10 indirect kills", "حقق 10 قتلات غير مباشرة"},
+    {"get 5 ricochet kills", "حقق 5 قتلات بالارتداد"},
+    {"get 5 stealth kills", "حقق 5 قتلات صامتة"},
+    {"1000 enemies killed", "تم القضاء على 1000 عدو"},
+    {"use gravestones for cover", "احتمِ بشواهد القبور"},
+    {"use shotgun to blast doors", "استخدم الشوزن لتفجير الأبواب"},
+    {"clear obstacles with shotgun", "أزل العوائق باستخدام الشوزن"},
+    {"blast a path with the shotgun", "افتح طريقاً باستخدام الشوزن"},
+    {"explore to find health packs", "استكشف المكان للعثور على حقائب الإسعاف"},
+    {"attach suppressor to silence weapon", "ركّب كاتم الصوت لتخفيض صوت السلاح"},
+    {"attach/detach suppressor", "تركيب/فك كاتم الصوت"},
+    {"pick up weapons from fallen enemies", "التقط الأسلحة من الأعداء القتلى"},
+    {"fallen enemies drop their weapons", "يسقط الأعداء القتلى أسلحتهم"},
+    {"fallen enemies drop first aid kits", "يسقط الأعداء القتلى حقائب إسعاف"},
+    {"health packs can be carried until needed", "يمكن حمل حقائب الإسعاف واستخدامها عند الحاجة"},
+    {"first aid kits instantly restore health", "حقائب الإسعاف تستعيد الصحة فوراً"},
+    {"use health pack when health bar is red", "استخدم حقيبة الإسعاف عندما يصبح شريط الصحة أحمر"},
+    {"use health pack", "استخدم حقيبة الإسعاف"},
+    {"red hit ring indicates attack direction", "الحلقة الحمراء تشير إلى اتجاه الهجوم"},
+    {"red crosshair indicates enemy in range", "المؤشر الأحمر يدل على أن العدو في المدى"},
+    {"green crosshair indicates friendly target", "المؤشر الأخضر يدل على هدف صديق"},
+    {"blurred crosshair indicates out of range", "ضبابية المؤشر تعني أن الهدف خارج المدى"},
+    {"heartbeat indicates low health", "نبضات القلب تشير إلى انخفاض الصحة"},
+    {"red objects explode when shot", "الأجسام الحمراء تنفجر عند إطلاق النار عليها"},
+    {"shoot mines to trigger explosions", "أطلق النار على الألغام لتفجيرها"},
+    {"shoot mines to take down enemies", "أطلق النار على الألغام لإسقاط الأعداء"},
+    {"breaking windows distracts enemies", "تحطيم النوافذ يشتت انتباه الأعداء"},
+    {"use the black reticle to find destruction objects", "استخدم مؤشر بلاك لإيجاد أهداف التدمير"},
+    {"use the black reticle to find and destroy objects.", "استخدم مؤشر بلاك للعثور على الأهداف وتدميرها."},
+    {"find blue document rolls to help in future missions.", "اعثر على لفائف الوثائق الزرقاء للمساعدة في المهمات القادمة."},
+    {"collect terrorist information and plans in folders and security briefcases.", "اجمع معلومات وخطط الإرهابيين في الملفات والحقائب الأمنية."},
+    {"destroy laptops, safes and briefcases containing secret information.", "دمّر الحواسيب والخزائن والحقائب التي تحتوي على معلومات سرية."},
+    {"find hidden weapons.", "اعثر على الأسلحة المخفية."},
+    {"find hidden weapons", "اعثر على الأسلحة المخفية"},
+    {"find weapons for armament objectives", "اعثر على الأسلحة لإكمال أهداف التسلح"},
+    {"collect mission info for recon objectives", "اجمع معلومات المهمة لأهداف الاستطلاع"},
+    {"collect info for intel objectives", "اجمع المعلومات لأهداف الاستخبارات"},
+    {"collect information on terrorist activity", "اجمع معلومات حول النشاط الإرهابي"},
+    {"find information for future missions", "اعثر على معلومات للمهمات القادمة"},
+    {"destroy info for blackmail objectives", "دمّر الوثائق السرية لأهداف الابتزاز"},
+    {"destroy us secrets to keep them hidden", "دمّر الأسرار السرية لإبقائها مخفية"},
+    {"shoot objects for destruction objectives", "أطلق النار على الأهداف لإكمال مهام التدمير"},
+    {"destroy objects for destruction objectives", "دمّر الأهداف لإكمال مهام التدمير"},
+    {"weapons found", "الأسلحة المكتشفة"},
+    {"weapon status", "حالة السلاح"},
+    {"preferred weapon:", "السلاح المفضل:"},
+    {"total bullets fired:", "إجمالي الطلقات المطلقة:"},
+    {"total play time:", "إجمالي وقت اللعب:"},
+    {"total game completion:", "نسبة إكمال اللعبة:"},
+    {"total enemy count:", "إجمالي عدد الأعداء:"},
+    {"welcome to black", "مرحباً بك في BLACK"},
+    {"enter the real world of black ops", "ادخل العالم الحقيقي للعمليات السرية"},
+    {"pull the trigger on the world's most explosive modern weaponry", "اضغط الزناد لأقوى الأسلحة الحديثة وأشدها انفجاراً"},
+    {"unleash devastating destruction", "أطلق دماراً ساحقاً"},
+    {"flawless", "بلا أخطاء"},
+    {"perfect", "مثالي"},
+    {"unlocked", "مفتوح"},
+    {"none", "لا يوجد"},
+    {"-unknown-", "-غير معروف-"},
+    {"high velocity", "سرعة عالية"},
+    {"high calibre", "عيار ثقيل"},
+    {"close range", "مدى قريب"},
+    {"rocket propelled", "مدفوع بالصواريخ"},
+    {"fragmentation", "متشظي"},
+    {"first aid kit", "حقيبة إسعاف أولية"},
+    {"first aid kits full", "حقائب الإسعاف ممتلئة"},
+    {"hand grenades full", "القنابل اليدوية ممتلئة"},
+    {"pistol ammo", "ذخيرة مسدس"},
+    {"pistol ammo full", "ذخيرة المسدس ممتلئة"},
+    {"smg ammo", "ذخيرة رشاش خفيف"},
+    {"smg ammo full", "ذخيرة الرشاش الخفيف ممتلئة"},
+    {"assault rifle ammo", "ذخيرة بندقية هجومية"},
+    {"assault rifle ammo full", "ذخيرة البندقية الهجومية ممتلئة"},
+    {"shotgun ammo", "ذخيرة شوزن"},
+    {"shotgun ammo full", "ذخيرة الشوزن ممتلئة"},
+    {"sniper rifle ammo", "ذخيرة بندقية قنص"},
+    {"sniper rifle ammo full", "ذخيرة بندقية القنص ممتلئة"},
+    {"magnum ammo", "ذخيرة ماغنوم"},
+    {"magnum ammo full", "ذخيرة الماغنوم ممتلئة"},
+    {"m249 ammo", "ذخيرة M249"},
+    {"m249 ammo full", "ذخيرة M249 ممتلئة"},
+    {"m203 ammo", "ذخيرة M203"},
+    {"m203 ammo full", "ذخيرة M203 ممتلئة"},
+    {"rpg ammo", "ذخيرة RPG"},
+    {"rpg ammo full", "ذخيرة RPG ممتلئة"},
+    {"you found a hidden sniper rifle", "عثرت على بندقية قنص مخفية"},
+    {"you found a hidden m16", "عثرت على بندقية M16 مخفية"},
+    {"you found a hidden uzi", "عثرت على رشاش Uzi مخفي"},
+    {"you found a hidden m203", "عثرت على سلاح M203 مخفي"},
+    {"you found a hidden rpg", "عثرت على قاذف RPG مخفي"},
+    {"you found a hidden magnum", "عثرت على مسدس Magnum مخفي"},
 
     // Credits Headers & Common Sections
     {"criterion games credits", "فريق تطوير Criterion Games"},
@@ -685,6 +945,16 @@ bool TryTranslatePattern(const std::string& norm, std::string& out_ar) {
         out_ar = buf;
         return true;
     }
+    if (std::sscanf(norm.c_str(), "weapon challenges complete: %d/%d", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تحديات السلاح المكتملة: %d/%d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "weapons found: %d/%d", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "الأسلحة المكتشفة: %d/%d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
     if (std::sscanf(norm.c_str(), "destruction complete: %d/%d", &n1, &n2) == 2) {
         std::snprintf(buf, sizeof(buf), "التدمير المكتمل: %d/%d", n1, n2);
         out_ar = buf;
@@ -692,6 +962,61 @@ bool TryTranslatePattern(const std::string& norm, std::string& out_ar) {
     }
     if (std::sscanf(norm.c_str(), "complete %d of %d secondary objectives", &n1, &n2) == 2) {
         std::snprintf(buf, sizeof(buf), "أكمل %d من %d أهداف ثانوية", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "%d/%d secondary objectives complete", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "اكتمل %d/%d من الأهداف الثانوية", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "intel objective %d/%d", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "هدف الاستخبارات %d/%d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "blackmail objective %d/%d", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "هدف الابتزاز %d/%d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "gasometer %d of %d destroyed", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم تدمير خزان الغاز %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "weapon machinery %d of %d destroyed", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم تدمير آلات السلاح %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "smelter %d of %d destroyed", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم تدمير المصهر %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "outbuilding %d of %d cleared", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم تطهير المبنى الخارجي %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "dry dock control %d of %d destroyed", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم تدمير تحكم الحوض الجاف %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "rpg enemy %d of %d has been eliminated", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم القضاء على رامي RPG %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "sniper %d of %d has been eliminated", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم القضاء على القناص %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "sniper position %d of %d taken", &n1, &n2) == 2) {
+        std::snprintf(buf, sizeof(buf), "تم السيطرة على موقع القناص %d من %d", n1, n2);
         out_ar = buf;
         return true;
     }
@@ -715,6 +1040,21 @@ bool TryTranslatePattern(const std::string& norm, std::string& out_ar) {
         out_ar = buf;
         return true;
     }
+    if (std::sscanf(norm.c_str(), "current record: %d targets", &n1) == 1) {
+        std::snprintf(buf, sizeof(buf), "الرقم القياسي الحالي: %d هدف", n1);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "current record: %d headshots", &n1) == 1) {
+        std::snprintf(buf, sizeof(buf), "الرقم القياسي الحالي: %d إصابة رأس", n1);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "current record: %d enemies killed", &n1) == 1) {
+        std::snprintf(buf, sizeof(buf), "الرقم القياسي الحالي: %d عدو قتيل", n1);
+        out_ar = buf;
+        return true;
+    }
     if (std::sscanf(norm.c_str(), "mission time: %d:%d", &n1, &n2) == 2) {
         std::snprintf(buf, sizeof(buf), "وقت المهمة: %d:%02d", n1, n2);
         out_ar = buf;
@@ -722,6 +1062,16 @@ bool TryTranslatePattern(const std::string& norm, std::string& out_ar) {
     }
     if (std::sscanf(norm.c_str(), "destruction %d of %d", &n1, &n2) == 2) {
         std::snprintf(buf, sizeof(buf), "تدمير %d من %d", n1, n2);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "complete %d objectives", &n1) == 1) {
+        std::snprintf(buf, sizeof(buf), "أكمل %d من الأهداف", n1);
+        out_ar = buf;
+        return true;
+    }
+    if (std::sscanf(norm.c_str(), "%d new kill book kills", &n1) == 1) {
+        std::snprintf(buf, sizeof(buf), "%d قتلى جدد في سجل العمليات", n1);
         out_ar = buf;
         return true;
     }
@@ -755,6 +1105,33 @@ bool TryTranslatePattern(const std::string& norm, std::string& out_ar) {
                     &n1) == 1) {
         std::snprintf(buf, sizeof(buf), "لا توجد مساحة كافية لحفظ اللعبة. تحتاج إلى تحرير %d وحدة إضافية.", n1);
         out_ar = buf;
+        return true;
+    }
+    if (norm.rfind("you destroyed", 0) == 0) {
+        out_ar = "لقد دمّرت هدف معلومات سرية (" + norm.substr(14) + ")";
+        return true;
+    }
+    if (norm.rfind("you discovered", 0) == 0 || norm.rfind("you found", 0) == 0 ||
+        norm.rfind("you uncovered", 0) == 0 || norm.rfind("you obtained", 0) == 0) {
+        out_ar = "لقد عثرت على معلومات استطلاع سرية";
+        return true;
+    }
+    if (norm.rfind("hold ", 0) == 0 && norm.find(" to pick up") != std::string::npos) {
+        out_ar = "اضغط مطولاً لالتقاط السلاح";
+        return true;
+    }
+    if (norm.rfind("hold ", 0) == 0 && norm.find(" to swap") != std::string::npos) {
+        out_ar = "اضغط مطولاً لتبديل السلاح";
+        return true;
+    }
+    if (norm.size() > 10 && norm.substr(norm.size() - 10) == " picked up") {
+        std::string item = TrimCopy(norm.substr(0, norm.size() - 10));
+        out_ar = "تم التقاط " + item;
+        return true;
+    }
+    if (norm.size() > 10 && norm.substr(norm.size() - 10) == " ammo full") {
+        std::string wpn = TrimCopy(norm.substr(0, norm.size() - 10));
+        out_ar = "ذخيرة " + wpn + " ممتلئة";
         return true;
     }
     const std::string_view p_over = "are you sure you want to overwrite profile \"";

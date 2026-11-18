@@ -54,6 +54,18 @@ struct WoundDripSlot {
 };
 constexpr size_t kMaxDripSlots = 32;
 WoundDripSlot g_drip_slots[kMaxDripSlots]{};
+constexpr size_t kMaxRecentSoldiers = 32;
+uint32_t g_recent_soldiers[kMaxRecentSoldiers]{};
+size_t g_recent_soldier_cursor = 0;
+
+void RememberSoldier(uint32_t who) noexcept {
+    if (!who) return;
+    for (size_t i = 0; i < kMaxRecentSoldiers; ++i) {
+        if (g_recent_soldiers[i] == who) return;
+    }
+    g_recent_soldiers[g_recent_soldier_cursor % kMaxRecentSoldiers] = who;
+    g_recent_soldier_cursor = (g_recent_soldier_cursor + 1) % kMaxRecentSoldiers;
+}
 
 void StepWoundBloodDrip(uint32_t who, float dt, float intensity) noexcept {
     if (!who || dt <= 0.0f || intensity <= 0.02f) return;
@@ -271,10 +283,29 @@ void OnBulletHit(const X86Context&, uint8_t* base, uint32_t victim, uint32_t,
     }
 }
 
+void OnExplosionShockwave(const float blast_pos[3], float blast_radius,
+                          float blast_force) noexcept {
+    if (!blast_pos) return;
+    const auto cfg = ReadConfigFromLab();
+    if (!cfg.enabled) return;
+
+    std::lock_guard<std::mutex> lock(g_sim_mutex);
+    g_sim.SetConfig(cfg);
+    for (size_t i = 0; i < kMaxRecentSoldiers; ++i) {
+        const uint32_t who = g_recent_soldiers[i];
+        if (!IsNonPlayerSoldier(who)) continue;
+        if (R32(who + kCharDyingOffset) != 0u) continue;
+        if (!IsValidGuestAddr(who + kCharPosOffset, 12u)) continue;
+        const float* sp = &G<float>(who + kCharPosOffset);
+        g_sim.OnExplosionShockwave(who, blast_pos, sp, blast_radius, blast_force);
+    }
+}
+
 void OnEnemyFrameStep(X86Context& ctx, uint8_t* base, uint32_t who,
                       float dt) noexcept {
     if (game::time_stop::IsFrozen()) return;
     if (!IsNonPlayerSoldier(who)) return;
+    RememberSoldier(who);
 
     const auto cfg = ReadConfigFromLab();
     if (!cfg.enabled) return;

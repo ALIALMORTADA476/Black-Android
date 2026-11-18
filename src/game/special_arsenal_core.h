@@ -11,8 +11,8 @@ enum class SpecialWeaponId : uint8_t {
     Flamethrower = 0,
     Mauser1891 = 1,
     MauserC96 = 2,
-    Maxim1910 = 3,
-    Count = 4
+    Count = 3,
+    Maxim1910 = 3
 };
 
 constexpr size_t kWeaponCount = size_t(SpecialWeaponId::Count);

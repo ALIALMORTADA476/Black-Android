@@ -964,6 +964,7 @@ X86_FUNC(sub_001E5410) {
   const float exp_f = g_params.explosion_force.load(std::memory_order_relaxed);
   if (have_deton_pos) {
     game::ballistics::OnExplosionDetonate(deton_pos, base_radius * rad, exp_f);
+    game::delirium_phys::OnExplosionShockwave(deton_pos, base_radius * rad, exp_f);
   }
   if (std::fabs(rad - 1.0f) > 1e-4f && IsValidGuestAddr(exp_desc, 0x100u)) {
     const float orig_r = G<float>(exp_desc + 0xF4u);

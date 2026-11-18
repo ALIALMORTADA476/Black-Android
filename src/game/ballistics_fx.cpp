@@ -381,7 +381,7 @@ std::array<RecentExplosion, kMaxRecentExplosions> g_recent_explosions{};
 size_t g_recent_exp_cursor = 0;
 
 // Explosion heat-haze lenses (screen-space refraction, see RenderWorldScene 2a)
-constexpr size_t kMaxBlastLenses = 4;
+constexpr size_t kMaxBlastLenses = 8;
 std::array<BlastLensNode, kMaxBlastLenses> g_blast_lenses{};
 size_t g_blast_lens_cursor = 0;
 
@@ -1675,12 +1675,12 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
          0.18f + (is_headshot ? 0.22f : 0.0f)) *
             spd,
         (dir[2] * side_sign + perp_a[2] * ca + perp_b[2] * sa) * spd};
-    const float art_r = 0.020f + next_rand() * 0.012f;
-    const float art_g = 0.0002f + next_rand() * 0.0002f;
-    const float art_b = 0.0005f + next_rand() * 0.0003f;
-    push_blood(0u, pos, vel, 0.20f + next_rand() * 0.16f,
-               (0.080f + next_rand() * 0.065f) * (is_headshot ? 1.28f : 1.0f),
-               0.64f + next_rand() * 0.16f, 1.0f, art_r, art_g, art_b);
+    const float art_r = 0.88f + next_rand() * 0.12f;
+    const float art_g = 0.11f + next_rand() * 0.07f;
+    const float art_b = 0.12f + next_rand() * 0.07f;
+    push_blood(0u, pos, vel, 0.22f + next_rand() * 0.18f,
+               (0.085f + next_rand() * 0.070f) * (is_headshot ? 1.32f : 1.0f),
+               0.76f + next_rand() * 0.16f, 1.0f, art_r, art_g, art_b);
   }
 
   // Layer 1b: High-velocity directional arterial spurts & liquid ligaments (Tile 9).
@@ -1708,12 +1708,12 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
          0.12f + next_rand() * 0.28f + (is_headshot ? 0.20f : 0.0f)) *
             spd * 0.65f,
         (dir[2] * dir_sign + perp_a[2] * ca + perp_b[2] * sa) * spd};
-    const float spurt_r = 0.018f + next_rand() * 0.012f;
-    const float spurt_g = 0.0002f + next_rand() * 0.0002f;
-    const float spurt_b = 0.0005f + next_rand() * 0.0003f;
-    push_blood(1u, pos, vel, 0.34f + next_rand() * 0.32f,
-               (0.032f + next_rand() * 0.036f) * (is_headshot ? 1.25f : 1.0f),
-               0.92f + next_rand() * 0.07f, 1.65f + next_rand() * 1.15f,
+    const float spurt_r = 0.86f + next_rand() * 0.14f;
+    const float spurt_g = 0.10f + next_rand() * 0.06f;
+    const float spurt_b = 0.11f + next_rand() * 0.06f;
+    push_blood(1u, pos, vel, 0.36f + next_rand() * 0.34f,
+               (0.036f + next_rand() * 0.038f) * (is_headshot ? 1.28f : 1.0f),
+               0.94f + next_rand() * 0.05f, 1.70f + next_rand() * 1.15f,
                spurt_r, spurt_g, spurt_b);
   }
 
@@ -1733,13 +1733,13 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
                      (next_rand() - 0.25f) * 0.45f) *
                         spd * 0.58f,
                     (dir[2] + perp_a[2] * ca + perp_b[2] * sa) * spd};
-    const float cr = 0.018f + next_rand() * 0.010f;
-    push_blood(3u, pos, vel, 0.22f + next_rand() * 0.24f,
-               0.014f + next_rand() * 0.015f, 0.86f,
-               1.80f + next_rand() * 1.20f, cr, 0.0002f, 0.0005f);
+    const float cr = 0.88f + next_rand() * 0.12f;
+    push_blood(3u, pos, vel, 0.24f + next_rand() * 0.26f,
+               0.016f + next_rand() * 0.016f, 0.90f,
+               1.85f + next_rand() * 1.20f, cr, 0.11f, 0.12f);
   }
 
-  // Layer 2: Heavy dark venous gobbets & clots (Tile 11) arcing under gravity
+  // Layer 2: Heavy venous gobbets & clots (Tile 11) arcing under gravity
   // onto the floor to form spatters and feed coagulating pools.
   for (int i = 0; i < clot_count; i++) {
     const bool exit_spray = (i % 4 != 0);
@@ -1757,12 +1757,12 @@ void OnEnemyBloodHit(uint32_t victim_ea, const float hit_pos[3], float ground_y,
         (0.05f + next_rand() * 0.52f + (is_headshot ? 0.26f : 0.0f)) * spd *
             0.52f,
         (dir[2] * dir_sign + (next_rand() - 0.5f) * 0.78f) * spd};
-    const float venous_r = 0.012f + next_rand() * 0.010f;
-    const float venous_g = 0.0001f + next_rand() * 0.0002f;
-    const float venous_b = 0.0004f + next_rand() * 0.0003f;
-    push_blood(2u, pos, vel, 0.68f + next_rand() * 0.50f,
-               0.026f + next_rand() * 0.028f, 0.95f,
-               1.25f + next_rand() * 0.65f, venous_r, venous_g, venous_b);
+    const float venous_r = 0.68f + next_rand() * 0.16f;
+    const float venous_g = 0.07f + next_rand() * 0.05f;
+    const float venous_b = 0.08f + next_rand() * 0.05f;
+    push_blood(2u, pos, vel, 0.70f + next_rand() * 0.52f,
+               0.028f + next_rand() * 0.030f, 0.96f,
+               1.28f + next_rand() * 0.65f, venous_r, venous_g, venous_b);
   }
 
   // Layer 3: Register/refresh systolic pulsing wound stream on this soldier
@@ -2108,19 +2108,20 @@ void OnExplosionDetonate(const float pos[3], float radius, float force) {
                        0.072f, true, perf ? 28u : kMaxHazeMotes);
   }
 
-  // 6. Screen-space refraction lens: the frame is bent by the blast wave for a
-  // few tenths of a second (see RenderWorldScene block 2a)
+  // 6. Screen-space transparent shockwave refraction lens & convective heat haze:
+  // Primary Sedov-Taylor supersonic air-compression shell + trailing thermal shimmer
+  // (see RenderWorldScene block 2a)
   {
     BlastLensNode &lens = g_blast_lenses[g_blast_lens_cursor % kMaxBlastLenses];
     g_blast_lens_cursor = (g_blast_lens_cursor + 1) % kMaxBlastLenses;
     lens.active = true;
     lens.pos[0] = pos[0];
-    lens.pos[1] = pos[1];
+    lens.pos[1] = pos[1] + 0.22f * rad_scale;
     lens.pos[2] = pos[2];
-    lens.radius = std::clamp(radius * 0.85f, 2.2f, 9.0f);
+    lens.radius = std::clamp(radius * 1.45f, 4.5f, 16.5f);
     lens.age = 0.0f;
-    lens.ttl = 0.55f + 0.12f * rad_scale;
-    lens.strength = 0.85f + 0.25f * std::min(rad_scale, 1.6f);
+    lens.ttl = 0.85f + 0.22f * rad_scale;
+    lens.strength = 1.35f + 0.40f * std::min(rad_scale, 2.0f);
   }
   lock.unlock();
   game::haptics::DispatchExplosionHaptic(pos);
@@ -2496,9 +2497,9 @@ void EmitWoundDrip(const float pos[3], float ground_y) {
   bn.opacity = 0.95f;
   bn.rot = next_rand() * 6.28318f;
   bn.stretch = 1.35f;
-  bn.r = 0.015f + next_rand() * 0.010f;
-  bn.g = 0.0002f;
-  bn.b = 0.0005f;
+  bn.r = 0.80f + next_rand() * 0.14f;
+  bn.g = 0.08f + next_rand() * 0.04f;
+  bn.b = 0.09f + next_rand() * 0.04f;
 }
 
 void EmitSpecialShotMuzzleAndTrace(const float muzzle_pos[3], const float dir[3],
@@ -3362,10 +3363,23 @@ void RenderWorldScene() {
           const float rx = ry / aspect;
           if (std::fabs(nx) - rx > 1.25f || std::fabs(ny) - ry > 1.25f)
             continue;
-          const float amp = std::clamp(0.55f * fade, 0.0f, 0.55f);
+          // Sedov-Taylor blast wave expansion r_front(t) = (t/ttl)^0.48 with
+          // Gladstone-Dale refractive index N-wave shell + inner convective heat haze
+          const float r_front = 0.12f + 0.86f * std::pow(tt, 0.46f);
+          const float shell_w = 0.14f + 0.08f * tt;
+          const float amp = std::clamp(0.95f * lens.strength * fade, 0.0f, 1.15f);
           const float base_a =
-              std::clamp(0.85f * lens.strength * fade, 0.0f, 0.92f);
-          constexpr int kWarpGrid = 16;
+              std::clamp(0.96f * lens.strength * std::pow(1.0f - tt, 1.20f), 0.0f, 0.98f);
+          // Subtle translucent Schlieren condensation ring along the expanding shockwave front
+          {
+            const float schlieren_a = std::clamp(0.24f * fade * std::min(lens.strength, 1.5f), 0.0f, 0.32f);
+            if (schlieren_a > 0.015f) {
+              EmitTexturedBillboard(
+                  fire_tex_verts, lens.pos, lens.radius * r_front, lens.age * 1.25f, 14,
+                  d3d::PackColorBgra(0.88f, 0.94f, 1.00f, schlieren_a), g_cam);
+            }
+          }
+          constexpr int kWarpGrid = 24;
           for (int gy = 0; gy < kWarpGrid; gy++) {
             for (int gx = 0; gx < kWarpGrid; gx++) {
               d3d::TexturedWorldVertex q[4];
@@ -3385,20 +3399,37 @@ void RenderWorldScene() {
                   dirx = tx / radial;
                   diry = ty / radial;
                 }
-                const float fall = std::max(0.0f, 1.0f - radial);
-                const float wobble =
-                    0.62f +
-                    0.38f *
-                        std::sin(6.28318f * (1.7f * std::min(radial, 1.0f) -
-                                             tt * 1.15f));
-                const float disp = amp * std::pow(fall, 1.25f) * wobble;
-                const float u = std::clamp(
-                    0.5f + ndc_x * 0.5f + dirx * disp * rx * 0.5f, 0.001f,
-                    0.999f);
-                const float v = std::clamp(
-                    0.5f - ndc_y * 0.5f - diry * disp * ry * 0.5f, 0.001f,
-                    0.999f);
-                const float a = base_a * std::pow(fall, 1.35f);
+                const float edge_guard = std::clamp((1.0f - radial) * 4.5f, 0.0f, 1.0f);
+                // 1. Primary supersonic Friedlander N-wave shock ring (compression peak + rarefaction trough)
+                const float xi = (radial - r_front) / shell_w;
+                const float n_wave = -xi * std::exp(-0.5f * xi * xi) * 1.6487f;
+                const float shock_env = std::exp(-0.40f * xi * xi);
+                // 2. Secondary reflected Mach stem wave trailing at 0.62 * r_front
+                const float xi2 = (radial - r_front * 0.62f) / (shell_w * 1.15f);
+                const float mach_wave = -xi2 * std::exp(-0.5f * xi2 * xi2) * 0.72f;
+                // 3. Inner turbulent thermal buoyancy shimmer (heat haze rising behind shock front)
+                const float inner_mask = std::clamp((r_front - radial) / std::max(r_front, 0.1f), 0.0f, 1.0f);
+                const float heat_shimmer_x =
+                    std::sin(tx * 12.5f + ty * 7.8f - lens.age * 18.0f) *
+                    std::cos(ty * 9.8f - lens.age * 14.0f) * 0.28f * inner_mask;
+                const float heat_shimmer_y =
+                    std::cos(tx * 9.2f - ty * 13.0f - lens.age * 20.0f) * 0.32f * inner_mask;
+
+                const float radial_disp =
+                    amp * edge_guard * (n_wave * 0.85f + mach_wave * 0.38f);
+                const float disp_x =
+                    (dirx * radial_disp + amp * edge_guard * heat_shimmer_x) * rx * 0.55f;
+                const float disp_y =
+                    (diry * radial_disp + amp * edge_guard * heat_shimmer_y) * ry * 0.55f;
+
+                const float u = std::clamp(0.5f + ndc_x * 0.5f + disp_x, 0.001f, 0.999f);
+                const float v = std::clamp(0.5f - ndc_y * 0.5f - disp_y, 0.001f, 0.999f);
+                // Alpha concentrates on the transparent refractive shock shell & warm shimmer core
+                const float shell_alpha =
+                    std::clamp(shock_env * 0.98f + std::exp(-0.5f * xi2 * xi2) * 0.52f +
+                                   inner_mask * 0.62f,
+                               0.0f, 1.0f);
+                const float a = base_a * edge_guard * shell_alpha;
                 q[c].x = ndc_x;
                 q[c].y = ndc_y;
                 q[c].z = 0.0f;
@@ -3801,9 +3832,9 @@ void RenderWorldScene() {
                 bn.opacity = 0.94f;
                 bn.rot = next_rand() * 6.28318f;
                 bn.stretch = is_spurt ? (1.60f + next_rand() * 0.85f) : 1.25f;
-                bn.r = (is_spurt ? 0.018f : 0.012f) + next_rand() * 0.010f;
-                bn.g = 0.0002f;
-                bn.b = 0.0005f;
+                bn.r = (is_spurt ? 0.88f : 0.74f) + next_rand() * 0.12f;
+                bn.g = is_spurt ? 0.11f : 0.07f;
+                bn.b = is_spurt ? 0.12f : 0.08f;
               }
             }
           }
@@ -4038,11 +4069,11 @@ void RenderWorldScene() {
             const float pinch =
                 std::clamp(1.0f - 0.38f * life, 0.52f, 1.0f);
             const uint32_t c_tail = d3d::PackColorBgra(
-                bn.r * 0.42f, bn.g * 0.40f, bn.b * 0.40f, alpha * 0.34f);
+                bn.r * 0.58f, bn.g * 0.42f, bn.b * 0.45f, alpha * 0.42f);
             const uint32_t c_mid = d3d::PackColorBgra(
-                bn.r * 0.64f, bn.g * 0.55f, bn.b * 0.55f, alpha * 0.78f);
+                bn.r * 0.78f, bn.g * 0.62f, bn.b * 0.65f, alpha * 0.84f);
             const uint32_t c_head = d3d::PackColorBgra(
-                bn.r * 0.78f, bn.g * 0.70f, bn.b * 0.70f, alpha * 0.94f);
+                bn.r * 0.96f, bn.g * 0.85f, bn.b * 0.88f, alpha * 0.96f);
             EmitCurvedBloodLigament(smoke_verts, tail_p, mid_ctrl, bn.pos,
                                     bn.radius, pinch, c_tail, c_mid, c_head,
                                     g_cam);
@@ -4088,37 +4119,38 @@ void RenderWorldScene() {
                                : 1.0f;
         const auto coag =
             blood_decals::EvaluatePoolCoagulation(pl.age, pl.opacity * fade);
-        // Attenuate blood_decals coagulation curves (0.260 fresh -> 0.125 dried)
-        // for Black's post-process tone-mapper so pools render as deep dark crimson
-        // (0.024 fresh -> 0.011 coagulated) instead of bright light-red paint.
-        const float body_r = std::clamp(coag.r * 0.092f, 0.008f, 0.028f);
-        const float body_g = std::clamp(coag.g * 0.025f, 0.0001f, 0.0006f);
-        const float body_b = std::clamp(coag.b * 0.030f, 0.0002f, 0.0008f);
+        // Vivid oxyhemoglobin arterial crimson when fresh (0.86) -> coagulated
+        // claret (0.54) so ground pools and spatters look lifelike and glistening, never pitch black!
+        const float body_r = std::clamp(coag.r, 0.50f, 0.94f);
+        const float body_g = std::clamp(coag.g, 0.045f, 0.16f);
+        const float body_b = std::clamp(coag.b, 0.055f, 0.18f);
 
         if (pl.is_spatter) {
           const float sp_r = pl.radius * 1.12f;
           EmitAnisotropicGroundTile(
               smoke_tex_verts, pl.pos, sp_r * pl.aspect, sp_r, pl.seed,
               int(pl.tile),
-              d3d::PackColorBgra(body_r * 0.88f, body_g, body_b, coag.a * 0.94f));
+              d3d::PackColorBgra(body_r * 0.94f, body_g, body_b, coag.a * 0.94f));
         } else {
           const float pool_r = pl.radius * 1.15f * coag.spread_scale;
           // Zone 1: Outer crimson pool with Marangoni surface-tension meniscus rim (Tile 10)
           EmitAnisotropicGroundTile(
               smoke_tex_verts, pl.pos, pool_r * pl.aspect, pool_r, pl.seed, 10,
               d3d::PackColorBgra(body_r, body_g, body_b, coag.a * 0.95f));
-          // Zone 2: Inner thick dark coagulated venous clot core (Beer-Lambert deep absorption)
+          // Zone 2: Inner thick coagulated venous clot core (Beer-Lambert deep crimson absorption)
           const float core_r = pool_r * 0.66f;
           EmitTexturedGroundTile(
               smoke_tex_verts, pl.pos, core_r, pl.seed + 1.57f, 10,
-              d3d::PackColorBgra(body_r * 0.38f, body_g * 0.30f, body_b * 0.30f,
+              d3d::PackColorBgra(body_r * 0.72f, body_g * 0.55f, body_b * 0.58f,
                                  coag.a * 0.94f));
-          // Zone 3: Subtle wet plasma/specular sheen on fresh pools that vanishes as fibrin clots
+          // Zone 3: Wet plasma/specular sheen on fresh pools that vanishes as fibrin clots
           if (coag.specular_sheen > 0.08f) {
             EmitTexturedGroundTile(
                 smoke_tex_verts, pl.pos, pool_r * 0.48f, pl.seed + 0.85f, 9,
-                d3d::PackColorBgra(body_r * 1.12f, body_g * 1.15f, body_b * 1.15f,
-                                   coag.a * coag.specular_sheen * 0.32f));
+                d3d::PackColorBgra(std::min(1.0f, body_r * 1.18f),
+                                   std::min(1.0f, body_g * 2.2f + 0.14f),
+                                   std::min(1.0f, body_b * 2.2f + 0.16f),
+                                   coag.a * coag.specular_sheen * 0.36f));
           }
         }
       }

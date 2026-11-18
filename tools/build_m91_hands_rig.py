@@ -24,59 +24,50 @@ HSKN_MAGIC = 0x4E4B5348  # 'HSKN'
 
 
 def build_black_tactical_hands_texture():
-    """Strip UV wireframe lines & decals from hands_tex_0.jpg and grade to BLACK tactical style."""
+    """Synthesize a clean, streak-free 1024x1024 BLACK tactical leather glove & ripstop sleeve texture."""
     im = Image.open(h.HANDS_TEX).convert("RGB").resize((1024, 1024), Image.LANCZOS)
     a = np.asarray(im, np.float32)
-    lum = 0.299 * a[:, :, 0] + 0.587 * a[:, :, 1] + 0.114 * a[:, :, 2]
-    sat = a.max(2) - a.min(2)
-    # Remove white UV wireframe overlays and bright baking outlines
-    wire_mask = (lum > 148.0) & (sat < 42.0)
-    clean = a.copy()
-    valid = (~wire_mask).astype(np.float32)
-    for _ in range(5):
-        num = np.asarray(
-            Image.fromarray(np.clip(clean * valid[:, :, None], 0, 255).astype(np.uint8))
-            .filter(ImageFilter.BoxBlur(5)),
-            np.float32,
-        )
-        den = np.asarray(
-            Image.fromarray(np.clip(valid * 255.0, 0, 255).astype(np.uint8))
-            .filter(ImageFilter.BoxBlur(5)),
-            np.float32,
-        ) / 255.0
-        fill = np.where(den[:, :, None] > 0.05, num / np.maximum(den[:, :, None], 1e-4), 56.0)
-        clean = np.where(wire_mask[:, :, None], fill, clean)
-        valid = np.clip(valid + (den > 0.2).astype(np.float32), 0, 1)
-
-    # Local detail preservation from desaturated luma (eliminates orange blotches!)
-    luma = (0.299 * clean[:, :, 0] + 0.587 * clean[:, :, 1] + 0.114 * clean[:, :, 2]) / 255.0
-    luma_blur = np.asarray(
-        Image.fromarray(np.clip(luma * 255.0, 0, 255).astype(np.uint8))
-        .filter(ImageFilter.GaussianBlur(8)),
+    # Extract only ultra-smooth macro ambient shading from the source map (eliminating all wireframe,
+    # digital camo squares, and bright edge-padding rays).
+    luma_raw = (0.299 * a[:, :, 0] + 0.587 * a[:, :, 1] + 0.114 * a[:, :, 2]) / 255.0
+    clamped_luma = np.clip(luma_raw, 0.15, 0.52)
+    macro_shade = np.asarray(
+        Image.fromarray(np.clip(clamped_luma * 255.0, 0, 255).astype(np.uint8))
+        .filter(ImageFilter.GaussianBlur(28)),
         np.float32,
     ) / 255.0
-    micro = np.clip((luma - luma_blur) * 2.4, -0.25, 0.25)
+    macro_mod = np.clip(0.82 + (macro_shade - float(macro_shade.mean())) * 1.15, 0.68, 1.14)
 
-    yy, xx = np.mgrid[0:1024, 0:1024]
+    yy, xx = np.mgrid[0:1024, 0:1024].astype(np.float32)
     is_sleeve = (xx < 512) & (yy < 520)
     is_cuff = (xx < 256) & (yy >= 520)
     is_armplate = (xx >= 256) & (xx < 512) & (yy >= 520)
 
+    # Fine multi-scale leather pebble grain (for gloves) & ripstop crosshatch weave (for sleeves)
+    p1 = np.sin(xx * 0.55 + np.cos(yy * 0.42) * 1.8) * np.cos(yy * 0.58 - np.sin(xx * 0.38) * 1.8)
+    p2 = np.sin(xx * 1.35 + yy * 0.95) * np.cos(xx * 0.85 - yy * 1.45)
+    leather_grain = (p1 * 0.045 + p2 * 0.028)
+    ripstop = (np.sin(xx * 1.57) * np.sin(yy * 1.57)) * 0.035 + np.cos((xx + yy) * 0.78) * 0.018
+    rib_knit = np.sin(xx * 2.2) * 0.055
+
     out = np.zeros((1024, 1024, 4), dtype=np.uint8)
-    # Matte black/charcoal tactical leather gloves with crisp fabric/grain contrast
-    glove_rgb = np.array([62.0, 64.0, 68.0]) * (0.68 + 0.65 * luma[:, :, None] + micro[:, :, None] * 1.45)
-    # Dark tactical combat sleeves (matching BLACK's navy-slate-charcoal uniform sleeves)
-    sleeve_rgb = np.array([54.0, 58.0, 60.0]) * (0.65 + 0.70 * luma[:, :, None] + micro[:, :, None] * 1.35)
-    # Knit wrist cuff & ballistic nylon guard (overwriting white eyeball graphic cleanly)
-    cuff_rgb = np.array([48.0, 50.0, 54.0]) * (0.72 + 0.55 * luma[:, :, None] + micro[:, :, None])
-    plate_rgb = np.array([52.0, 55.0, 60.0]) * (0.85 + 0.40 * micro[:, :, None])
+    glove_mod = (macro_mod + leather_grain)[:, :, None]
+    sleeve_mod = (macro_mod + ripstop)[:, :, None]
+    cuff_mod = (macro_mod + rib_knit)[:, :, None]
+    plate_mod = (macro_mod + leather_grain * 0.6)[:, :, None]
+
+    # Authentic BLACK first-person palette: matte charcoal leather gloves & dark slate-navy sleeves
+    glove_rgb = np.array([58.0, 61.0, 66.0]) * glove_mod
+    sleeve_rgb = np.array([46.0, 50.0, 55.0]) * sleeve_mod
+    cuff_rgb = np.array([42.0, 45.0, 50.0]) * cuff_mod
+    plate_rgb = np.array([52.0, 56.0, 62.0]) * plate_mod
 
     rgb = glove_rgb.copy()
     rgb[is_sleeve] = sleeve_rgb[is_sleeve]
     rgb[is_cuff] = cuff_rgb[is_cuff]
     rgb[is_armplate] = plate_rgb[is_armplate]
 
-    out[:, :, :3] = np.clip(rgb, 14.0, 220.0).astype(np.uint8)
+    out[:, :, :3] = np.clip(rgb, 18.0, 128.0).astype(np.uint8)
     out[:, :, 3] = 255
     return Image.fromarray(out, "RGBA")
 
@@ -233,8 +224,164 @@ def main():
 
     b_idx, b_wgt = compute_clean_skin_weights(gltf, rest_pos, tris, wms)
 
+    # Conform right & left hands to the Kar98k stock envelope so zero fingers penetrate wood
+    gltf_k, blob_k = m91.parse_glb(os.path.join(m91.PACK_ROOT, "model", "kar_98_lod0.glb"))
+    nodes_k = gltf_k["nodes"]
+    root_t = np.array(nodes_k[10].get("translation", [0, 0, 0]), np.float64)
+    rec_nd = next(nd for nd in nodes_k if nd["name"] == "Receiver_And_Body")
+    rec_mesh = gltf_k["meshes"][rec_nd["mesh"]]
+    rec_nt = np.array(rec_nd.get("translation", [0, 0, 0]), np.float64)
+    rec_ns = np.array(rec_nd.get("scale", [1, 1, 1]), np.float64)
+    rec_nq = rec_nd.get("rotation", [0, 0, 0, 1])
+    rec_pts = []
+    for pr in rec_mesh["primitives"]:
+        pk_p = m91.read_accessor(gltf_k, blob_k, pr["attributes"]["POSITION"])
+        w = m91.quat_rotate(pk_p * rec_ns, rec_nq) + rec_nt + root_t
+        rec_pts.append(w)
+    rec_pts = np.concatenate(rec_pts, axis=0)
+    stock_x, stock_y, stock_z = rec_pts[:, 0], rec_pts[:, 1], rec_pts[:, 2]
+
+    xbins = np.linspace(0.05, 0.75, 141)
+    ymin_lut = np.full(140, -0.02)
+    ymax_lut = np.full(140, +0.03)
+    zmin_lut = np.full(140, -0.011)
+    zmax_lut = np.full(140, +0.011)
+    for b in range(140):
+        x0, x1 = xbins[b] - 0.005, xbins[b + 1] + 0.005
+        m_s = (stock_x >= x0) & (stock_x <= x1)
+        if np.any(m_s):
+            ymin_lut[b] = float(np.percentile(stock_y[m_s], 2))
+            ymax_lut[b] = float(np.percentile(stock_y[m_s], 98))
+            zmin_lut[b] = float(np.percentile(stock_z[m_s], 2))
+            zmax_lut[b] = float(np.percentile(stock_z[m_s], 98))
+
+    def stock_bounds_at(x_val):
+        bi = int(np.clip((x_val - 0.05) / (0.70 / 140.0), 0, 139))
+        return ymin_lut[bi], ymax_lut[bi], zmin_lut[bi], zmax_lut[bi]
+
+    n = len(rest_pos)
+    W_mat = np.zeros((n, 40), dtype=np.float64)
+    for k in range(4):
+        np.add.at(W_mat, (np.arange(n), b_idx[:, k]), b_wgt[:, k])
+    left_w = W_mat[:, 3:22].sum(axis=1)
+    right_w = W_mat[:, 22:40].sum(axis=1)
+    w_f1_rt = W_mat[:, [25, 26, 27]].sum(axis=1)
+    w_f234_rt = W_mat[:, 28:37].sum(axis=1)
+    w_thumb_rt = W_mat[:, [37, 38, 39]].sum(axis=1)
+    w_thumb_lt = W_mat[:, [19, 20, 21]].sum(axis=1)
+    w_fingers_lt = W_mat[:, 7:19].sum(axis=1)
+
+    for i in range(n):
+        rw = right_w[i]
+        if rw > 1e-4:
+            p = rest_pos[i]
+            arm_t = np.clip((p[0] - (-0.15)) / (0.18 - (-0.15)), 0.0, 1.0)
+            f1 = w_f1_rt[i]
+            f234 = w_f234_rt[i]
+            th = w_thumb_rt[i]
+            dx = -0.044 * arm_t + f1 * (+0.028) + f234 * (-0.010) + th * (-0.018)
+            dy = -0.003 * arm_t + f1 * (-0.008) + f234 * (-0.014) + th * (+0.006)
+            dz = +0.014 * arm_t + f1 * (-0.004) + f234 * (+0.004) + th * (-0.006)
+            rest_pos[i] = p + rw * np.array([dx, dy, dz])
+        lw = left_w[i]
+        if lw > 1e-4:
+            p = rest_pos[i]
+            arm_t = np.clip((p[0] - 0.10) / (0.46 - 0.10), 0.0, 1.0)
+            f_lt = w_fingers_lt[i]
+            th_lt = w_thumb_lt[i]
+            dx = -0.008 * arm_t
+            dy = -0.024 * arm_t - 0.008 * f_lt - 0.006 * th_lt
+            dz = +0.006 * arm_t + 0.008 * f_lt - 0.004 * th_lt
+            rest_pos[i] = p + lw * np.array([dx, dy, dz])
+
+    pos_map = defaultdict(list)
+    for i in range(n):
+        pos_map[tuple(np.round(rest_pos[i] * 1e4).astype(np.int64))].append(i)
+    adj = defaultdict(set)
+    for a, b, c in tris:
+        adj[a].update((b, c)); adj[b].update((a, c)); adj[c].update((a, b))
+    for grp in pos_map.values():
+        if len(grp) > 1:
+            g0 = grp[0]
+            for gi in grp[1:]:
+                adj[g0].update(adj[gi]); adj[gi].update(adj[g0])
+    nbrs = [list(adj[i]) for i in range(n)]
+
+    pad = 0.0025
+    for pass_i in range(4):
+        for i in range(n):
+            x, y, z = rest_pos[i]
+            if x < 0.12 or x > 0.68:
+                continue
+            ymin_s, ymax_s, zmin_s, zmax_s = stock_bounds_at(x)
+            if right_w[i] >= 0.5:
+                if w_f1_rt[i] > 0.35 and x >= 0.255 and y < ymin_s + 0.004:
+                    # Index finger on trigger blade
+                    if z < 0.001:
+                        z = 0.001
+                    if y > ymin_s - 0.001 and z < zmax_s + pad:
+                        y = ymin_s - 0.001
+                elif w_thumb_rt[i] > 0.35 and x <= 0.228 and y >= ymax_s - 0.004:
+                    # Right thumb wrapping over the top of the pistol-grip wrist saddle
+                    y = max(y, ymax_s + 0.0018)
+                    z = max(z, -0.006)
+                elif w_f234_rt[i] > 0.30 and x <= 0.242 and y <= ymin_s + 0.006:
+                    # Right middle/ring/pinky fingers curling underneath the pistol grip
+                    y = min(y, ymin_s - 0.0018)
+                    z = max(z, zmin_s - 0.001)
+                else:
+                    if z < zmin_s + 0.002:
+                        z = zmin_s + 0.002
+                    if (ymin_s - pad) < y < (ymax_s + pad) and z < (zmax_s + pad):
+                        if w_f234_rt[i] > 0.25 and y < (0.65 * ymin_s + 0.35 * ymax_s):
+                            y = ymin_s - pad
+                        else:
+                            z = zmax_s + pad
+                rest_pos[i] = [x, y, z]
+            elif left_w[i] >= 0.5:
+                if y > ymax_s - 0.005:
+                    y = ymax_s - 0.005
+                if y > (ymin_s - pad) and (zmin_s - pad) < z < (zmax_s + pad):
+                    if w_thumb_lt[i] > 0.2 or z < 0.0:
+                        z = zmin_s - pad
+                    elif w_fingers_lt[i] > 0.25 and z > 0.0:
+                        z = zmax_s + pad
+                    else:
+                        y = ymin_s - pad
+                rest_pos[i] = [x, y, z]
+        if pass_i < 3:
+            nxt = rest_pos.copy()
+            for i in range(n):
+                ns = nbrs[i]
+                if ns:
+                    nxt[i] = 0.68 * rest_pos[i] + 0.32 * rest_pos[ns].mean(axis=0)
+            for grp in pos_map.values():
+                if len(grp) > 1:
+                    nxt[grp] = nxt[grp].mean(axis=0, keepdims=True)
+            rest_pos = nxt
+
+    # Recompute smooth vertex normals & 3D finger-crevice/knuckle AO for tactile depth
+    acc_n = np.zeros_like(rest_pos)
+    for t_tri in tris:
+        a, b, c = rest_pos[t_tri[0]], rest_pos[t_tri[1]], rest_pos[t_tri[2]]
+        fn = np.cross(b - a, c - a)
+        acc_n[t_tri[0]] += fn
+        acc_n[t_tri[1]] += fn
+        acc_n[t_tri[2]] += fn
+    for grp in pos_map.values():
+        if len(grp) > 1:
+            acc_n[grp] = acc_n[grp].sum(axis=0, keepdims=True)
+    nl = np.linalg.norm(acc_n, axis=1, keepdims=True)
+    nl[nl < 1e-9] = 1.0
+    rest_nrm = acc_n / nl
+
+    tints_h = np.full((n, 4), [235.0, 238.0, 242.0, 255.0], dtype=np.float64)
+    pos_d3d_h = np.column_stack((rest_pos[:, 2], rest_pos[:, 1], rest_pos[:, 0])).astype(np.float32)
+    nrm_d3d_h = np.column_stack((rest_nrm[:, 2], rest_nrm[:, 1], rest_nrm[:, 0])).astype(np.float32)
+    hand_bgra = m91.bake_vertex_ao(pos_d3d_h, nrm_d3d_h, tris, tints_h, None, "Hands")
+
     uu = np.mod(uv[:, 0], 1.0).astype(np.float32)
-    vv = (1.0 - np.mod(uv[:, 1], 1.0)).astype(np.float32)
+    vv = np.mod(uv[:, 1], 1.0).astype(np.float32)
 
     anims = gltf.get("animations", [])
     hskn_path = os.path.join(m91.OUT_DIR, "mauser_1891_12_hands.hskn")
@@ -247,7 +394,7 @@ def main():
                 float(rest_pos[i, 0]), float(rest_pos[i, 1]), float(rest_pos[i, 2]),
                 float(rest_nrm[i, 0]), float(rest_nrm[i, 1]), float(rest_nrm[i, 2]),
                 float(uu[i]), float(vv[i]),
-                0xFFFFFFFF,
+                int(hand_bgra[i]),
                 int(b_idx[i, 0]), int(b_idx[i, 1]), int(b_idx[i, 2]), int(b_idx[i, 3]),
                 float(b_wgt[i, 0]), float(b_wgt[i, 1]), float(b_wgt[i, 2]), float(b_wgt[i, 3]),
             ))

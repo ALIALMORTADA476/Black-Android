@@ -11,6 +11,9 @@ void OnBulletHit(const X86Context& ctx, uint8_t* base, uint32_t victim,
                  uint32_t attacker, uint32_t hit_dir_ea, float force_val,
                  uint8_t zone_byte) noexcept;
 
+void OnExplosionShockwave(const float blast_pos[3], float blast_radius,
+                          float blast_force) noexcept;
+
 void OnEnemyFrameStep(X86Context& ctx, uint8_t* base, uint32_t who,
                       float dt) noexcept;
 

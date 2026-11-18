@@ -214,12 +214,12 @@ PART_ORDER = list(PART_MAP.keys())
 # lens tile in region 3 so the scope lens stops showing steel grain.
 MAT_REGION = {0: 0, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3}
 MAT_TINT = {
-    0: (224, 226, 232, 255),   # Ao_-_Bruto_1 blued/parkerized receiver & optic rings
-    1: (238, 240, 245, 255),   # Steel_-_Satin brushed steel bolt & hardware
-    2: (242, 232, 220, 255),   # Cherry wood forend/grip accents
-    3: (245, 235, 222, 255),   # Walnut stock (UV rotated 90)
-    4: (160, 185, 220, 220),   # Glass_Red (ruby-violet objective lens coat)
-    5: (155, 190, 225, 220),   # Glass_Blue (sapphire ocular lens coat)
+    0: (226, 228, 236, 255),   # Ao_-_Bruto_1 blued/parkerized receiver & optic rings
+    1: (240, 242, 248, 255),   # Steel_-_Satin brushed steel bolt & hardware
+    2: (242, 234, 224, 255),   # Cherry wood forend/grip accents
+    3: (245, 236, 225, 255),   # Walnut stock (UV rotated 90)
+    4: (200, 205, 215, 255),   # Glass_Red (dark recessed objective lens coat)
+    5: (195, 205, 220, 255),   # Glass_Blue (dark recessed ocular lens coat)
 }
 # Kept as an explicit knob, but pinned to 1.0. Real Kar98k scale relative to
 # receiver/grip sockets; viewmodel screen framing is tuned at the camera so
@@ -253,21 +253,25 @@ def _bake_pbr_metal_tile(base, mrao, nrm, size=512, contrast=1.35, gleam=28.0, w
     rough = np.clip(mrao[:, :, 1] / 255.0, 0.05, 1.0)
     metal = np.clip(mrao[:, :, 2] / 255.0, 0.0, 1.0)
     ao_mean = float(ao.mean()) + 1e-6
-    ao_rel = np.clip(0.55 + 0.45 * (ao / ao_mean), 0.38, 1.25)
+    ao_rel = np.clip(0.48 + 0.52 * (ao / ao_mean), 0.30, 1.32)
 
-    # Tangent normal relief under key-light dir (-0.52, 0.68, 0.52)
+    # Multi-directional tangent normal relief (primary key light + rim light + micro-cavity)
     nx = (nrm[:, :, 0] - 128.0) / 127.0
     ny = (nrm[:, :, 1] - 128.0) / 127.0
     nz = np.clip((nrm[:, :, 2] - 128.0) / 127.0, 0.1, 1.0)
-    ndotl = np.clip(nx * (-0.55) + ny * 0.65 + nz * 0.52, 0.0, 1.35)
-    # Normalize around resting flat tangent dot (0.52) and amplify crisp micro-relief
-    relief = 1.0 + (ndotl - 0.52) * 2.8
-    relief = np.clip(relief, 0.62, 1.48)
+    ndotl_key = np.clip(nx * (-0.58) + ny * 0.66 + nz * 0.48, 0.0, 1.40)
+    ndotl_rim = np.clip(nx * 0.62 + ny * 0.35 + nz * 0.70, 0.0, 1.30)
+    # High-frequency normal slope for machined bevels & micro-engravings
+    grad_x = np.roll(nx, -1, axis=1) - np.roll(nx, 1, axis=1)
+    grad_y = np.roll(ny, -1, axis=0) - np.roll(ny, 1, axis=0)
+    micro_curv = np.clip((grad_x - grad_y) * 1.65, -0.38, 0.45)
+
+    relief = 1.0 + (ndotl_key - 0.48) * 3.25 + (ndotl_rim - 0.65) * 0.85 + micro_curv
+    relief = np.clip(relief, 0.48, 1.62)
 
     # Edge wear / brushed satin specular glint where roughness is lower
     r_mean = float(rough.mean())
-    polish = np.clip((r_mean - rough) * 4.5 + 0.18 * metal, -0.15, 0.65)
-    # Local contrast enhancement on albedo luminance around mean
+    polish = np.clip((r_mean - rough) * 5.4 + 0.22 * metal + np.maximum(0.0, micro_curv * 0.9), -0.18, 0.78)
     b_mean = base.mean(axis=(0, 1), keepdims=True)
     enhanced = b_mean + (base - b_mean) * contrast
     lit = enhanced * ao_rel[:, :, None] * relief[:, :, None]
@@ -277,36 +281,42 @@ def _bake_pbr_metal_tile(base, mrao, nrm, size=512, contrast=1.35, gleam=28.0, w
     lit[:, :, 2] *= warm[2]
 
     out = np.zeros((size, size, 4), dtype=np.uint8)
-    out[:, :, :3] = np.clip(lit, 10.0, 245.0).astype(np.uint8)
+    out[:, :, :3] = np.clip(lit, 8.0, 248.0).astype(np.uint8)
     out[:, :, 3] = 255
     return Image.fromarray(out, "RGBA")
 
 
 def _bake_pbr_wood_tile(wood, grain_map, size=512):
-    """Bake Cherry/Walnut diffuse + grain pore map (tex_7) into deep oiled walnut RGBA."""
+    """Bake Cherry/Walnut diffuse + grain pore map (tex_7) into deep 3D hand-oiled walnut RGBA."""
     pore = grain_map[:, :, 2] / 255.0
     varnish = grain_map[:, :, 1] / 255.0
     p_mean = float(pore.mean()) + 1e-6
     v_mean = float(varnish.mean()) + 1e-6
-    grain_mod = np.clip(1.0 + (pore - p_mean) * 1.95, 0.36, 1.52)
-    sheen_add = np.clip((v_mean - varnish) * 58.0, -18.0, 28.0)
+
+    # Compute tangent-space pore normal relief from pore heightfield so wood grain has real 3D micro-shadow
+    gx = (np.roll(pore, -1, axis=1) - np.roll(pore, 1, axis=1)) * 3.8
+    gy = (np.roll(pore, -1, axis=0) - np.roll(pore, 1, axis=0)) * 3.8
+    pore_bump = np.clip(1.0 + gx * (-0.55) + gy * 0.65, 0.62, 1.38)
+
+    grain_mod = np.clip(1.0 + (pore - p_mean) * 2.45, 0.28, 1.58) * pore_bump
+    sheen_add = np.clip((v_mean - varnish) * 68.0, -24.0, 34.0)
 
     w_mean = wood.mean(axis=(0, 1), keepdims=True)
-    rich = w_mean + (wood - w_mean) * 2.15
-    # Rich Mauser oiled walnut saturation & warm grain contrast
-    rich[:, :, 0] *= 1.38
-    rich[:, :, 1] *= 1.08
-    rich[:, :, 2] *= 0.80
-    lit = rich * grain_mod[:, :, None] + sheen_add[:, :, None] * np.array([1.18, 0.90, 0.64])[None, None, :]
+    rich = w_mean + (wood - w_mean) * 2.45
+    # Authentic German military oiled walnut: deep dark-brown pores with warm amber-burled ridges
+    rich[:, :, 0] *= 1.24
+    rich[:, :, 1] *= 0.92
+    rich[:, :, 2] *= 0.64
+    lit = rich * grain_mod[:, :, None] + sheen_add[:, :, None] * np.array([1.15, 0.84, 0.56])[None, None, :]
 
     out = np.zeros((size, size, 4), dtype=np.uint8)
-    out[:, :, :3] = np.clip(lit, 8.0, 236.0).astype(np.uint8)
+    out[:, :, :3] = np.clip(lit, 6.0, 232.0).astype(np.uint8)
     out[:, :, 3] = 255
     return Image.fromarray(out, "RGBA")
 
 
-def bake_vertex_ao(pos, nrm, tris, tints_rgba):
-    """Fast local cavity/edge AO from 1-ring edge convexity, modulated into vertex BGRA."""
+def bake_vertex_ao(pos, nrm, tris, tints_rgba, mat_ids=None, node_name=""):
+    """Multi-scale 3D cavity/curvature AO + inter-part proximity shadows + studio hemisphere relief."""
     n = len(pos)
     acc = np.zeros(n, dtype=np.float64)
     cnt = np.zeros(n, dtype=np.float64)
@@ -323,17 +333,64 @@ def bake_vertex_ao(pos, nrm, tris, tints_rgba):
     np.add.at(acc, v, conv_v)
     np.add.at(cnt, v, 1.0)
     mean_conv = acc / np.maximum(cnt, 1.0)
-    # Two Jacobi passes on welded neighborhoods to keep creases crisp without noise
-    s = mean_conv.copy()
-    for _ in range(2):
+
+    # Fine 1-ring bevel/crease + broader 4-ring cavity occlusion
+    s_fine = mean_conv.copy()
+    s_broad = mean_conv.copy()
+    for p_idx in range(4):
         s_acc = np.zeros(n, dtype=np.float64)
-        np.add.at(s_acc, u, s[v])
-        np.add.at(s_acc, v, s[u])
-        s = 0.6 * s + 0.4 * (s_acc / np.maximum(cnt, 1.0))
-    ao = np.clip(1.0 - s * 0.72, 0.56, 1.12)
-    r = np.clip(tints_rgba[:, 0] * ao, 10, 255).astype(np.uint32)
-    g = np.clip(tints_rgba[:, 1] * ao, 10, 255).astype(np.uint32)
-    b = np.clip(tints_rgba[:, 2] * ao, 10, 255).astype(np.uint32)
+        np.add.at(s_acc, u, s_broad[v])
+        np.add.at(s_acc, v, s_broad[u])
+        s_broad = 0.5 * s_broad + 0.5 * (s_acc / np.maximum(cnt, 1.0))
+        if p_idx == 0:
+            s_fine = 0.65 * s_fine + 0.35 * (s_acc / np.maximum(cnt, 1.0))
+
+    # Concave crevices darken deeply (down to 0.34); sharp convex machined edges gleam (up to 1.24)
+    curv_ao = np.clip(1.0 - s_fine * 0.95 - s_broad * 0.55, 0.34, 1.24)
+
+    # Directional 3D hemisphere + rim sculpting in D3D space (X_d3d=right, Y_d3d=up, Z_d3d=fwd)
+    nx, ny, nz = nrm[:, 0], nrm[:, 1], nrm[:, 2]
+    px, py, pz = pos[:, 0], pos[:, 1], pos[:, 2]
+    # Top sky light (+Y) + left camera-side key light (-X_d3d) + subtle rear-top rim (-Z_d3d, +Y_d3d)
+    hemi = 0.84 + 0.18 * ny - 0.08 * nx + 0.06 * np.clip(-0.55 * nx + 0.65 * ny - 0.52 * nz, 0.0, 1.0)
+    # Darken downward-facing underbellies so the stock & barrel have strong 3D cylindrical volume
+    hemi = np.where(ny < -0.15, hemi * (0.82 + 0.18 * (1.0 + ny)), hemi)
+
+    # Inter-part proximity & contact shadows on Receiver_And_Body
+    prox = np.ones(n, dtype=np.float64)
+    if node_name == "Receiver_And_Body":
+        # 1. Scope tube & dual mount rings cast contact shadow onto top of receiver/stock (Z_d3d in [0.36, 0.59])
+        under_scope = (pz >= 0.365) & (pz <= 0.585) & (py >= 0.022) & (py <= 0.052) & (np.abs(px) <= 0.013)
+        ring_dist = np.minimum(np.abs(pz - 0.415), np.abs(pz - 0.535))
+        scope_occ = np.where(ring_dist < 0.024, 0.54, 0.72)
+        prox = np.where(under_scope & (ny > 0.15), prox * scope_occ, prox)
+
+        # 2. Wood-to-steel bedding channel shadow along top edge of walnut stock (py in [0.018, 0.035])
+        if mat_ids is not None:
+            is_wood = (mat_ids == 2) | (mat_ids == 3)
+            bedding_lip = is_wood & (py >= 0.018) & (py <= 0.036) & (pz >= 0.25) & (pz <= 0.78)
+            prox = np.where(bedding_lip & (ny > 0.25), prox * 0.74, prox)
+            # Subtle checkering & palm shadow on the pistol grip neck (pz in [0.16, 0.24], py < 0.005)
+            grip_check = is_wood & (pz >= 0.165) & (pz <= 0.238) & (py <= 0.008) & (np.abs(px) >= 0.005)
+            check_pat = 0.90 + 0.10 * np.sin(pz * 620.0 + py * 620.0) * np.sin(pz * 620.0 - py * 620.0)
+            prox = np.where(grip_check, prox * check_pat, prox)
+
+        # 3. Bolt handle shadow on right cheek of stock (pz in [0.275, 0.315], px > 0.006)
+        bolt_shadow = (pz >= 0.275) & (pz <= 0.315) & (py >= -0.005) & (py <= 0.030) & (px >= 0.005)
+        prox = np.where(bolt_shadow, prox * 0.68, prox)
+
+    elif node_name == "Scope_Assembly":
+        # Darken the inside of the front/rear scope hoods and underside of the scope tube
+        prox = np.where(ny < -0.25, prox * 0.72, prox)
+        if mat_ids is not None:
+            is_glass = (mat_ids == 4) | (mat_ids == 5)
+            # Keep scope glass dark and recessed, never blown out
+            prox = np.where(is_glass, 0.78, prox)
+
+    total_mod = np.clip(curv_ao * hemi * prox, 0.24, 1.22)
+    r = np.clip(tints_rgba[:, 0] * total_mod, 8, 255).astype(np.uint32)
+    g = np.clip(tints_rgba[:, 1] * total_mod, 8, 255).astype(np.uint32)
+    b = np.clip(tints_rgba[:, 2] * total_mod, 8, 255).astype(np.uint32)
     a = np.clip(tints_rgba[:, 3], 0, 255).astype(np.uint32)
     return (a << 24) | (r << 16) | (g << 8) | b
 
@@ -345,30 +402,41 @@ def pingpong01(x):
 
 
 def _lens_tile(size=512):
-    """Procedural rifle-scope objective lens.
+    """Realistic dark recessed ZF39 optical scope lens with subtle multi-coated crescent reflection.
 
-    The GLB glass materials ship no baseColorTexture, and the viewmodel pass has
-    alpha blending disabled, so the lens has to read as an opaque coated disc:
-    deep bluish coating, bright centre glow, a broad diagonal specular streak and
-    a soft anti-aliased rim.
+    Replaces the bright cyan/white disc with a deep dark optical cavity (#090E16),
+    a dark matte-anodized inner retaining ring, and a restrained off-axis Carl Zeiss
+    sapphire/emerald anti-reflective crescent reflection.
     """
     yy, xx = np.mgrid[0:size, 0:size].astype(np.float64)
     u = (xx + 0.5) / size * 2.0 - 1.0
     v = (yy + 0.5) / size * 2.0 - 1.0
     r = np.sqrt(u * u + v * v)
-    coating = np.clip(1.0 - 0.55 * np.power(r, 1.6), 0.0, 1.0)
-    glow = np.clip(1.0 - r, 0.0, 1.0) ** 2.2
-    streak = np.clip(1.0 - np.abs((u * 0.72 + v * 0.69) + 0.18) * 3.4, 0.0, 1.0) ** 1.6
-    streak *= np.clip(1.0 - r * 0.85, 0.0, 1.0)
-    edge = np.clip((0.985 - r) * 26.0, 0.0, 1.0)
-    dim = 0.35 + 0.65 * coating
-    rr = (38.0 + 126.0 * glow + 96.0 * streak) * edge * dim
-    gg = (52.0 + 150.0 * glow + 92.0 * streak) * edge * dim
-    bb = (72.0 + 158.0 * glow + 88.0 * streak) * edge * dim
+
+    # Dark anodized retaining bezel outside r > 0.84
+    bezel = np.clip((r - 0.82) / 0.08, 0.0, 1.0)
+    # Deep recessed optical glass cavity inside r <= 0.84
+    cavity_vig = np.clip(1.0 - 0.45 * (r / 0.85) ** 2, 0.25, 1.0)
+
+    # Subtle off-axis crescent reflection in upper-left quadrant
+    du = u + 0.28
+    dv = v + 0.26
+    dr = np.sqrt(du * du + dv * dv)
+    crescent = np.exp(-((dr - 0.34) / 0.11) ** 2) * np.clip((-u - v) * 0.85 + 0.2, 0.0, 1.0)
+    crescent *= (1.0 - bezel)
+
+    # Tiny secondary pinpoint reflection in lower-right
+    p2 = np.exp(-(((u - 0.32) ** 2 + (v - 0.30) ** 2) / (0.06 ** 2))) * (1.0 - bezel) * 0.45
+
+    # Base deep optical glass: RGB ~(12, 18, 26), crescent adds subtle sapphire/teal glint
+    rr = (12.0 * cavity_vig + 38.0 * crescent + 48.0 * p2) * (1.0 - bezel) + 22.0 * bezel
+    gg = (18.0 * cavity_vig + 74.0 * crescent + 62.0 * p2) * (1.0 - bezel) + 24.0 * bezel
+    bb = (28.0 * cavity_vig + 115.0 * crescent + 78.0 * p2) * (1.0 - bezel) + 27.0 * bezel
+
     out = np.zeros((size, size, 4), np.uint8)
-    out[..., 0] = np.clip(rr, 0, 255)
-    out[..., 1] = np.clip(gg, 0, 255)
-    out[..., 2] = np.clip(bb, 0, 255)
+    out[..., 0] = np.clip(rr, 6, 180)
+    out[..., 1] = np.clip(gg, 8, 195)
+    out[..., 2] = np.clip(bb, 10, 215)
     out[..., 3] = 255
     return Image.fromarray(out, "RGBA")
 
@@ -448,7 +516,7 @@ def main():
         world_off = nt + root_t
 
         pos_chunks, nrm_chunks, tri_chunks = [], [], []
-        atlas_uv_chunks, hd_uv_chunks, tint_rgba_chunks, reg_chunks = [], [], [], []
+        atlas_uv_chunks, hd_uv_chunks, tint_rgba_chunks, reg_chunks, vmat_chunks = [], [], [], [], []
         base = 0
         for prim in mesh["primitives"]:
             p = read_accessor(gltf, blob, prim["attributes"]["POSITION"])
@@ -465,13 +533,24 @@ def main():
             w = p * ns
             w = quat_rotate(w, nq)
             w = (w + world_off) * MODEL_SCALE
-            d3d = np.column_stack((w[:, 2], w[:, 1], w[:, 0])).astype(np.float32)
             nrot = quat_rotate(nv, nq)
+
+            # Fix internal sear z-fighting on Trigger_Gatilho against wooden stock sides
+            if node_name == "Trigger_Gatilho":
+                upper_sear = w[:, 1] > -0.002
+                w[upper_sear, 2] = np.clip(w[upper_sear, 2], -0.0038, 0.0038)
+
+            d3d = np.column_stack((w[:, 2], w[:, 1], w[:, 0])).astype(np.float32)
             nd3d = np.column_stack((nrot[:, 2], nrot[:, 1], nrot[:, 0])).astype(np.float32)
 
             # Continuous unwrapped UVs for HD multi-material hardware D3DTADDRESS_WRAP
             uu_raw = uv[:, 0] * 0.1
             vv_raw = 1.0 - (uv[:, 1] * 0.1)
+            if mat in (2, 3):
+                # Fix planar UV stretching on top/bottom stock bevels (|ny| > 0.35) by blending Z_pack
+                top_w = np.clip((np.abs(nrot[:, 1]) - 0.35) / 0.45, 0.0, 1.0)
+                vv_box = 1.0 - ((w[:, 1] + w[:, 2] * 1.35 * np.sign(nrot[:, 1] + 1e-6)) * 2.8)
+                vv_raw = vv_raw * (1.0 - top_w) + vv_box * top_w
             if mat == 3:
                 uu_raw, vv_raw = vv_raw, 1.0 - uu_raw
 
@@ -487,6 +566,7 @@ def main():
             atlas_uv_chunks.append(np.column_stack((au, av)).astype(np.float32))
             hd_uv_chunks.append(np.column_stack((uu_raw, vv_raw)).astype(np.float32))
             tint_rgba_chunks.append(t_rgba)
+            vmat_chunks.append(np.full(len(p), mat, dtype=np.int32))
             reg_chunks.append(np.full(len(idx) // 3, region, dtype=np.int32))
             tri_chunks.append(idx + base)
             base += len(p)
@@ -496,15 +576,16 @@ def main():
         atl_uv = np.concatenate(atlas_uv_chunks, axis=0)
         hd_uv = np.concatenate(hd_uv_chunks, axis=0)
         tints = np.concatenate(tint_rgba_chunks, axis=0)
+        vert_mats = np.concatenate(vmat_chunks, axis=0)
         tri_reg = np.concatenate(reg_chunks, axis=0)
         tris = np.concatenate(tri_chunks, axis=0).reshape(-1, 3)
         total_raw += len(pos)
 
+        # Bake rich 3D multi-scale cavity/bevel AO + inter-part proximity shadows into vertex BGRA
+        ao_bgra = bake_vertex_ao(pos, nrm, tris, tints, vert_mats, node_name)
+
         # Fallback atlas mesh (60,000 tris, zero wrap jumps via pingpong)
-        raw_bgra = np.zeros(len(pos), dtype=np.uint32)
-        t_u32 = tints.astype(np.uint32)
-        raw_bgra = (t_u32[:, 3] << 24) | (t_u32[:, 0] << 16) | (t_u32[:, 1] << 8) | t_u32[:, 2]
-        np_, nn, nc, nu, nt2 = preserve_part_triangles(pos, atl_uv, nrm, raw_bgra, tris)
+        np_, nn, nc, nu, nt2 = preserve_part_triangles(pos, atl_uv, nrm, ao_bgra, tris)
         pkey = "Weapon_Root" if PART_MAP[node_name] == "body_stock" else node_name
         if pkey not in pivots_pack:
             pkey = node_name
@@ -516,7 +597,6 @@ def main():
         })
 
         # HD mesh: group triangles by material ID + bake per-vertex geometric cavity/edge AO
-        ao_bgra = bake_vertex_ao(pos, nrm, tris, tints)
         hp, hn, hc, hu, ht = preserve_part_triangles(pos, hd_uv, nrm, ao_bgra, tris)
         # Reorder ht by tri_reg (0..3) and record MMAT batches
         order = np.argsort(tri_reg, kind="stable")
