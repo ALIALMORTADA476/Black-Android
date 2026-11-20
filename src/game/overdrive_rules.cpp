@@ -257,4 +257,34 @@ bool ShouldRenderThermalBracket(bool thermal_enabled, bool target_alive, float c
     return thermal_enabled && target_alive && std::isfinite(clip_w) && clip_w > 0.08f;
 }
 
+void KillCamSlowmoController::Reset() noexcept {
+    remaining_ = 0.0f;
+    duration_ = 1.15f;
+    min_scale_ = 0.40f;
+}
+
+void KillCamSlowmoController::Trigger(bool enabled, float intensity) noexcept {
+    if (!enabled) return;
+    const float k = std::clamp(std::isfinite(intensity) ? intensity : 1.0f, 0.4f, 1.5f);
+    duration_ = 0.90f + 0.30f * k;
+    remaining_ = duration_;
+    min_scale_ = std::clamp(0.48f - 0.10f * k, 0.34f, 0.55f);
+}
+
+float KillCamSlowmoController::Step(float dt, bool enabled) noexcept {
+    if (!enabled || remaining_ <= 0.0f) {
+        remaining_ = 0.0f;
+        return 1.0f;
+    }
+    if (std::isfinite(dt) && dt > 0.0f) {
+        remaining_ = std::max(0.0f, remaining_ - dt);
+    }
+    if (remaining_ <= 0.0f) return 1.0f;
+    const float u = 1.0f - (remaining_ / std::max(duration_, 0.1f));
+    // Sharp entry into slow-mo, then smooth quadratic recovery back to 1.0x
+    if (u < 0.55f) return min_scale_;
+    const float rec = (u - 0.55f) / 0.45f;
+    return min_scale_ + (1.0f - min_scale_) * (rec * rec);
+}
+
 }  // namespace game::overdrive_rules

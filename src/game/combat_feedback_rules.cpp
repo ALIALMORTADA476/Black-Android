@@ -110,4 +110,96 @@ float ComputeEnhancedRecoilKickScale(bool enhanced_recoil, bool no_recoil,
     return 1.12f;
 }
 
+void ComputeDirectionalDamageImpulse(const float cam_pos[3], const float cam_fwd[3],
+                                     const float cam_right[3], const float source_pos[3],
+                                     float damage_norm, float& out_rel_angle_rad,
+                                     float& out_yaw_kick_deg, float& out_pitch_kick_deg,
+                                     float& out_roll_kick_deg) noexcept {
+    out_rel_angle_rad = 0.0f;
+    out_yaw_kick_deg = 0.0f;
+    out_pitch_kick_deg = 0.0f;
+    out_roll_kick_deg = 0.0f;
+    if (!cam_pos || !cam_fwd || !cam_right || !source_pos) return;
+
+    const float dx = source_pos[0] - cam_pos[0];
+    const float dz = source_pos[2] - cam_pos[2];
+    const float xz_len = std::sqrt(dx * dx + dz * dz);
+    if (!std::isfinite(xz_len) || xz_len < 1e-4f) return;
+    const float inv = 1.0f / xz_len;
+    const float ux = dx * inv;
+    const float uz = dz * inv;
+
+    const float f_len = std::max(1e-4f, std::sqrt(cam_fwd[0] * cam_fwd[0] + cam_fwd[2] * cam_fwd[2]));
+    const float r_len = std::max(1e-4f, std::sqrt(cam_right[0] * cam_right[0] + cam_right[2] * cam_right[2]));
+    const float fx = cam_fwd[0] / f_len, fz = cam_fwd[2] / f_len;
+    const float rx = cam_right[0] / r_len, rz = cam_right[2] / r_len;
+
+    const float fwd_dot = std::clamp(ux * fx + uz * fz, -1.0f, 1.0f);
+    const float right_dot = std::clamp(ux * rx + uz * rz, -1.0f, 1.0f);
+    out_rel_angle_rad = std::atan2(right_dot, fwd_dot);
+
+    const float mag = std::clamp(std::isfinite(damage_norm) ? damage_norm : 0.4f, 0.15f, 1.0f);
+    out_yaw_kick_deg = -right_dot * (1.85f * mag);
+    out_pitch_kick_deg = -(0.55f + 0.65f * std::fabs(fwd_dot)) * mag;
+    out_roll_kick_deg = -right_dot * (1.40f * mag);
+}
+
+float EvaluateHitstopDurationSec(bool is_headshot, bool is_lethal,
+                                 uint8_t weapon_tier, float distance_m) noexcept {
+    if (!is_lethal && weapon_tier < 2u) return 0.0f;
+    const float d = std::isfinite(distance_m) ? std::max(distance_m, 0.0f) : 10.0f;
+    if (weapon_tier >= 2u && is_lethal) {
+        return is_headshot ? 0.042f : 0.032f;
+    }
+    if (weapon_tier == 1u && is_lethal && d < 12.0f) {
+        return is_headshot ? 0.036f : 0.025f;
+    }
+    if (is_headshot && is_lethal) {
+        return 0.024f;
+    }
+    return 0.0f;
+}
+
+void ActiveReloadState::Reset() noexcept {
+    active_ = false;
+    tapped_ = false;
+    duration_ = 1.6f;
+    elapsed_ = 0.0f;
+}
+
+void ActiveReloadState::Start(float total_duration_sec) noexcept {
+    active_ = true;
+    tapped_ = false;
+    duration_ = std::clamp(std::isfinite(total_duration_sec) ? total_duration_sec : 1.6f, 0.6f, 5.0f);
+    elapsed_ = 0.0f;
+}
+
+void ActiveReloadState::Step(float dt) noexcept {
+    if (!active_) return;
+    if (std::isfinite(dt) && dt > 0.0f) elapsed_ += dt;
+    if (elapsed_ >= duration_) {
+        active_ = false;
+    }
+}
+
+float ActiveReloadState::Progress() const noexcept {
+    return (duration_ > 1e-4f) ? std::clamp(elapsed_ / duration_, 0.0f, 1.0f) : 0.0f;
+}
+
+ActiveReloadTapResult ActiveReloadState::TryTap(float elapsed_sec) noexcept {
+    ActiveReloadTapResult res;
+    if (!active_ || tapped_) return res;
+    tapped_ = true;
+    res.handled = true;
+    const float u = (duration_ > 1e-4f) ? (elapsed_sec / duration_) : 0.0f;
+    if (u >= kBandMin && u <= kBandMax) {
+        res.success = true;
+        res.remaining_scale = 0.35f;
+    } else {
+        res.success = false;
+        res.remaining_scale = 1.20f;
+    }
+    return res;
+}
+
 }  // namespace game::combat_feedback

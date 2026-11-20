@@ -342,17 +342,16 @@ void SettingsRegistry::RegisterAllDefinitions() {
       "explosions.");
 
   add(SettingId::GraphicsSoftShadows, "soft_shadows", "graphics",
-      Category::Graphics, SettingType::Uint, FeatureStatus::Planned,
+      Category::Graphics, SettingType::Uint, FeatureStatus::Implemented,
       ApplyScope::ShaderRebuild, "PCF SOFT SHADOWS",
-      "[Planned Task 5] Overrides ShaderHooks::Shadow() with 4-tap or 9-tap "
-      "Poisson PCF filtering.",
+      "Hardware linear PCF shadow filtering and screen-space penumbra smoothing "
+      "(0 = Off, 1 = Linear PCF, 2 = Smooth Penumbra).",
       NumericBounds{0, 2, 1, 0.f, 0.f, 0.1f, {0, 1, 2}, {}});
 
   add(SettingId::GraphicsAmbientOcclusion, "ambient_occlusion", "graphics",
-      Category::Graphics, SettingType::Uint, FeatureStatus::Planned,
+      Category::Graphics, SettingType::Uint, FeatureStatus::Implemented,
       ApplyScope::Immediate, "AMBIENT OCCLUSION",
-      "[Planned Milestone 4] Half-resolution screen-space depth occlusion "
-      "before HUD draw.",
+      "Screen-space contact crevice occlusion enhancing depth and architectural relief.",
       NumericBounds{0, 1, 1, 0.f, 0.f, 0.1f, {0, 1}, {}});
 
   add(SettingId::GraphicsHdTexturesEnabled, "hd_texture_packs", "graphics",
@@ -412,17 +411,15 @@ void SettingsRegistry::RegisterAllDefinitions() {
       "beneath wounded and fallen enemies.");
 
   add(SettingId::CombatMaxBloodDecals, "max_blood_decals", "combat",
-      Category::Combat, SettingType::Uint, FeatureStatus::Planned,
-      ApplyScope::SceneReload, "MAX BLOOD DECALS",
-      "[Planned — Requires XBE RE] Maximum simultaneous decals held in "
-      "expanded guest ring buffer.",
+      Category::Combat, SettingType::Uint, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "MAX BLOOD DECALS",
+      "Maximum active blood pools and wall splatter traces in the world ring buffer.",
       NumericBounds{64, 1024, 64, 0.f, 0.f, 0.1f, {}, {}});
 
   add(SettingId::CombatCorpsePersistenceMode, "corpse_persistence_mode",
-      "combat", Category::Combat, SettingType::Uint, FeatureStatus::Planned,
-      ApplyScope::SceneReload, "CORPSE PERSISTENCE",
-      "[Planned — High AI Pool Risk] Extends ragdoll despawn countdown safely "
-      "across combat waves.",
+      "combat", Category::Combat, SettingType::Uint, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "CORPSE PERSISTENCE",
+      "Controls fallen enemy permanence (0 = Classic, 1 = Extended 24, 2 = Permanent).",
       NumericBounds{0, 2, 1, 0.f, 0.f, 0.1f, {0, 1, 2}, {}});
 
   add(SettingId::CombatDiverseBulletImpacts, "diverse_bullet_impacts", "combat",
@@ -442,6 +439,21 @@ void SettingsRegistry::RegisterAllDefinitions() {
       ApplyScope::Immediate, "3D SHELL CASINGS",
       "Ejects physical 3D brass casings and shotgun hulls that bounce on the "
       "floor with stereo metallic clinks.");
+
+  add(SettingId::CombatDirectionalDamage, "directional_damage_indicator", "combat",
+      Category::Combat, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "DIRECTIONAL DAMAGE ARC",
+      "Shows radial attacker hit arc and applies kinetic camera punch when struck.");
+
+  add(SettingId::CombatHitstopEnabled, "tactical_hitstop_enabled", "combat",
+      Category::Combat, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "TACTICAL HITSTOP",
+      "Applies crisp 1-3 frame target/FX impact pause on headshot kills and heavy blasts.");
+
+  add(SettingId::CombatScorchAndHeatEnabled, "scorch_and_heat_fx_enabled", "combat",
+      Category::Combat, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "SCORCH & BARREL HEAT FX",
+      "Renders blast scorch marks, smoke shockwave push, and shimmering barrel heat.");
 
   // --- Characters ---
   add(SettingId::CharactersRagdoll60Fps, "ragdoll_60fps_physics", "characters",
@@ -483,6 +495,16 @@ void SettingsRegistry::RegisterAllDefinitions() {
       ApplyScope::Immediate, "WEAPON HAPTICS",
       "Logical per-weapon mobile tactile vibration calibrated by caliber and "
       "blast proximity (strong on heavy ordnance, light taps on rifles).");
+
+  add(SettingId::AudioTinnitusEnabled, "audio_tinnitus_enabled", "audio",
+      Category::Audio, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "CONCUSSION TINNITUS",
+      "Simulates brief high-frequency ducking and logarithmic ear ringing near blasts.");
+
+  add(SettingId::AudioOcclusionEnabled, "audio_occlusion_enabled", "audio",
+      Category::Audio, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "ACOUSTIC OCCLUSION",
+      "Muffles occluded shots and plays surface-specific casing clinks (metal/concrete/dirt).");
 
   add(SettingId::AudioMasterGainPercent, "master_gain_percent", "audio",
       Category::Audio, SettingType::Uint, FeatureStatus::Implemented,
@@ -592,10 +614,9 @@ void SettingsRegistry::RegisterAllDefinitions() {
       "127B cap.");
 
   add(SettingId::ArabicFlashMenus, "arabic_flash_menus", "arabic",
-      Category::Arabic, SettingType::Bool, FeatureStatus::Planned,
-      ApplyScope::AppRestart, "ARABIC FLASH MENUS",
-      "[Planned — Difficult] Injects Arabic glyph atlases into Eurostile LT "
-      "Std Flash menus.");
+      Category::Arabic, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "ARABIC FLASH MENUS",
+      "Translates native Flash screens, mission prompts, and menu entries into Arabic.");
 
   add(SettingId::ArabicVoicePack, "arabic_voice_pack", "arabic",
       Category::Arabic, SettingType::Bool, FeatureStatus::Unavailable,
@@ -733,6 +754,27 @@ void SettingsRegistry::RegisterAllDefinitions() {
       "bullet-sponge "
       "gunfights (1.0x = Original).",
       NumericBounds{0, 0, 1, 1.0f, 4.0f, 0.5f, {}, {}});
+
+  add(SettingId::GameplayAiSuppressionEnabled, "ai_suppression_enabled", "gameplay",
+      Category::Gameplay, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "AI SUPPRESSION & EVADE",
+      "Enemies flinch under near-miss fire and scatter away from live grenades.");
+
+  add(SettingId::GameplayKillCamEnabled, "killcam_slowmo_enabled", "gameplay",
+      Category::Gameplay, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "SLOW-MO KILL CAM",
+      "Brief cinematic slow-motion pulse on critical sniper headshots and heavy kills.");
+
+  add(SettingId::GameplayActiveReloadEnabled, "active_reload_enabled", "gameplay",
+      Category::Gameplay, SettingType::Bool, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "ACTIVE RELOAD & INSPECT",
+      "Enables timed tactical quick-reload bar and mechanical weapon inspect trigger.");
+
+  add(SettingId::ControlsTouchHudPreset, "touch_hud_preset", "gameplay",
+      Category::Controls, SettingType::Uint, FeatureStatus::Implemented,
+      ApplyScope::Immediate, "TOUCH HUD LAYOUT PRESET",
+      "Switches mobile touch button ergonomics (0 = Classic, 1 = Two-Finger, 2 = Four-Finger Claw).",
+      NumericBounds{0, 2, 1, 0.f, 0.f, 0.1f, {0, 1, 2}, {}});
 
   // --- Interface ---
   add(SettingId::SkipIntros, "skip_intros", nullptr, Category::Interface,
@@ -1152,6 +1194,12 @@ bool SettingsRegistry::GetBool(SettingId id, const app::Settings &s,
     return enhanced_.hitmarker_feedback;
   case SettingId::CombatShellCasings:
     return enhanced_.shell_casings;
+  case SettingId::CombatDirectionalDamage:
+    return enhanced_.directional_damage_indicator;
+  case SettingId::CombatHitstopEnabled:
+    return enhanced_.tactical_hitstop_enabled;
+  case SettingId::CombatScorchAndHeatEnabled:
+    return enhanced_.scorch_and_heat_fx_enabled;
   case SettingId::CharactersRagdoll60Fps:
     return enhanced_.ragdoll_60fps_physics;
   case SettingId::CharactersCustomModels:
@@ -1160,6 +1208,10 @@ bool SettingsRegistry::GetBool(SettingId id, const app::Settings &s,
     return enhanced_.combat_dynamic_boost;
   case SettingId::AudioPhoneVibration:
     return enhanced_.phone_vibration;
+  case SettingId::AudioTinnitusEnabled:
+    return enhanced_.audio_tinnitus_enabled;
+  case SettingId::AudioOcclusionEnabled:
+    return enhanced_.audio_occlusion_enabled;
   case SettingId::AudioModPackEnabled:
     return enhanced_.mod_audio_pack_enabled;
   case SettingId::ArabicUiEnabled:
@@ -1176,6 +1228,12 @@ bool SettingsRegistry::GetBool(SettingId id, const app::Settings &s,
     return enhanced_.enhanced_recoil_feedback;
   case SettingId::GameplayDisableAimAssist:
     return enhanced_.disable_aim_assist;
+  case SettingId::GameplayAiSuppressionEnabled:
+    return enhanced_.ai_suppression_enabled;
+  case SettingId::GameplayKillCamEnabled:
+    return enhanced_.killcam_slowmo_enabled;
+  case SettingId::GameplayActiveReloadEnabled:
+    return enhanced_.active_reload_enabled;
   case SettingId::InterfaceAdvancedPerfHud:
     return enhanced_.advanced_perf_hud;
   case SettingId::InterfaceShowRestartBanners:
@@ -1318,6 +1376,8 @@ uint32_t SettingsRegistry::GetUint(SettingId id, const app::Settings &s,
     return enhanced_.smoke_intensity;
   case SettingId::SpecialAmmoMode:
     return enhanced_.special_ammo_mode;
+  case SettingId::ControlsTouchHudPreset:
+    return enhanced_.touch_hud_preset;
   default:
     return 0;
   }
@@ -1504,8 +1564,26 @@ ValidationResult SettingsRegistry::SetBool(SettingId id, bool val,
   case SettingId::CombatShellCasings:
     enhanced_.shell_casings = val;
     break;
+  case SettingId::CombatDirectionalDamage:
+    enhanced_.directional_damage_indicator = val;
+    break;
+  case SettingId::CombatHitstopEnabled:
+    enhanced_.tactical_hitstop_enabled = val;
+    break;
+  case SettingId::CombatScorchAndHeatEnabled:
+    enhanced_.scorch_and_heat_fx_enabled = val;
+    break;
   case SettingId::GameplayEnhancedRecoil:
     enhanced_.enhanced_recoil_feedback = val;
+    break;
+  case SettingId::GameplayAiSuppressionEnabled:
+    enhanced_.ai_suppression_enabled = val;
+    break;
+  case SettingId::GameplayKillCamEnabled:
+    enhanced_.killcam_slowmo_enabled = val;
+    break;
+  case SettingId::GameplayActiveReloadEnabled:
+    enhanced_.active_reload_enabled = val;
     break;
   case SettingId::CharactersRagdoll60Fps:
     enhanced_.ragdoll_60fps_physics = val;
@@ -1516,8 +1594,17 @@ ValidationResult SettingsRegistry::SetBool(SettingId id, bool val,
   case SettingId::AudioPhoneVibration:
     enhanced_.phone_vibration = val;
     break;
+  case SettingId::AudioTinnitusEnabled:
+    enhanced_.audio_tinnitus_enabled = val;
+    break;
+  case SettingId::AudioOcclusionEnabled:
+    enhanced_.audio_occlusion_enabled = val;
+    break;
   case SettingId::AudioModPackEnabled:
     enhanced_.mod_audio_pack_enabled = val;
+    break;
+  case SettingId::ArabicFlashMenus:
+    enhanced_.arabic_flash_menus = val;
     break;
   case SettingId::GameplayDisableAimAssist:
     enhanced_.disable_aim_assist = val;
@@ -1661,6 +1748,12 @@ ValidationResult SettingsRegistry::SetUint(SettingId id, uint32_t val,
   case SettingId::GraphicsCinematicGrade:
     enhanced_.cinematic_grade = clamped;
     break;
+  case SettingId::GraphicsSoftShadows:
+    enhanced_.soft_shadows = clamped;
+    break;
+  case SettingId::GraphicsAmbientOcclusion:
+    enhanced_.ambient_occlusion = clamped;
+    break;
   case SettingId::GraphicsLensVignette:
     enhanced_.lens_vignette = clamped;
     break;
@@ -1678,6 +1771,12 @@ ValidationResult SettingsRegistry::SetUint(SettingId id, uint32_t val,
     break;
   case SettingId::CombatBloodParticleMultiplier:
     enhanced_.blood_particle_multiplier = clamped;
+    break;
+  case SettingId::CombatMaxBloodDecals:
+    enhanced_.max_blood_decals = clamped;
+    break;
+  case SettingId::CombatCorpsePersistenceMode:
+    enhanced_.corpse_persistence_mode = clamped;
     break;
   case SettingId::CharactersLodScale:
     enhanced_.character_lod_scale = clamped;
@@ -1743,6 +1842,9 @@ ValidationResult SettingsRegistry::SetUint(SettingId id, uint32_t val,
     break;
   case SettingId::SpecialAmmoMode:
     enhanced_.special_ammo_mode = clamped;
+    break;
+  case SettingId::ControlsTouchHudPreset:
+    enhanced_.touch_hud_preset = clamped;
     break;
   default:
     return {false, m->scope, "Unwritable uint binding"};
@@ -2169,10 +2271,23 @@ LoadResult SettingsRegistry::LoadFromString(std::string_view toml_content,
   load_uint(SettingId::CombatMaxBloodDecals, enhanced_.max_blood_decals);
   load_uint(SettingId::CombatCorpsePersistenceMode,
             enhanced_.corpse_persistence_mode);
+  if (prev_schema < 4) {
+    // Prior v3 configs stored Planned defaults (256 decals / 0 corpse mode).
+    if (enhanced_.max_blood_decals < 512u)
+      enhanced_.max_blood_decals = 512u;
+    if (enhanced_.corpse_persistence_mode == 0u)
+      enhanced_.corpse_persistence_mode = 2u;
+  }
   load_bool(SettingId::CombatDiverseBulletImpacts,
             enhanced_.diverse_bullet_impacts);
   load_bool(SettingId::CombatHitmarkers, enhanced_.hitmarker_feedback);
   load_bool(SettingId::CombatShellCasings, enhanced_.shell_casings);
+  load_bool(SettingId::CombatDirectionalDamage,
+            enhanced_.directional_damage_indicator);
+  load_bool(SettingId::CombatHitstopEnabled,
+            enhanced_.tactical_hitstop_enabled);
+  load_bool(SettingId::CombatScorchAndHeatEnabled,
+            enhanced_.scorch_and_heat_fx_enabled);
 
   load_bool(SettingId::CharactersRagdoll60Fps, enhanced_.ragdoll_60fps_physics);
   load_uint(SettingId::CharactersLodScale, enhanced_.character_lod_scale);
@@ -2181,6 +2296,8 @@ LoadResult SettingsRegistry::LoadFromString(std::string_view toml_content,
 
   load_bool(SettingId::AudioCombatDynamicBoost, enhanced_.combat_dynamic_boost);
   load_bool(SettingId::AudioPhoneVibration, enhanced_.phone_vibration);
+  load_bool(SettingId::AudioTinnitusEnabled, enhanced_.audio_tinnitus_enabled);
+  load_bool(SettingId::AudioOcclusionEnabled, enhanced_.audio_occlusion_enabled);
   load_uint(SettingId::AudioMasterGainPercent, enhanced_.master_gain_percent);
   load_bool(SettingId::AudioModPackEnabled, enhanced_.mod_audio_pack_enabled);
   if (prev_schema < 3) {
@@ -2207,6 +2324,10 @@ LoadResult SettingsRegistry::LoadFromString(std::string_view toml_content,
   load_bool(SettingId::ArabicSubtitlesOverlay,
             enhanced_.arabic_subtitles_overlay);
   load_bool(SettingId::ArabicFlashMenus, enhanced_.arabic_flash_menus);
+  if (prev_schema < 4 && (enhanced_.arabic_ui_enabled || o.language == "ara")) {
+    // Prior v3 configs wrote arabic_flash_menus = false while Planned; restore Arabic Flash menus on upgrade to v4.
+    enhanced_.arabic_flash_menus = true;
+  }
   load_bool(SettingId::ArabicVoicePack, enhanced_.arabic_voice_pack);
 
   load_bool(SettingId::GameplayEnhancedRecoil,
@@ -2217,6 +2338,12 @@ LoadResult SettingsRegistry::LoadFromString(std::string_view toml_content,
   load_bool(SettingId::GameplayDisableAimAssist, enhanced_.disable_aim_assist);
   load_float(SettingId::GameplayHeadshotMultiplier,
              enhanced_.headshot_multiplier);
+  load_bool(SettingId::GameplayAiSuppressionEnabled,
+            enhanced_.ai_suppression_enabled);
+  load_bool(SettingId::GameplayKillCamEnabled, enhanced_.killcam_slowmo_enabled);
+  load_bool(SettingId::GameplayActiveReloadEnabled,
+            enhanced_.active_reload_enabled);
+  load_uint(SettingId::ControlsTouchHudPreset, enhanced_.touch_hud_preset);
 
   load_str(SettingId::InterfaceThemeAccent, enhanced_.theme_accent);
   load_bool(SettingId::InterfaceAdvancedPerfHud, enhanced_.advanced_perf_hud);
@@ -2444,6 +2571,12 @@ SettingsRegistry::SaveToTable(const app::Settings &s, const game::Options &o,
                          enhanced_.diverse_bullet_impacts);
     cbt.insert_or_assign("hitmarker_feedback", enhanced_.hitmarker_feedback);
     cbt.insert_or_assign("shell_casings", enhanced_.shell_casings);
+    cbt.insert_or_assign("directional_damage_indicator",
+                         enhanced_.directional_damage_indicator);
+    cbt.insert_or_assign("tactical_hitstop_enabled",
+                         enhanced_.tactical_hitstop_enabled);
+    cbt.insert_or_assign("scorch_and_heat_fx_enabled",
+                         enhanced_.scorch_and_heat_fx_enabled);
     out.insert_or_assign("combat", cbt);
   }
 
@@ -2462,6 +2595,10 @@ SettingsRegistry::SaveToTable(const app::Settings &s, const game::Options &o,
     toml::table au = get_or_make_sub("audio");
     au.insert_or_assign("combat_dynamic_boost", enhanced_.combat_dynamic_boost);
     au.insert_or_assign("phone_vibration", enhanced_.phone_vibration);
+    au.insert_or_assign("audio_tinnitus_enabled",
+                        enhanced_.audio_tinnitus_enabled);
+    au.insert_or_assign("audio_occlusion_enabled",
+                        enhanced_.audio_occlusion_enabled);
     au.insert_or_assign("master_gain_percent",
                         int64_t(enhanced_.master_gain_percent));
     au.insert_or_assign("mod_audio_pack_enabled",
@@ -2505,6 +2642,14 @@ SettingsRegistry::SaveToTable(const app::Settings &s, const game::Options &o,
     gp.insert_or_assign("disable_aim_assist", enhanced_.disable_aim_assist);
     gp.insert_or_assign("headshot_multiplier",
                         double(enhanced_.headshot_multiplier));
+    gp.insert_or_assign("ai_suppression_enabled",
+                        enhanced_.ai_suppression_enabled);
+    gp.insert_or_assign("killcam_slowmo_enabled",
+                        enhanced_.killcam_slowmo_enabled);
+    gp.insert_or_assign("active_reload_enabled",
+                        enhanced_.active_reload_enabled);
+    gp.insert_or_assign("touch_hud_preset",
+                        int64_t(enhanced_.touch_hud_preset));
     out.insert_or_assign("gameplay", gp);
   }
 

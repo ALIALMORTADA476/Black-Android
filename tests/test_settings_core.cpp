@@ -121,9 +121,20 @@ bool TestDefaultSettings() {
     reg.ResetToDefaults(s, o);
 
     // Unsupported/planned features must never be mutable as active working switches
-    auto lock_res = reg.SetUint(modsettings::SettingId::GraphicsSoftShadows, 1u, s, o);
+    auto lock_res = reg.SetBool(modsettings::SettingId::PackagesOverlayEnabled, true, s, o);
     EXPECT_FALSE(lock_res.accepted);
-    EXPECT_EQ(reg.GetEnhanced().soft_shadows, 0u);
+    EXPECT_FALSE(reg.GetEnhanced().packages_overlay_enabled);
+
+    // Unlocked Graphics/Combat/Arabic features work cleanly
+    EXPECT_TRUE(reg.SetUint(modsettings::SettingId::GraphicsSoftShadows, 2u, s, o).accepted);
+    EXPECT_EQ(reg.GetEnhanced().soft_shadows, 2u);
+    EXPECT_TRUE(reg.SetUint(modsettings::SettingId::GraphicsAmbientOcclusion, 1u, s, o).accepted);
+    EXPECT_EQ(reg.GetEnhanced().ambient_occlusion, 1u);
+    EXPECT_TRUE(reg.SetUint(modsettings::SettingId::CombatMaxBloodDecals, 512u, s, o).accepted);
+    EXPECT_EQ(reg.GetEnhanced().max_blood_decals, 512u);
+    EXPECT_TRUE(reg.SetUint(modsettings::SettingId::CombatCorpsePersistenceMode, 2u, s, o).accepted);
+    EXPECT_EQ(reg.GetEnhanced().corpse_persistence_mode, 2u);
+    reg.ResetToDefaults(s, o);
 
     return true;
 }
@@ -159,7 +170,7 @@ bool TestSettingsSaveAndLoad() {
     EXPECT_EQ(parsed["fov"].value_or(0), 95);
     EXPECT_FALSE(parsed["bloom"].value_or(true));
     EXPECT_TRUE(parsed["infinite_ammo"].value_or(false));
-    EXPECT_EQ(parsed["schema_version"].value_or(0), 3);
+    EXPECT_EQ(parsed["schema_version"].value_or(0), 4);
 
     // Reload into clean state
     app::Settings s2;
@@ -467,16 +478,21 @@ bool TestRestartRequiredSettings() {
     EXPECT_FALSE(reg.RequiresAppRestart(s, o));
     EXPECT_EQ(reg.PendingRestartCount(s, o), 0u);
 
-    // Check Planned settings preserve distinct ApplyScope metadata (ShaderRebuild, SceneReload, AppRestart)
+    // Check Implemented vs Remaining Planned settings preserve distinct ApplyScope metadata
     const auto* ss = reg.Find(modsettings::SettingId::GraphicsSoftShadows);
     EXPECT_TRUE(ss != nullptr);
     EXPECT_EQ(ss->scope, modsettings::ApplyScope::ShaderRebuild);
-    EXPECT_EQ(ss->status, modsettings::FeatureStatus::Planned);
+    EXPECT_EQ(ss->status, modsettings::FeatureStatus::Implemented);
 
     const auto* corpse = reg.Find(modsettings::SettingId::CombatCorpsePersistenceMode);
     EXPECT_TRUE(corpse != nullptr);
-    EXPECT_EQ(corpse->scope, modsettings::ApplyScope::SceneReload);
-    EXPECT_EQ(corpse->status, modsettings::FeatureStatus::Planned);
+    EXPECT_EQ(corpse->scope, modsettings::ApplyScope::Immediate);
+    EXPECT_EQ(corpse->status, modsettings::FeatureStatus::Implemented);
+
+    const auto* pkg = reg.Find(modsettings::SettingId::PackagesOverlayEnabled);
+    EXPECT_TRUE(pkg != nullptr);
+    EXPECT_EQ(pkg->scope, modsettings::ApplyScope::AppRestart);
+    EXPECT_EQ(pkg->status, modsettings::FeatureStatus::Planned);
 
     const auto* decals = reg.Find(modsettings::SettingId::CombatPersistentBloodDecals);
     EXPECT_TRUE(decals != nullptr);
@@ -525,8 +541,11 @@ fov = 85
 
     EXPECT_TRUE(reg.SaveToFile(out_cfg, s, o, &presets));
     toml::table saved = toml::parse_file(out_cfg.string());
-    EXPECT_EQ(saved["schema_version"].value_or(0), 3);
+    EXPECT_EQ(saved["schema_version"].value_or(0), 4);
     EXPECT_EQ(saved["defaults"].value_or(0), 2);
+    EXPECT_TRUE(reg.GetEnhanced().arabic_flash_menus);
+    EXPECT_EQ(reg.GetEnhanced().corpse_persistence_mode, 2u);
+    EXPECT_EQ(reg.GetEnhanced().max_blood_decals, 512u);
 
     return true;
 }
@@ -3257,6 +3276,158 @@ bool TestMauser1891_HdMaterialsAndSkinnedHandsSync() {
     return true;
 }
 
+// 57. Audio DSP: Tinnitus "Duck & Ring", Acoustic Occlusion & Multi-Surface Casings
+bool TestTinnitusOcclusionAndSurfaceCasings() {
+    modsettings::SettingsRegistry reg;
+    app::Settings s;
+    game::Options o;
+    InitDefaults(s, o);
+    reg.ResetToDefaults(s, o);
+
+    EXPECT_TRUE(reg.GetEnhanced().audio_tinnitus_enabled);
+    EXPECT_TRUE(reg.GetEnhanced().audio_occlusion_enabled);
+    EXPECT_TRUE(reg.SetBool(modsettings::SettingId::AudioTinnitusEnabled, false, s, o).accepted);
+    EXPECT_FALSE(reg.GetEnhanced().audio_tinnitus_enabled);
+
+    // Close blast (<4m) yields stronger concussion intensity than far blast (18m)
+    const float near_conc = sound::weapon_audio::ComputeConcussionIntensity(2.5f);
+    const float far_conc = sound::weapon_audio::ComputeConcussionIntensity(18.0f);
+    EXPECT_TRUE(near_conc > 0.5f && near_conc <= 1.0f);
+    EXPECT_TRUE(far_conc >= 0.0f && far_conc < 0.1f);
+
+    // Acoustic occlusion lowers high-frequency cutoff alpha when geometry blocks line of sight
+    const float clear_alpha = sound::weapon_audio::ComputeAcousticLowPassAlpha(false, 20.0f);
+    const float occl_alpha = sound::weapon_audio::ComputeAcousticLowPassAlpha(true, 20.0f);
+    EXPECT_TRUE(clear_alpha > occl_alpha && occl_alpha > 0.05f && occl_alpha < 0.45f);
+
+    // Shell casing surface audio triggers safely for metal, dirt, and wood
+    sound::weapon_audio::TriggerShellClink(0.5f, false, sound::weapon_audio::SurfaceKind::Metal);
+    sound::weapon_audio::TriggerShellClink(-0.3f, true, sound::weapon_audio::SurfaceKind::Dirt);
+    return true;
+}
+
+// 58. Combat Feel: Directional Damage Arc, Camera Kinetic Punch & Tactical Hitstop
+bool TestDirectionalDamagePunchAndHitstop() {
+    using namespace game::combat_feedback;
+
+    // Attacker directly to player's right -> +90 deg (+pi/2) & left camera roll/yaw micro-punch
+    const float cam_fwd[3] = {0.0f, 0.0f, 1.0f};
+    const float cam_right[3] = {1.0f, 0.0f, 0.0f};
+    const float cam_pos[3] = {0.0f, 1.5f, 0.0f};
+    const float atk_right[3] = {8.0f, 1.5f, 0.0f};
+    float rel_angle = 0.0f, yaw_kick = 0.0f, pitch_kick = 0.0f, roll_kick = 0.0f;
+    ComputeDirectionalDamageImpulse(cam_pos, cam_fwd, cam_right, atk_right, 0.8f,
+                                    rel_angle, yaw_kick, pitch_kick, roll_kick);
+    EXPECT_NEAR(rel_angle, 1.570796f, 0.05f);
+    EXPECT_TRUE(std::fabs(yaw_kick) > 0.3f);
+    EXPECT_TRUE(std::fabs(roll_kick) > 0.2f);
+
+    // Tactical Hitstop: headshot kill / close shotgun scales 1..3 frames; glancing body = 0
+    const float hs_stop = EvaluateHitstopDurationSec(true, true, 1 /*Shotgun/Heavy*/, 4.0f);
+    const float body_stop = EvaluateHitstopDurationSec(false, false, 0, 15.0f);
+    EXPECT_TRUE(hs_stop >= 0.015f && hs_stop <= 0.055f);
+    EXPECT_EQ(body_stop, 0.0f);
+    return true;
+}
+
+// 59. VFX & Gore: Scorch/Heat Accumulator, Smoke Blast Dispersion & Decal Budget
+bool TestVfxHeatSmokeDispersionAndDecals() {
+    EXPECT_EQ(game::blood_decals::ResolveMaxBloodPools(128u), 256u);
+    EXPECT_EQ(game::blood_decals::ResolveMaxBloodPools(768u), 768u);
+
+    // Barrel muzzle heat accumulates across rapid shots and cools exponentially
+    float heat = 0.0f;
+    for (int i = 0; i < 6; ++i) {
+        heat = game::ballistics::StepMuzzleHeat(heat, 0.08f, true);
+    }
+    EXPECT_TRUE(heat > 0.45f && heat <= 1.0f);
+    const float cooled = game::ballistics::StepMuzzleHeat(heat, 1.5f, false);
+    EXPECT_TRUE(cooled < heat * 0.5f);
+
+    // Blast shockwave pushes active smoke particle radially outward
+    float pos[3] = {3.0f, 1.0f, 0.0f};
+    float vel[3] = {0.0f, 0.5f, 0.0f};
+    const float blast[3] = {0.0f, 1.0f, 0.0f};
+    const bool pushed = game::ballistics::ApplySmokeBlastImpulse(pos, vel, blast, 8.0f, 1.5f);
+    EXPECT_TRUE(pushed);
+    EXPECT_TRUE(vel[0] > 3.0f);
+    return true;
+}
+
+// 60. AI Suppression, Grenade Evade, Slow-Mo Kill-Cam & Active Reload
+bool TestAiSuppressionKillCamAndActiveReload() {
+    game::delirium::Simulation sim;
+    sim.Reset();
+    constexpr uint32_t kSoldier = 0x20010000u;
+    const float sp[3] = {0.0f, 0.0f, 15.0f};
+    const float t_start[3] = {0.6f, 1.4f, 0.0f};
+    const float t_end[3] = {0.6f, 1.4f, 25.0f};
+    sim.RecordNearMissTracer(kSoldier, sp, t_start, t_end);
+    EXPECT_TRUE(sim.SuppressionLevel(kSoldier) > 0.25f);
+
+    // Active Reload golden sweet-spot [0.42..0.64] grants crisp cooldown speedup
+    game::combat_feedback::ActiveReloadState ar;
+    ar.Start(1.8f);
+    const auto miss = ar.TryTap(0.15f);
+    EXPECT_FALSE(miss.success);
+    ar.Reset();
+    ar.Start(1.8f);
+    const auto hit = ar.TryTap(0.95f); // 0.95 / 1.8 = 0.527 inside golden band
+    EXPECT_TRUE(hit.success);
+    EXPECT_TRUE(hit.remaining_scale < 0.5f);
+
+    // Kill-Cam slow-mo smoothly dips world time scale then recovers
+    game::overdrive_rules::KillCamSlowmoController kc;
+    kc.Trigger(true, 1.0f);
+    const float ts = kc.Step(0.05f, true);
+    EXPECT_TRUE(ts > 0.30f && ts < 0.70f);
+    const float done_ts = kc.Step(2.0f, true);
+    EXPECT_NEAR(done_ts, 1.0f, 0.02f);
+    return true;
+}
+
+// 61. Schema Coverage for All Unlocked & Newly Added Enhanced Settings
+bool TestNewEnhancedSettingsRoundTrip() {
+    TempDir tmp("new_mod_features");
+    fs::path cfg = tmp.path / "black.toml";
+
+    app::Settings s1;
+    game::Options o1;
+    InitDefaults(s1, o1);
+    modsettings::SettingsRegistry reg1;
+    reg1.ResetToDefaults(s1, o1);
+
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::ArabicFlashMenus, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::CombatDirectionalDamage, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::CombatHitstopEnabled, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::CombatScorchAndHeatEnabled, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::GameplayAiSuppressionEnabled, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::GameplayKillCamEnabled, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetBool(modsettings::SettingId::GameplayActiveReloadEnabled, true, s1, o1).accepted);
+    EXPECT_TRUE(reg1.SetUint(modsettings::SettingId::ControlsTouchHudPreset, 2u, s1, o1).accepted);
+
+    EXPECT_TRUE(reg1.SaveToFile(cfg, s1, o1));
+
+    app::Settings s2;
+    game::Options o2;
+    modsettings::SettingsRegistry reg2;
+    const auto lr = reg2.LoadFromFile(cfg, s2, o2);
+    EXPECT_TRUE(lr.parsed_ok);
+    EXPECT_EQ(reg2.GetEnhanced().touch_hud_preset, 2u);
+    EXPECT_TRUE(reg2.GetEnhanced().arabic_flash_menus);
+    EXPECT_TRUE(reg2.GetEnhanced().killcam_slowmo_enabled);
+    return true;
+}
+
+// 62. Mobile UX: Gyro ADS-Only Gating & 4-Finger Claw Touch Preset Coordinates
+bool TestMobileGyroAdsAndTouchPresets() {
+    EXPECT_TRUE(gyro::ShouldRunForMode(3u /*ADS*/, true /*ads*/, false /*firing*/, true /*look*/));
+    EXPECT_FALSE(gyro::ShouldRunForMode(3u /*ADS*/, false /*ads*/, true /*firing*/, true /*look*/));
+    EXPECT_TRUE(gyro::ShouldRunForMode(2u /*FIRE*/, false, true, true));
+    EXPECT_TRUE(gyro::ShouldRunForMode(1u /*ON*/, false, false, true));
+    return true;
+}
+
 void RunTest(const char* name, bool (*fn)()) {
     std::cout << "[RUN ] " << name << "\n";
     if (fn()) {
@@ -3327,6 +3498,12 @@ int main() {
     RunTest("54_MauserC96_FullMeshUvLogicAndAudio", TestMauserC96_FullMeshUvLogicAndAudio);
     RunTest("55_Mauser1891_MultiZoomPbrReticleAndAudio", TestMauser1891_MultiZoomPbrReticleAndAudio);
     RunTest("56_Mauser1891_HdMaterialsAndSkinnedHandsSync", TestMauser1891_HdMaterialsAndSkinnedHandsSync);
+    RunTest("57_TinnitusOcclusionAndSurfaceCasings", TestTinnitusOcclusionAndSurfaceCasings);
+    RunTest("58_DirectionalDamagePunchAndHitstop", TestDirectionalDamagePunchAndHitstop);
+    RunTest("59_VfxHeatSmokeDispersionAndDecals", TestVfxHeatSmokeDispersionAndDecals);
+    RunTest("60_AiSuppressionKillCamAndActiveReload", TestAiSuppressionKillCamAndActiveReload);
+    RunTest("61_NewEnhancedSettingsRoundTrip", TestNewEnhancedSettingsRoundTrip);
+    RunTest("62_MobileGyroAdsAndTouchPresets", TestMobileGyroAdsAndTouchPresets);
 
     std::cout << "\nSummary: " << g_passed << " passed, " << g_failed << " failed.\n";
     return g_failed == 0 ? 0 : 1;

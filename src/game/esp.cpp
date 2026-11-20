@@ -8,6 +8,7 @@
 #include <mutex>
 
 #include "common/options.h"
+#include "game/combat_feedback.h"
 #include "game/delirium_physics.h"
 #include "game/flamethrower.h"
 #include "game/layout.h"
@@ -255,8 +256,9 @@ X86_FUNC(sub_001DFD90) {
             game::time_stop::RecordFrozenEnemy(who);
         }
     }
-    if (game::time_stop::IsFrozen() && who && R32(who + kCharKind) != 2u) {
-        game::time_stop::RecordSkippedAiTick();
+    if ((game::time_stop::IsFrozen() || game::combat_feedback::IsHitstopActive()) &&
+        who && R32(who + kCharKind) != 2u) {
+        if (game::time_stop::IsFrozen()) game::time_stop::RecordSkippedAiTick();
         ctx.esp += 8;
         return;
     }

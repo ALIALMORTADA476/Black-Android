@@ -15,8 +15,8 @@
 
 namespace modsettings {
 
-// Schema versioning: 1 = legacy flat upstream, 2 = Enhanced Edition modular schema, 3 = Audio Remaster default-on migration
-inline constexpr int64_t kCurrentSchemaVersion = 3;
+// Schema versioning: 1 = legacy flat upstream, 2 = Enhanced Edition modular schema, 3 = Audio Remaster default-on migration, 4 = Unlocked Flash Arabic & Gore persistence migration
+inline constexpr int64_t kCurrentSchemaVersion = 4;
 inline constexpr int64_t kCurrentDefaultsVersion = 2;
 
 enum class Category : uint8_t {
@@ -130,6 +130,9 @@ enum class SettingId : uint32_t {
     CombatDiverseBulletImpacts,
     CombatHitmarkers,
     CombatShellCasings,
+    CombatDirectionalDamage,
+    CombatHitstopEnabled,
+    CombatScorchAndHeatEnabled,
 
     // --- Enhanced Category 3: Characters ---
     CharactersRagdoll60Fps,
@@ -150,6 +153,8 @@ enum class SettingId : uint32_t {
     AudioBulletFlyby,
     AudioVariationPercent,
     AudioPhoneVibration,
+    AudioTinnitusEnabled,
+    AudioOcclusionEnabled,
 
     // --- Enhanced Category 5: Arabic Localization ---
     ArabicUiEnabled,
@@ -162,6 +167,10 @@ enum class SettingId : uint32_t {
     GameplayEnhancedRecoil,
     GameplayDisableAimAssist,
     GameplayHeadshotMultiplier,
+    GameplayAiSuppressionEnabled,
+    GameplayKillCamEnabled,
+    GameplayActiveReloadEnabled,
+    ControlsTouchHudPreset,
 
     // --- Enhanced Category 7: Interface ---
     InterfaceThemeAccent,
@@ -268,11 +277,14 @@ struct EnhancedOptions {
     uint32_t particle_fade_scale = 100;      // 100..400%
     uint32_t blood_particle_multiplier = 2;  // 1..4x 3D blood burst & mist density
     bool persistent_blood_decals = true;     // 3D floor blood pools & splatters
-    uint32_t max_blood_decals = 128;         // (Planned)
-    uint32_t corpse_persistence_mode = 0;    // (Planned)
+    uint32_t max_blood_decals = 512;         // 64..1024 active 3D blood pool/wall splatters
+    uint32_t corpse_persistence_mode = 2;    // 0=Classic, 1=Extended (24), 2=Permanent All Corpses
     bool diverse_bullet_impacts = true;      // 3D sparks & concrete/metal impact bursts
     bool hitmarker_feedback = true;          // Minimalist tactical hitmarker & kill confirm
     bool shell_casings = true;               // Physical 3D ejecting brass casings & floor clink
+    bool directional_damage_indicator = true; // Radial directional damage arc + camera kick
+    bool tactical_hitstop_enabled = true;    // 1-3 frame micro-impact hitstop on critical kills
+    bool scorch_and_heat_fx_enabled = true;  // 3D blast scorch decals, smoke blast push & barrel heat shimmer
 
     // Characters
     bool ragdoll_60fps_physics = true;
@@ -293,18 +305,24 @@ struct EnhancedOptions {
     uint32_t audio_bullet_flyby = 100;          // 0..150% Supersonic bullet cracks, whizzes & ricochet flybys
     uint32_t audio_variation_percent = 50;      // 0..100%
     bool phone_vibration = true;                // Logical per-weapon phone vibration feedback
+    bool audio_tinnitus_enabled = true;         // Explosion concussion ducking & logarithmic ear ringing
+    bool audio_occlusion_enabled = true;        // Acoustic wall muffling & surface-matched shell clinks
 
     // Arabic
     bool arabic_ui_enabled = true;
     bool arabic_rtl_mirror = true;
     bool arabic_subtitles_overlay = true;
-    bool arabic_flash_menus = false;         // (Planned)
+    bool arabic_flash_menus = true;
     bool arabic_voice_pack = false;          // (Planned/Unavailable)
 
-    // Gameplay
+    // Gameplay & Controls
     bool enhanced_recoil_feedback = true;    // Tactile crisp recoil recovery curves & micro-kick
     bool disable_aim_assist = false;
     float headshot_multiplier = 2.0f;        // 1.0 .. 4.0x tactical headshot lethality
+    bool ai_suppression_enabled = true;      // Near-miss AI flinch/duck + live grenade scatter
+    bool killcam_slowmo_enabled = true;      // Brief slow-motion focus on sniper headshots / final kill
+    bool active_reload_enabled = true;       // Active reload sweet-spot boost & tactical inspect
+    uint32_t touch_hud_preset = 0;           // 0=Classic, 1=2-Finger Ergonomic, 2=4-Finger Claw
 
     // Interface
     std::string theme_accent = "brass";      // "brass" | "crimson" | "olive"

@@ -187,6 +187,24 @@ CURATED_FIDS = [
     1273,  # ShotgunShell_Land_Concrete_02
     1116,  # Steyr TMP Cocking & Dry Fire
     1624,  # gun_semi_auto_rifle_cock_02
+
+    # --- EXTRA 2016-2024 REALISM PASS (12g SPAS/Saiga/USAS, L86 LSW, M4 Burst, On-Gun & 2024 Explosions) ---
+    1004,  # HK MP7 4.6mm On Gun DPA4062
+    1028,  # Enfield L86 LSW 5.56mm 1m Right
+    1029,  # Enfield L86 LSW 5.56mm On Gun DPA4062
+    849,   # Assault Rifle M4 Burst 03
+    1085,  # SAIGA-12 12g Solid Slug 1m Left
+    1109,  # USAS-12 12g Solid Slug 1m Right
+    1110,  # USAS-12 12g Solid Slug 55m In Front
+    1098,  # SPAS-12 12g Solid Slug 1m Right
+    1099,  # SPAS-12 12g Solid Slug 50m Behind
+    5662,  # Wav Junction Shotgun Fire 3
+    5663,  # Wav Junction Shotgun Pump Action 1
+    2516,  # explosion_large_07
+    2683,  # Explosion 8 (Olivier Girardot)
+    6631,  # DavidDumais Car Explosion Metal Glass 2024
+    6632,  # DavidDumais Heavy Explosion 2024
+    6633,  # DavidDumais Medium Realistic Explosion 15 2024
 ]
 
 def load_index():

@@ -304,8 +304,11 @@ StepOutput Simulation::StepAlive(uint32_t soldier_ea, float dt) noexcept {
     }
   }
 
-  // Balance recovers naturally once impact passes
+  // Balance & suppression recover naturally once impact passes
   st->balance = std::min(1.0f, st->balance + step_dt * 0.35f);
+  if (st->suppression > 0.0f) {
+    st->suppression = std::max(0.0f, st->suppression - step_dt * 0.42f);
+  }
 
   if (st->stumble_timer > 0.0f) {
     st->stumble_timer = std::max(0.0f, st->stumble_timer - step_dt);
@@ -453,6 +456,64 @@ AgonyPulse Simulation::StepAgony(uint32_t soldier_ea, float dt) noexcept {
   pulse.impulse_force =
       0.42f * cfg_.intensity * damped_env * (0.65f + 0.35f * std::fabs(curl));
   return pulse;
+}
+
+void Simulation::RecordNearMissTracer(uint32_t soldier_ea, const float soldier_pos[3],
+                                      const float tracer_start[3], const float tracer_end[3]) noexcept {
+    if (!soldier_ea || !soldier_pos || !tracer_start || !tracer_end) return;
+    const float sx = tracer_end[0] - tracer_start[0];
+    const float sy = tracer_end[1] - tracer_start[1];
+    const float sz = tracer_end[2] - tracer_start[2];
+    const float seg_len_sq = sx * sx + sy * sy + sz * sz;
+    if (!std::isfinite(seg_len_sq) || seg_len_sq < 0.04f) return;
+
+    const float chest[3] = {soldier_pos[0], soldier_pos[1] + 1.25f, soldier_pos[2]};
+    const float px = chest[0] - tracer_start[0];
+    const float py = chest[1] - tracer_start[1];
+    const float pz = chest[2] - tracer_start[2];
+    const float t = std::clamp((px * sx + py * sy + pz * sz) / seg_len_sq, 0.0f, 1.0f);
+    const float cx = tracer_start[0] + t * sx - chest[0];
+    const float cy = tracer_start[1] + t * sy - chest[1];
+    const float cz = tracer_start[2] + t * sz - chest[2];
+    const float dist_sq = cx * cx + cy * cy + cz * cz;
+    if (dist_sq > 3.2f * 3.2f) return;
+
+    ActorState* st = FindOrAllocActor(soldier_ea);
+    if (!st) return;
+    const float add = (1.0f - std::sqrt(dist_sq) / 3.2f) * 0.55f + 0.15f;
+    st->suppression = std::min(1.0f, st->suppression + add);
+    if (st->suppression > 0.35f) {
+        st->blind_fire_timer = std::max(st->blind_fire_timer, 1.15f * st->suppression);
+        st->clutch_timer = std::max(st->clutch_timer, 0.55f);
+    }
+}
+
+void Simulation::RecordGrenadeThreat(uint32_t soldier_ea, const float soldier_pos[3],
+                                     const float grenade_pos[3]) noexcept {
+    if (!soldier_ea || !soldier_pos || !grenade_pos) return;
+    const float dx = soldier_pos[0] - grenade_pos[0];
+    const float dz = soldier_pos[2] - grenade_pos[2];
+    const float d2 = dx * dx + dz * dz;
+    if (!std::isfinite(d2) || d2 > 8.5f * 8.5f) return;
+    const float d = std::sqrt(std::max(d2, 0.04f));
+    const float inv = 1.0f / d;
+    ActorState* st = FindOrAllocActor(soldier_ea);
+    if (!st) return;
+    const float urg = std::clamp(1.0f - d / 8.5f, 0.2f, 1.0f);
+    st->suppression = 1.0f;
+    st->stumble_vel[0] = dx * inv * (3.8f * urg);
+    st->stumble_vel[1] = 0.0f;
+    st->stumble_vel[2] = dz * inv * (3.8f * urg);
+    st->stumble_timer = std::max(st->stumble_timer, 0.75f);
+    st->blind_fire_timer = std::max(st->blind_fire_timer, 1.25f);
+}
+
+float Simulation::SuppressionLevel(uint32_t soldier_ea) const noexcept {
+    if (!soldier_ea) return 0.0f;
+    for (const auto& st : actors_) {
+        if (st.ea == soldier_ea) return st.suppression;
+    }
+    return 0.0f;
 }
 
 } // namespace game::delirium

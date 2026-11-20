@@ -75,7 +75,8 @@ std::unordered_set<std::string> g_logged_untranslated;
 std::unordered_set<std::string> g_logged_translated;
 
 bool IsArabicUiActive() {
-    return game::Opt().language == "ara" || modsettings::Registry().GetEnhanced().arabic_ui_enabled;
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    return (game::Opt().language == "ara" || enh.arabic_ui_enabled) && enh.arabic_flash_menus;
 }
 
 std::string Utf16GuestToUtf8(uint32_t guest_ptr, size_t max_chars = 512) {

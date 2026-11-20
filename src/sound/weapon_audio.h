@@ -79,9 +79,28 @@ void StopAll();
 // Updates live room reverb telemetry from mixer.cpp so indoor/outdoor reflections adapt dynamically.
 void SetEnvironmentState(bool reverb_active, float reverb_late);
 
-// Procedural crisp 48 kHz stereo hit-confirm and bouncing shell-clink audio cues.
+enum class SurfaceKind : uint8_t {
+    Concrete = 0,
+    Metal = 1,
+    Dirt = 2,
+    Wood = 3,
+};
+
+// Procedural crisp 48 kHz stereo hit-confirm and surface-aware shell-clink audio cues.
 void TriggerHitConfirm(bool headshot, bool lethal);
-void TriggerShellClink(float pan_right_ratio, bool is_shotgun_hull);
+void TriggerShellClink(float pan_right_ratio, bool is_shotgun_hull,
+                       SurfaceKind surface = SurfaceKind::Concrete);
+
+// Tactical weapon inspect foley (mechanical slide/mag/check).
+void TriggerWeaponInspect();
+
+// Pure DSP helpers + Explosion concussion "Duck & Ring" (low-pass occlusion + decaying ear ring).
+float ComputeConcussionIntensity(float dist_m);
+float ComputeAcousticLowPassAlpha(bool occluded_by_geometry, float dist_m);
+void TriggerExplosionConcussion(float dist_m);
+float CurrentConcussionDaze();
+void ApplyMasterPostDsp(float* out, uint32_t frames, uint32_t out_channels,
+                        uint32_t fl_ch, uint32_t fr_ch);
 
 // Procedural Overdrive Protocol combat synth cues (Kinetic Dash, Shockwave Slam, Surge, Special Ammo cycle)
 void TriggerKineticDash(bool with_shockwave = false);

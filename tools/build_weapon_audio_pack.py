@@ -36,6 +36,7 @@ GDC_EXTRA_DIR = os.path.join(REPO, ".local", "audio_src", "gdc_extra")
 SOTIYAT_DIR = os.path.join(REPO, "صوتيات")
 FFX_MASTER_DIR = os.path.join(REPO, ".local", "audio_src", "ffx", "Master Tracks")
 WEB_DIR = os.path.join(REPO, ".local", "audio_src", "web")
+WSTFG_DIR = os.path.join(REPO, ".local", "audio_src", "wstfg")
 ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_analysis.json")
 EXTRA_ANALYSIS_JSON = os.path.join(REPO, ".local", "audio_src", "gdc_extra_analysis.json")
 SCRATCH = os.path.join(REPO, ".local", "audio_src", "build_scratch")
@@ -143,6 +144,12 @@ SLOTS = {
     "TAIL_C96_OUTDOOR": 152,
     "M91_EQUIP": 153,
     "M91_SUPP": 154,
+    # Surface-aware Shell Casings, Weapon Inspect & Sub-Bass Anchor (BWAR v3 Extended, 155..159)
+    "CASING_METAL": 155,
+    "CASING_DIRT": 156,
+    "CASING_WOOD": 157,
+    "WEAPON_INSPECT": 158,
+    "BASS_SUB_PUNCH": 159,
 }
 
 # Stem categories: matches StemCategory enum & StemForSlot() in weapon_audio.cpp
@@ -166,7 +173,7 @@ def slot_stem(slot_name):
     if any(k in slot_name for k in ("_UNLD", "_LD", "RPG_ATTACH", "GRL_CASE", "GRL_OPEN", "_CLIP", "TANK_RELOAD", "MXM_RELOAD")):
         return STEM_RELOAD
     if slot_name in (
-        "MELEE_SWING", "MELEE_HIT", "PICKUP_AMMO", "PICKUP_HEALTH", "WEAPON_DROP",
+        "MELEE_SWING", "MELEE_HIT", "PICKUP_AMMO", "PICKUP_HEALTH", "WEAPON_DROP", "WEAPON_INSPECT",
         "FLM_VALVE_SHUTOFF", "M91_BOLT", "M91_DRY", "M91_CHAMBER_CLOSE", "M91_EQUIP",
         "C96_BREECH", "C96_DRY", "C96_LOCKOPEN", "MXM_BELT_ADVANCE"
     ) or any(
@@ -215,6 +222,11 @@ def W(rel):
     return ("web", rel)
 
 
+def WS(rel):
+    """Reference a downloaded WSTFG 48 kHz/24-bit tactical WAV inside .local/audio_src/wstfg."""
+    return ("wstfg", rel)
+
+
 def G(rel):
     """Reference a downloaded Sonniss GDC 96 kHz/24-bit WAV inside .local/audio_src/gdc."""
     return ("gdc", rel)
@@ -225,7 +237,7 @@ def resolve_ref(ref):
         kind, rel = ref
         base = (
             SOTIYAT_DIR if kind == "sotiyat"
-            else (WEB_DIR if kind == "web" else (GDC_DIR if kind == "gdc" else FFX_MASTER_DIR))
+            else (WEB_DIR if kind == "web" else (WSTFG_DIR if kind == "wstfg" else (GDC_DIR if kind == "gdc" else FFX_MASTER_DIR)))
         )
         full = os.path.join(base, rel.replace("/", os.sep))
         label = f"{kind}:{os.path.basename(rel)}"
@@ -240,6 +252,11 @@ def resolve_ref(ref):
         entry = ana[str(fid)]
         full = os.path.join(GDC_DIR, entry["rel_path"].replace("/", os.sep))
         return full, f"GDC{fid}", entry
+    prefix = f"{fid}_"
+    for root, _, fs in os.walk(GDC_DIR):
+        for fn in fs:
+            if fn.startswith(prefix) and fn.lower().endswith(".wav"):
+                return os.path.join(root, fn), f"GDC{fid}", None
     raise FileNotFoundError(f"Unknown audio reference: {ref}")
 
 
@@ -1001,6 +1018,30 @@ def build_all_clips():
         res = L(S(rel), sk=sk, mx=mx, hpf=hpf, gap=gap)
         return res if res else TS(rel, mx=mx, hpf=hpf, gap=gap)
 
+    def WS_GLOB(subdir):
+        base = os.path.join(WSTFG_DIR, subdir.replace("/", os.sep))
+        if not os.path.isdir(base):
+            return []
+        return [subdir.rstrip("/") + "/" + fn for fn in sorted(os.listdir(base)) if fn.lower().endswith(".wav")]
+
+    def TWS(rels_or_dir, mx=920.0, hpf=26.0):
+        rels = WS_GLOB(rels_or_dir) if isinstance(rels_or_dir, str) else rels_or_dir
+        out = []
+        for r in rels:
+            t = get_takes(WS(r), max_dur_ms=mx, hpf_hz=hpf, prefer_clean=True, min_gap_ms=120.0, whole_file=True)
+            out.extend(t)
+        return out
+
+    def LWS(rels_or_dir, sk=35.0, mx=1900.0, hpf=32.0):
+        rels = WS_GLOB(rels_or_dir) if isinstance(rels_or_dir, str) else rels_or_dir
+        out = []
+        for r in rels:
+            t = get_tails(WS(r), skip_ms=sk, max_dur_ms=mx, hpf_hz=hpf, min_gap_ms=120.0)
+            if not t:
+                t = get_takes(WS(r), max_dur_ms=mx, hpf_hz=hpf, prefer_clean=True, min_gap_ms=120.0, whole_file=True)
+            out.extend(t)
+        return out
+
     # =========================================================================
     # CURATED SLICED POOLS — ZERO SHARED PRIMARY FIREARM SOURCES!
     # =========================================================================
@@ -1240,18 +1281,94 @@ def build_all_clips():
     sh_hand   = T(5826, 480, 90.0)
     lynx_ej   = T(6910, 650, 65.0)
 
-    # Impacts & Explosions
+    # WSTFG Dark Signal + New GDC 2016-2024 Tactical Weapon Pools
+    ws_bass      = TWS("weapons/_bass/stereo", 720, 22.0)
+    ws_pst_fire  = TWS("weapons/_gunfire/stereo/beretta", 720, 28.0) + TWS("weapons/_gunfire/stereo/1911", 720, 28.0)
+    ws_glk_fire  = TWS(["weapons/_gunfire/stereo/glock/close_1.wav", "weapons/_gunfire/stereo/glock/close_2.wav", "weapons/_gunfire/stereo/glock/close_3.wav"], 720, 28.0)
+    ws_mgn_fire  = TWS("weapons/_gunfire/stereo/deagle", 920, 24.0) + TWS("weapons/_gunfire/stereo/mp412", 920, 24.0)
+    ws_uzi_fire  = TWS("weapons/_gunfire/stereo/pp19", 620, 30.0) + TWS("weapons/_gunfire/stereo/udp9", 620, 30.0)
+    ws_mac_fire  = TWS("weapons/_gunfire/stereo/mac10", 580, 30.0)
+    ws_mp5_fire  = TWS("weapons/_gunfire/stereo/mp5", 620, 30.0)
+    ws_p90_fire  = TWS("weapons/_gunfire/stereo/p90", 600, 30.0)
+    ws_akm_fire  = TWS("weapons/_gunfire/stereo/akm", 860, 26.0)
+    ws_g36_fire  = TWS("weapons/_gunfire/stereo/g36", 800, 26.0)
+    ws_m4_fire   = TWS("weapons/_gunfire/stereo/m4", 820, 26.0) + TWS("weapons/_gunfire/stereo/hk416", 820, 26.0)
+    ws_bns_fire  = TWS("weapons/_gunfire/stereo/fal", 860, 24.0) + TWS("weapons/_gunfire/stereo/g3", 860, 24.0)
+    ws_ugl_fire  = TWS("weapons/_gunfire/stereo/ugl", 840, 24.0) + TWS(["weapons/m203/m203_grenshoot.wav"], 780, 24.0)
+    ws_spas_fire = TWS("weapons/_gunfire/stereo/spas12", 940, 24.0)
+    ws_pump_fire = TWS("weapons/_gunfire/stereo/pump", 960, 24.0)
+    ws_snr_fire  = TWS("weapons/_gunfire/stereo/l96", 1040, 22.0) + TWS("weapons/_gunfire/stereo/awm", 1040, 22.0) + TWS("weapons/_gunfire/stereo/svd", 1040, 22.0)
+    ws_hvy_fire  = TWS("weapons/_gunfire/stereo/m249", 720, 26.0)
+    ws_rpg_exp   = TWS(["weapons/_boom/mono/rpg/close_1.wav", "weapons/_boom/mono/rpg/close_2.wav", "weapons/_boom/mono/rpg/close_3.wav", "weapons/_boom/mono/rpg/close_4.wav"], 1200, 22.0)
+    ws_rg6_fire  = TWS("weapons/_boom/stereo/rg6", 860, 24.0)
+    ws_rpg_fly   = TWS(["weapons/rocket_fly.wav"], 1100, 38.0)
+
+    # Distinct Per-Weapon Suppressed Stereo Takes (zero generic SmokeHiss / .22 masking!)
+    ws_sup_pst   = TWS("weapons/_sd/stereo/pb", 520, 32.0) + TWS(["weapons/_sd/stereo/pistol/medium.wav", "weapons/_sd/stereo/pistol/pb.wav"], 520, 32.0)
+    ws_sup_gk1   = TWS(["weapons/_sd/stereo/glock/sd_close_1.wav", "weapons/_sd/stereo/glock/sd_close_2.wav", "weapons/_sd/stereo/glock/sd_close_3.wav", "weapons/_sd/stereo/glock/sd_close_4.wav"], 520, 32.0)
+    ws_sup_smg   = TWS("weapons/_sd/stereo/smg9", 520, 34.0) + TWS("weapons/_sd/stereo/udp9", 520, 34.0)
+    ws_sup_mac   = TWS("weapons/_sd/stereo/mac10", 520, 34.0)
+    ws_sup_mp5   = TWS("weapons/_sd/stereo/mp5sd", 520, 34.0)
+    ws_sup_p90   = TWS("weapons/_sd/stereo/p90", 540, 34.0)
+    ws_sup_ak1   = TWS("weapons/_sd/stereo/762_warsaw", 600, 30.0)
+    ws_sup_g36   = TWS("weapons/_sd/stereo/g36", 580, 32.0)
+    ws_sup_m16   = TWS("weapons/_sd/stereo/556_c", 580, 32.0) + TWS("weapons/_sd/stereo/scar", 580, 32.0)
+    ws_sup_snr   = TWS("weapons/_sd/stereo/dvl", 680, 28.0) + TWS("weapons/_sd/stereo/awm", 680, 28.0)
+
+    # WSTFG Distant Tails, Bullets, Inspections & Multi-Surface Casings
+    ws_t_pst     = LWS(["weapons/_gunfire/mono/_pistol/med_1.wav", "weapons/_gunfire/mono/_pistol/far_1.wav", "weapons/_gunfire/mono/_pistol/far_2.wav"], 25, 1600, 34.0)
+    ws_t_smg     = LWS(["weapons/_gunfire/mono/_smg/med_1.wav", "weapons/_gunfire/mono/_smg/far_1.wav", "weapons/_gunfire/mono/_smg/far_2.wav"], 25, 1600, 34.0)
+    ws_t_ar      = LWS(["weapons/_gunfire/mono/_ar/med_1.wav", "weapons/_gunfire/mono/_ar/far_1.wav", "weapons/_gunfire/mono/_ar/far_2.wav"], 25, 2100, 32.0)
+    ws_t_hvy     = LWS(["weapons/_gunfire/mono/_rifle/far_1.wav", "weapons/_gunfire/mono/_sniper_big/far_1.wav", "weapons/_gunfire/mono/_sniper_big/med_1.wav"], 25, 2200, 30.0)
+    ws_t_shg     = LWS(["weapons/_gunfire/mono/_shotgun/med_1.wav", "weapons/_gunfire/mono/_shotgun/far_1.wav", "weapons/_gunfire/mono/_shotgun/far_2.wav"], 25, 1950, 30.0)
+    ws_whines    = TWS("whine", 520, 120.0)
+    ws_inspects  = TWS([
+        "weapons/mp5_new/mp5_inspect.wav",
+        "weapons/spas/inspect.wav",
+        "weapons/uzi/uzi_inspect.wav",
+        "weapons/wpn_l96_new/l96_new_inspect.wav",
+        "weapons/remington870/rem870_inspect.wav",
+    ], 950, 50.0)
+    ws_cas_metal = TWS([r for r in WS_GLOB("casings") if "_metal_" in r], 480, 140.0)
+    ws_cas_dirt  = TWS([r for r in WS_GLOB("casings") if ("_dirt_" in r or "_grass_" in r)], 460, 120.0)
+    ws_cas_wood  = TWS([r for r in WS_GLOB("casings") if "_wood_" in r], 480, 120.0)
+    ws_cas_conc  = TWS([r for r in WS_GLOB("casings") if "_concrete_" in r], 480, 150.0)
+
+    # Extra 2016-2024 GDC On-Gun & Heavy Takes
+    vp70_on   = T(1006, 560)              # HK VP70 on_gun DPA4062
+    hk416_on  = T(998, 650)               # HK 416 on_gun DPA4062
+    mp7_on    = T(1004, 520)              # HK MP7 on_gun DPA4062
+    m98b_on   = T(1013, 820)              # Barrett M98B on_gun DPA4062
+    l86_c     = T(1028, 700)              # Enfield L86 LSW 5.56mm
+    l86_on    = T(1029, 620)              # Enfield L86 LSW on_gun DPA4062
+    m4_bst_g  = T(849, 760, gap=65.0)     # M4 Burst 03
+    saiga12_c = T(1085, 880)              # Saiga-12 12g solid slug 1m
+    usas12_c  = T(1109, 860)              # USAS-12 12g solid slug 1m
+    spas_12g  = T(1098, 880)              # SPAS-12 12g solid slug 1m
+    wj_shg2   = T(5662, 850)              # Wav Junction Shotgun Fire 3
+    wj_pmp2   = T(5663, 450, 55.0)        # Wav Junction Shotgun Pump 1
+    dd_car    = get_long_events(6631, 1400.0, 1850.0, 750.0, 24.0)
+    dd_heavy  = get_long_events(6632, 1500.0, 1900.0, 800.0, 22.0)
+    dd_med    = get_long_events(6633, 1300.0, 1750.0, 700.0, 24.0)
+    og_exp8   = get_long_events(2683, 1450.0, 1850.0, 750.0, 24.0)
+    gm_exp7   = get_long_events(2516, 1300.0, 1700.0, 700.0, 24.0)
+    ws_frag_c = LWS(["weapons/_boom/mono/frag/close_distance_1.wav", "weapons/_boom/mono/frag/close_distance_2.wav",
+                     "weapons/_boom/mono/frag/close_distance_3.wav", "weapons/_boom/mono/frag/close_distance_4.wav"], 0, 1750, 22.0)
+    ws_frag_r = LWS(["weapons/_boom/mono/reflector/reflector_1.wav", "weapons/_boom/mono/reflector/reflector_2.wav",
+                     "weapons/_boom/mono/reflector/reflector_3.wav", "weapons/_boom/mono/reflector/reflector_4.wav"], 0, 1750, 28.0)
+
+    # Impacts & Explosions (enriched with 2024 GDC + WSTFG!)
     imp_flesh = T(1607, 450, 45.0) + T(4846, 450, 45.0)
     imp_conc  = T(1608, 450, 55.0)
     imp_met   = T(1609, 550, 55.0)
     imp_dirt  = T(4844, 500, 55.0)
     imp_glss  = T(4845, 500, 80.0)
-    exp_lg    = (mf_exp +
+    exp_lg    = (ws_frag_c + dd_med + og_exp8 + mf_exp +
                  get_long_events(1611, 1500.0, 1850.0, 800.0, 24.0) +
                  get_long_events(4439, 1400.0, 1800.0, 800.0, 24.0) +
-                 get_long_events(5828, 1500.0, 1850.0, 800.0, 24.0) +
-                 get_long_events(6992, 1500.0, 1900.0, 800.0, 24.0))
-    exp_deep  = (get_long_events(5515, 1500.0, 1850.0, 800.0, 24.0) +
+                 get_long_events(5828, 1500.0, 1850.0, 800.0, 24.0))
+    exp_deep  = (dd_heavy + ws_frag_r + gm_exp7 +
+                 get_long_events(5515, 1500.0, 1850.0, 800.0, 24.0) +
                  get_long_events(1613, 1400.0, 1750.0, 800.0, 24.0) +
                  get_long_events(68, 1500.0, 1850.0, 800.0, 24.0))
     rpg_pass  = get_long_events(4440, 650.0, 1100.0, 350.0, 55.0)
@@ -1437,156 +1554,156 @@ def build_all_clips():
         clips.append((slot_name, desc, mastered, ch, width_pct, stats_of(norm_unit(raw_arr)), stats_of(mastered), src_fid))
 
     # =========================================================================
-    # 1. ALL 18 BASE WEAPONS + FLAMETHROWER — 100% UNIQUE PRIMARY RECORDINGS!
+    # 1. ALL 17 BASE WEAPONS + BNS_M203 — WSTFG DARK SIGNAL + SONNISS GDC ON-GUN!
     # =========================================================================
-    # PST (SP-9mm Service Pistol): Snake Authentic 9mm + صوتيات Modern_Firearms Pistol + Luger + VP70
+    # PST (SP-9mm Service Pistol): WSTFG Beretta/1911 Stereo + GDC1006 VP70 on-gun + VP70 1m
     eq_pst = [(115, 1.3, 2.2), (2700, 1.5, 2.0), (7000, 1.4, 1.2)]
     for i in range(4):
-        add("PST_FIRE", f"Snake 9mm + Sotiyat Pistol9mm + Luger + GDC1005 VP70 #{i+1}",
-            align_mix([(pick(snk_9mm_f, i), 0.72, 0), (pick(mf_pst, i), 0.56, 0), (pick(luger_c, i), 0.36, 0), (pick(vp70_c, i), 0.28, 1)], 720),
-            "snake:9mm+sotiyat:Gun_Pistol_9mm+1005", eq_bands=eq_pst, comp_ratio=2.2, width_pct=98)
+        add("PST_FIRE", f"WSTFG Beretta/1911 + GDC1006 VP70 OnGun + GDC1005 #{i+1}",
+            align_mix([(pick(ws_pst_fire, i), 0.78, 0), (pick(vp70_on, i), 0.44, 0), (pick(vp70_c, i), 0.36, 1), (pick(mf_pst, i), 0.24, 2)], 720),
+            "wstfg:beretta+1006+1005", eq_bands=eq_pst, comp_ratio=2.1, width_pct=100)
 
-    # GK1 (Glock 19): GDC6202 Glock 17 Stereo + Snake 9mm Isolated + GDC6963 Room + GDC1089 P229
-    eq_gk1 = [(130, 1.3, 2.0), (2100, 1.5, 2.2), (6200, 1.3, 1.6)]
+    # GK1 (Glock 19): WSTFG Glock Stereo + GDC6202 Glock 17 Stereo + GDC6963 Room + P229
+    eq_gk1 = [(130, 1.3, 2.0), (2100, 1.5, 2.4), (6200, 1.3, 1.8)]
     for i in range(4):
-        add("GK1_FIRE", f"GDC6202 Glock 17 Stereo + Snake 9mm + GDC6963 + P229 #{i+1}",
-            align_mix([(pick(glock_c, i), 0.68, 0), (pick(snk_9mm_f, i + 1), 0.54, 0), (pick(glock_rm, i), 0.36, 0), (pick(p229_c, i), 0.24, 2)], 720),
-            "6202+snake:9mm+6963+1089", eq_bands=eq_gk1, comp_ratio=2.2, width_pct=98)
+        add("GK1_FIRE", f"WSTFG Glock Stereo + GDC6202 Glock 17 + GDC6963 + P229 #{i+1}",
+            align_mix([(pick(ws_glk_fire, i), 0.78, 0), (pick(glock_c, i), 0.56, 0), (pick(glock_rm, i), 0.32, 1), (pick(p229_c, i), 0.24, 2)], 720),
+            "wstfg:glock+6202+6963+1089", eq_bands=eq_gk1, comp_ratio=2.1, width_pct=100)
 
-    # MGN (.44/.357 Magnum Revolver): Snake 7.62x54R / .308 Cannon Crack + Desert Eagle Stereo + Colt Python Stereo
-    eq_mgn = [(70, 1.3, 4.2), (1450, 1.4, 2.4), (4400, 1.5, 1.6)]
+    # MGN (.44/.357 Magnum Revolver): WSTFG Deagle/MP412 + GDC6881 DEagle + 6875 Python + 6879 DW445 + Sub
+    eq_mgn = [(68, 1.3, 4.4), (1450, 1.4, 2.4), (4400, 1.5, 1.6)]
     for i in range(4):
-        add("MGN_FIRE", f"Snake 308/54R Punch + GDC6881 DEagle + 6875 Python + 6879 DW445 #{i+1}",
-            align_mix([(pick(deagle_c, i), 0.58, 0), (pick(python_c, i), 0.48, 0), (pick(snk_308_f, i), 0.44, 0), (pick(dw445_c, i), 0.34, 1), (pick(mag44_c, i), 0.30, 3)], 950),
-            "6881+6875+snake:308+1095", eq_bands=eq_mgn, comp_ratio=2.1, width_pct=106)
+        add("MGN_FIRE", f"WSTFG Deagle/MP412 + GDC6881 + 6875 Python + DW445 + Sub #{i+1}",
+            align_mix([(pick(ws_mgn_fire, i), 0.74, 0), (pick(deagle_c, i), 0.52, 0), (pick(python_c, i), 0.44, 0), (pick(dw445_c, i), 0.34, 1), (pick(ws_bass, i), 0.26, 0)], 950),
+            "wstfg:deagle+mp412+6881+6875", eq_bands=eq_mgn, comp_ratio=2.0, width_pct=108)
 
-    # SMG (Uzi 9mm): Snake 9mm + M3 Grease Gun + GDC1111 Uzi + GDC1075 Mini Uzi + TT33
+    # SMG (Uzi 9mm): GDC1111 Uzi 1m + GDC1075 Mini Uzi + WSTFG PP19/UDP9 Open-Bolt Crisp Staccato
     eq_smg = [(135, 1.4, 1.8), (2400, 1.5, 2.4), (6400, 1.3, 1.8)]
     for i in range(4):
-        add("SMG_FIRE", f"Snake 9mm + GDC1111 Uzi + TT33 + M3GG + 1075 #{i+1}",
-            align_mix([(pick(uzi_c, i), 0.58, 0), (pick(snk_9mm_f, i + 2), 0.54, 0), (pick(tt33_c, i), 0.40, 0), (pick(m3gg_c, i * 3), 0.32, 0), (pick(muzi_d, i), 0.32, 2)], 600),
-            "snake:9mm+1111+TT33+1075", eq_bands=eq_smg, comp_ratio=2.2, width_pct=98)
+        add("SMG_FIRE", f"GDC1111 Uzi + WSTFG UDP9/PP19 + MiniUzi #{i+1}",
+            align_mix([(pick(uzi_c, i), 0.74, 0), (pick(ws_uzi_fire, i), 0.66, 0), (pick(muzi_d, i), 0.36, 2)], 600),
+            "1111+wstfg:udp9+1075", eq_bands=eq_smg, comp_ratio=2.1, width_pct=100)
 
-    # SM3 (Ingram MAC-10 / Tommy .45): GDC852 Tommy Gun Stereo + GDC1055 M10 + GDC1056 + FFX PPSh Stereo
-    eq_sm3 = [(155, 1.4, 1.6), (3100, 1.5, 2.6), (7200, 1.3, 2.0)]
+    # SM3 (Ingram MAC-10): WSTFG MAC-10 Stereo + GDC1055 Ingram M10 + GDC1056 (genuine M10 lead!)
+    eq_sm3 = [(155, 1.4, 1.8), (3100, 1.5, 2.6), (7200, 1.3, 2.0)]
     for i in range(4):
-        add("SM3_FIRE", f"GDC852 Tommy + GDC1055 M10 + FFX PPSh Stereo #{i+1}",
-            align_mix([(pick(tommy_c, i), 0.64, 0), (pick(mac10_c, i), 0.50, 0), (pick(ffx_ppsh, i), 0.38, 1), (pick(mac10_d, i), 0.30, 3)], 540),
-            "852+1055+ffx:P_24", eq_bands=eq_sm3, comp_ratio=2.3, width_pct=98)
+        add("SM3_FIRE", f"WSTFG MAC-10 Stereo + GDC1055 Ingram M10 + GDC1056 #{i+1}",
+            align_mix([(pick(ws_mac_fire, i), 0.78, 0), (pick(mac10_c, i), 0.62, 0), (pick(mac10_d, i), 0.34, 2)], 560),
+            "wstfg:mac10+1055+1056", eq_bands=eq_sm3, comp_ratio=2.2, width_pct=100)
 
-    # MP1 (HK MP5): GDC1001 MP5 2m Stereo + GDC1002 + GDC851 MP40 Stereo
-    eq_mp1 = [(115, 1.4, 2.0), (2200, 1.5, 2.4), (5800, 1.4, 1.8)]
+    # MP1 (HK MP5): WSTFG MP5 Stereo + GDC1001 MP5 2m Stereo + GDC1002 + GDC6965 Hall
+    eq_mp1 = [(115, 1.4, 2.0), (2200, 1.5, 2.5), (5800, 1.4, 1.8)]
     for i in range(4):
-        add("MP1_FIRE", f"GDC1001 MP5 Stereo + GDC851 MP40 Stereo + 1002 #{i+1}",
-            align_mix([(pick(mp5_c, i), 0.72, 0), (pick(mp40_c, i * 2), 0.44, 0), (pick(mp5_d, i), 0.38, 2)], 580),
-            "1001+851+1002", eq_bands=eq_mp1, comp_ratio=2.2, width_pct=96)
+        add("MP1_FIRE", f"WSTFG MP5 Stereo + GDC1001 MP5 Stereo + 1002 #{i+1}",
+            align_mix([(pick(ws_mp5_fire, i), 0.78, 0), (pick(mp5_c, i), 0.64, 0), (pick(mp5_d, i), 0.36, 2)], 580),
+            "wstfg:mp5+1001+1002", eq_bands=eq_mp1, comp_ratio=2.1, width_pct=98)
 
-    # P90 (FN P90 5.7x28mm): GDC1043 P90 + GDC1041 Five-seveN + GDC1003 MP7
+    # P90 (FN P90 5.7x28mm): WSTFG P90 Stereo + GDC1043 P90 + GDC1041 5.7 + GDC1004 MP7 OnGun
     eq_p90 = [(145, 1.4, 1.6), (3400, 1.5, 2.8), (8200, 1.3, 2.2)]
     for i in range(4):
-        add("P90_FIRE", f"GDC1043 P90 + GDC1041 5.7 + GDC1003 MP7 + M1911 tail #{i+1}",
-            align_mix([(pick(p90_c, i), 0.68, 0), (pick(fn57_c, i), 0.44, 0), (pick(mp7_c, i), 0.36, 1), (pick(t_smg, i)[:int(0.45*SR)], 0.25, 2)], 540),
-            "1043+1041+1003", eq_bands=eq_p90, comp_ratio=2.2, width_pct=95)
+        add("P90_FIRE", f"WSTFG P90 Stereo + GDC1043 P90 + 1041 + 1004 OnGun #{i+1}",
+            align_mix([(pick(ws_p90_fire, i), 0.76, 0), (pick(p90_c, i), 0.58, 0), (pick(fn57_c, i), 0.36, 0), (pick(mp7_on, i), 0.30, 1)], 560),
+            "wstfg:p90+1043+1041+1004", eq_bands=eq_p90, comp_ratio=2.1, width_pct=98)
 
-    # AK1 (AK-47/AKM 7.62x39mm — Iconic BLACK Hero Weapon): Snake 7.62x39 + AK-74 4ch + FFX AK-47 Stereo + GDC1007 AKM
-    eq_ak1 = [(85, 1.3, 3.8), (1650, 1.5, 2.4), (3600, 1.4, 2.2)]
+    # AK1 (AK-47/AKM 7.62x39mm — Iconic BLACK Hero Weapon): WSTFG AKM + GDC1007 AKM + FFX AK-47 + Sub
+    eq_ak1 = [(82, 1.3, 4.0), (1650, 1.5, 2.6), (3600, 1.4, 2.2)]
     for i in range(4):
-        add("AK1_FIRE", f"Snake 7.62x39 + Sotiyat AK0405 + FFX AK47 + GDC1007 AKM #{i+1}",
-            align_mix([(pick(snk_762_f, i), 0.68, 0), (pick(akm_c, i), 0.56, 0), (pick(ak0405_d, i), 0.44, 0), (pick(ffx_ak47, i), 0.42, 0), (pick(ak47_bt, i), 0.34, 3)], 840),
-            "snake:762x39+ffx:C_25+1007+3086", eq_bands=eq_ak1, comp_ratio=2.1, width_pct=104)
+        add("AK1_FIRE", f"WSTFG AKM Stereo + GDC1007 AKM + FFX AK47 + 3086 Tail + Sub #{i+1}",
+            align_mix([(pick(ws_akm_fire, i), 0.78, 0), (pick(akm_c, i), 0.56, 0), (pick(ffx_ak47, i), 0.44, 0), (pick(ak47_bt, i), 0.32, 3), (pick(ws_bass, i), 0.24, 0)], 850),
+            "wstfg:akm+1007+ffx:C_25+3086", eq_bands=eq_ak1, comp_ratio=2.0, width_pct=106)
 
-    # ASR (G36C / Assault Rifle): Snake 5.56 + Modern_Firearms Assault Rifle + GDC1051 G36C + GDC1034 FAMAS
+    # ASR (G36C 5.56mm): WSTFG G36 Stereo + GDC1051 G36C + GDC1034 FAMAS + GDC1029 OnGun
     eq_asr = [(110, 1.3, 2.6), (2600, 1.5, 2.6), (6200, 1.3, 1.8)]
     for i in range(4):
-        add("ASR_FIRE", f"Snake 5.56 + Sotiyat AssaultRifle + GDC1051 G36C + FAMAS #{i+1}",
-            align_mix([(pick(snk_556_f, i), 0.66, 0), (pick(mf_asr, i), 0.60, 0), (pick(g36_c, i), 0.44, 0), (pick(famas_c, i), 0.36, 1)], 750),
-            "snake:556+sotiyat:Gun_Assault_Rifle+1051", eq_bands=eq_asr, comp_ratio=2.2, width_pct=102)
+        add("ASR_FIRE", f"WSTFG G36 Stereo + GDC1051 G36C + 1034 + 1029 OnGun #{i+1}",
+            align_mix([(pick(ws_g36_fire, i), 0.78, 0), (pick(g36_c, i), 0.54, 0), (pick(famas_c, i), 0.34, 1), (pick(l86_on, i), 0.28, 0)], 780),
+            "wstfg:g36+1051+1034+1029", eq_bands=eq_asr, comp_ratio=2.1, width_pct=104)
 
-    # M16 (M16A2 / M4A1): Snake 5.56 Isolated/Full + GDC67 M4 Stereo + FFX AR-15 Stereo + GDC997 HK416
+    # M16 (M16A2 / M4A1): WSTFG M4/HK416 + GDC998 HK416 OnGun + GDC67 M4 + GDC849 M4 Burst
     eq_m16 = [(95, 1.3, 3.0), (2400, 1.5, 2.6), (6800, 1.3, 2.0)]
     for i in range(4):
-        add("M16_FIRE", f"Snake 5.56 + GDC67 M4 Stereo + FFX AR-15 Stereo + HK416 #{i+1}",
-            align_mix([(pick(m4_c, i), 0.64, 0), (pick(snk_556_f, i + 1), 0.58, 0), (pick(ffx_ar15, i), 0.42, 0), (pick(hk416_c, i), 0.38, 0)], 780),
-            "snake:556+67+ffx:D_31+997", eq_bands=eq_m16, comp_ratio=2.1, width_pct=102)
+        add("M16_FIRE", f"WSTFG M4/HK416 + GDC998 OnGun + GDC67 M4 + FFX AR-15 #{i+1}",
+            align_mix([(pick(ws_m4_fire, i), 0.78, 0), (pick(hk416_on, i), 0.48, 0), (pick(m4_c, i), 0.44, 0), (pick(m4_bst_g, i), 0.30, 1), (pick(ffx_ar15, i), 0.32, 0)], 800),
+            "wstfg:m4+hk416+998+67+849", eq_bands=eq_m16, comp_ratio=2.0, width_pct=104)
 
-    # BNS (Elite Battle Rifle): Snake .308 (7.62x51) + GDC730 HK416 + GDC1026 L85 + GDC995 HK G3
-    eq_bns = [(82, 1.3, 3.4), (1950, 1.5, 2.4), (5400, 1.4, 2.0)]
+    # BNS (DC3 Elite Heavy Carbine): WSTFG FAL/G3 7.62 + GDC730 HK416 + GDC995 G3 + GDC1026 L85
+    eq_bns = [(82, 1.3, 3.5), (1950, 1.5, 2.5), (5400, 1.4, 2.0)]
     for i in range(4):
-        add("BNS_FIRE", f"Snake .308 + GDC730 + 1026 L85 + 995 G3 7.62 #{i+1}",
-            align_mix([(pick(snk_308_f, i), 0.64, 0), (pick(hk416_rm, i), 0.54, 0), (pick(g3_c, i), 0.44, 1), (pick(l85_c, i), 0.38, 0)], 820),
-            "snake:308+730+995+1026", eq_bands=eq_bns, comp_ratio=2.1, width_pct=105)
+        add("BNS_FIRE", f"WSTFG FAL/G3 7.62 + GDC730 + 995 G3 + 1026 L85 #{i+1}",
+            align_mix([(pick(ws_bns_fire, i), 0.78, 0), (pick(hk416_rm, i), 0.48, 0), (pick(g3_c, i), 0.42, 1), (pick(l85_c, i), 0.34, 0)], 840),
+            "wstfg:fal+g3+730+995", eq_bands=eq_bns, comp_ratio=2.0, width_pct=106)
 
-    # BNS_M203 (Underbarrel 40mm): GDC5829 Smoke GRL Stereo + صوتيات Bluezone Tank Artillery
-    eq_m203 = [(65, 1.2, 4.8), (420, 1.4, 2.2), (1600, 1.5, -1.5)]
+    # BNS_M203 (Underbarrel 40mm): WSTFG UGL/M203 Grenshoot + GDC5829 Smoke GRL + 4441 Artillery
+    eq_m203 = [(62, 1.2, 5.0), (420, 1.4, 2.4), (1600, 1.5, -1.2)]
     for i in range(3):
-        add("BNS_M203", f"GDC5829 Smoke GRL + Sotiyat Bluezone Artillery #{i+1}",
-            align_mix([(pick(grl_smoke, i), 0.80, 0), (pick(tank_can, i), 0.48, 0)], 760),
-            "5829+4441", eq_bands=eq_m203, transient_boost_db=2.0, width_pct=106)
+        add("BNS_M203", f"WSTFG UGL/M203 + GDC5829 + GDC4441 #{i+1}",
+            align_mix([(pick(ws_ugl_fire, i), 0.80, 0), (pick(grl_smoke, i), 0.58, 0), (pick(tank_can, i), 0.44, 2)], 780),
+            "wstfg:ugl+m203+5829+4441", eq_bands=eq_m203, transient_boost_db=2.2, width_pct=108)
 
-    # SHG (12g Pump Shotgun): Snake 20ga Boom + Modern_Firearms Shotgun + GDC729 R870 + GDC1303
-    eq_shg = [(65, 1.2, 4.8), (950, 1.4, 2.2), (3200, 1.4, 2.0)]
+    # SHG (Franchi SPAS-12 12g — PURE 12-GAUGE, ZERO 20ga bleed!): WSTFG SPAS-12 + GDC1098 SPAS Slug + 6902/6903 + Sub
+    eq_shg = [(62, 1.2, 5.2), (1050, 1.4, 2.4), (3600, 1.4, 2.2)]
     for i in range(4):
-        add("SHG_FIRE", f"Snake 20ga + Sotiyat Shotgun + WavJunction + GDC729 R870 #{i+1}",
-            align_mix([(pick(snk_20ga_f, i), 0.62, 0), (pick(mf_shg, i), 0.60, 0), (pick(r870_c, i), 0.52, 0), (pick(ts_fire, i), 0.38, 0)], 940),
-            "snake:20ga+sotiyat:Gun_Shotgun+729", eq_bands=eq_shg, comp_ratio=2.1, width_pct=108)
+        add("SHG_FIRE", f"WSTFG SPAS-12 12g + GDC1098 SPAS Slug + 6903/6902 + Sub #{i+1}",
+            align_mix([(pick(ws_spas_fire, i), 0.82, 0), (pick(spas_12g, i), 0.56, 0), (pick(spas_semi, i), 0.44, 0), (pick(spas_c, i), 0.34, 2), (pick(ws_bass, i), 0.32, 0)], 960),
+            "wstfg:spas12+1098+6903+6902", eq_bands=eq_shg, transient_boost_db=2.0, comp_ratio=2.0, width_pct=110)
 
-    # RM1 (Combat Semi-Auto 12g): Snake 20ga + GDC6660 Saiga + 6859 Beretta + 6902 SPAS
-    eq_rm1 = [(72, 1.3, 4.2), (1300, 1.5, 2.4), (4200, 1.4, 1.8)]
+    # RM1 (Remington 870 12g Pump — PURE 12-GAUGE, ZERO 20ga bleed!): WSTFG Pump + GDC729 R870 + 1303/5662 + Sub
+    eq_rm1 = [(66, 1.3, 4.8), (1250, 1.5, 2.4), (4200, 1.4, 2.0)]
     for i in range(4):
-        add("RM1_FIRE", f"Snake 20ga + GDC6660 Saiga + 6859 Beretta + 6902 SPAS #{i+1}",
-            align_mix([(pick(saiga_ds, i), 0.58, 0), (pick(snk_20ga_f, i + 1), 0.52, 0), (pick(ber1201_c, i), 0.42, 0), (pick(spas_c, i), 0.40, 0)], 880),
-            "snake:20ga+6660+6859+6902", eq_bands=eq_rm1, comp_ratio=2.1, width_pct=108)
+        add("RM1_FIRE", f"WSTFG R870 Pump 12g + GDC729 R870 + TS1303 + 5662 + Sub #{i+1}",
+            align_mix([(pick(ws_pump_fire, i), 0.80, 0), (pick(r870_c, i), 0.58, 0), (pick(ts_fire, i), 0.44, 0), (pick(wj_shg2, i), 0.34, 1), (pick(ws_bass, i), 0.30, 0)], 940),
+            "wstfg:pump+729+1303+5662", eq_bands=eq_rm1, transient_boost_db=2.0, comp_ratio=2.0, width_pct=110)
 
-    # SNR (Heavy Sniper Rifle): Snake 7.62x54R + .308 + Sniper + FFX Tikka + M98B .338 + Lynx .50
-    eq_snr = [(58, 1.2, 5.0), (1400, 1.4, 2.4), (3500, 1.4, 2.2)]
+    # SNR (Walther WA2000 Sniper Rifle): WSTFG L96/AWM/SVD + GDC1013 M98B OnGun + 1012 + 6909 Lynx .50 + Sub
+    eq_snr = [(55, 1.2, 5.2), (1400, 1.4, 2.5), (3500, 1.4, 2.2)]
     for i in range(4):
-        add("SNR_FIRE", f"Snake 7.62x54R + 308 + FFX Tikka + M98B + Lynx .50 #{i+1}",
-            align_mix([(pick(snk_762x54r_f, i), 0.62, 0), (pick(mf_snr, i), 0.48, 0), (pick(ffx_tikka, i), 0.44, 0), (pick(m98b_c, i), 0.48, 0), (pick(lynx50_c, i), 0.36, 2)], 1060),
-            "snake:54r+sotiyat:Gun_Sniper+ffx:W_27+1012+6909", eq_bands=eq_snr, transient_boost_db=2.2, comp_ratio=2.0, width_pct=110)
+        add("SNR_FIRE", f"WSTFG L96/AWM/SVD + GDC1013 OnGun + 1012 + 6909 Lynx + Sub #{i+1}",
+            align_mix([(pick(ws_snr_fire, i), 0.78, 0), (pick(m98b_on, i), 0.48, 0), (pick(m98b_c, i), 0.48, 0), (pick(lynx50_c, i), 0.36, 2), (pick(ws_bass, i), 0.32, 0)], 1060),
+            "wstfg:l96+awm+1013+1012+6909", eq_bands=eq_snr, transient_boost_db=2.4, comp_ratio=1.95, width_pct=112)
 
-    # HVY (M249 SAW / LMG): Snake 7.62x54R + GDC1067 M1919A4 + M1919 + L110A2
-    eq_hvy = [(82, 1.3, 3.6), (1800, 1.4, 2.6), (4800, 1.4, 2.0)]
+    # HVY (M249 SAW 5.56mm Belt-Fed LMG): WSTFG M249 + GDC1060 L110A2 + GDC999 MG4 + GDC1028/1029 L86
+    eq_hvy = [(84, 1.3, 3.6), (1850, 1.4, 2.8), (5200, 1.4, 2.2)]
     for i in range(5):
-        add("HVY_FIRE", f"Snake 7.62x54R + GDC1067 M1919A4 + Sotiyat M1919 + L110 #{i+1}",
-            align_mix([(pick(snk_762x54r_f, i), 0.56, 0), (pick(m1919a4_c, i), 0.54, 0), (pick(m1919_d, i), 0.46, 0), (pick(l110_c, i), 0.44, 0)], 720),
-            "snake:54r+1067+sotiyat:M1919+1060", eq_bands=eq_hvy, comp_ratio=2.2, width_pct=104)
+        add("HVY_FIRE", f"WSTFG M249 SAW + GDC1060 L110 + 999 MG4 + 1029 L86 OnGun #{i+1}",
+            align_mix([(pick(ws_hvy_fire, i), 0.80, 0), (pick(l110_c, i), 0.54, 0), (pick(mg4_c, i), 0.44, 0), (pick(l86_on, i), 0.32, 0), (pick(l86_c, i), 0.28, 1)], 720),
+            "wstfg:m249+1060+999+1029", eq_bands=eq_hvy, transient_boost_db=1.8, comp_ratio=2.1, width_pct=106)
 
-    # RPG (RPG-7): GDC2894 Rocket Launcher Stereo + GDC6991 RPG + صوتيات Shell Trajectory
-    eq_rpg = [(62, 1.2, 4.5), (420, 1.3, 2.0), (2600, 1.4, 1.5)]
+    # RPG (RPG-7): WSTFG RPG Blast + GDC2894 RocketLauncher + GDC6991 RPG + WSTFG Rocket Fly
+    eq_rpg = [(58, 1.2, 4.8), (420, 1.3, 2.2), (2600, 1.4, 1.6)]
     for i in range(3):
-        add("RPG_FIRE", f"GDC2894 RocketLauncher + GDC6991 RPG + 4440 Trajectory #{i+1}",
-            align_mix([(pick(rpg_ext, i), 0.64, 0), (pick(rpg_fire, i), 0.56, 0), (pick(shell_trj, i), 0.48, 6)], 1150),
-            "2894+6991+4440", eq_bands=eq_rpg, width_pct=112)
+        add("RPG_FIRE", f"WSTFG RPG Close/Fly + GDC2894 + GDC6991 + 4440 #{i+1}",
+            align_mix([(pick(ws_rpg_exp, i), 0.68, 0), (pick(rpg_ext, i), 0.58, 0), (pick(rpg_fire, i), 0.52, 0), (pick(ws_rpg_fly, i), 0.42, 8)], 1180),
+            "wstfg:rpg+2894+6991", eq_bands=eq_rpg, transient_boost_db=2.0, width_pct=114)
 
-    # GRL (Standalone M203/Grenade Launcher): GDC850 MK44 Cannon Stereo + GDC2882 GRL 2 Stereo
-    eq_grl = [(65, 1.2, 4.6), (380, 1.4, 2.4), (1800, 1.5, -1.8)]
+    # GRL (Standalone M203/RG6 Grenade Launcher): WSTFG RG6 + UGL + GDC850 + GDC5829
+    eq_grl = [(62, 1.2, 4.8), (380, 1.4, 2.4), (1800, 1.5, -1.5)]
     for i in range(3):
-        add("GRL_FIRE", f"GDC850 MK44 Cannon Stereo + GDC2882 GRL2 Stereo #{i+1}",
-            align_mix([(pick(mk44_c, i), 0.72, 0), (pick(grl2_c, i), 0.58, 0)], 840),
-            "850+2882", eq_bands=eq_grl, width_pct=108)
+        add("GRL_FIRE", f"WSTFG RG6/UGL + GDC850 + GDC2882 #{i+1}",
+            align_mix([(pick(ws_rg6_fire, i), 0.78, 0), (pick(mk44_c, i), 0.56, 0), (pick(ws_ugl_fire, i), 0.46, 0), (pick(grl2_c, i), 0.36, 1)], 860),
+            "wstfg:rg6+ugl+850+2882", eq_bands=eq_grl, transient_boost_db=2.0, width_pct=110)
 
     # =========================================================================
-    # 2. SUPPRESSED WEAPONS (17..26 — ZERO clipped sources, True Stereo!)
+    # 2. SUPPRESSED WEAPONS (17..26 — 100% PER-CALIBER WSTFG + GDC SUPPRESSED!)
     # =========================================================================
-    eq_sup = [(160, 1.3, 1.5), (3800, 1.4, 1.8), (650, 1.5, -1.8)]
+    eq_sup = [(150, 1.3, 1.8), (3600, 1.4, 2.0), (650, 1.5, -1.6)]
     supp_map = [
-        ("PST_SUPP", mf_sup,     supp_pst,   t_ind_6964, "sotiyat:Silenced+2535+6964 P38 Silenced"),
-        ("GK1_SUPP", ffx_sup22,  supp_pst,   ffx_ppq_h,  "ffx:J_2+2535+ffx:X Glock Silenced"),
-        ("SMG_SUPP", supp_pst,   supp_hiss,  ppsh_ck,    "2535+sotiyat:SmokeHiss+5118 Uzi SD"),
-        ("SM3_SUPP", supp_ppk,   supp_dl,    mp40_ck,    "2781+1021+5042 MAC10 SD"),
-        ("MP1_SUPP", mf_sup,     ffx_cg_h,   supp_ppk,   "sotiyat:Silenced+ffx:G_2+2781 MP5-SD"),
-        ("P90_SUPP", supp_dl,    supp_hiss,  ffx_sup22,  "1021+sotiyat:SmokeHiss+ffx:J_2 P90 SD"),
-        ("AK1_SUPP", ffx_sup300, aksd_813,   t_ind_6962, "ffx:T_15+sotiyat:AKSD0813+6962 AK47 SD"),
-        ("ASR_SUPP", supp_dl,    ffx_ar_h,   supp_snp,   "1021+ffx:D_13+2536 G36C SD"),
-        ("M16_SUPP", supp_trg,   t_ind_2779, m4_chrg,    "1088+2779+69 M4A1/M16 SD"),
-        ("SNR_SUPP", supp_snp,   ffx_sup300, mnsd_315,   "2536+ffx:T_15+sotiyat:MNSD0315 Sniper SD"),
+        ("PST_SUPP", ws_sup_pst, supp_pst,   t_ind_6964, "wstfg:pb_sd+2535 P9mm Silenced"),
+        ("GK1_SUPP", ws_sup_gk1, supp_pst,   ffx_ppq_h,  "wstfg:glock_sd+2535 Glock SD"),
+        ("SMG_SUPP", ws_sup_smg, supp_ppk,   ppsh_ck,    "wstfg:smg9_sd+2781 Uzi SD"),
+        ("SM3_SUPP", ws_sup_mac, supp_dl,    mp40_ck,    "wstfg:mac10_sd+1021 MAC10 SD"),
+        ("MP1_SUPP", ws_sup_mp5, supp_ppk,   ffx_cg_h,   "wstfg:mp5sd+2781 MP5-SD"),
+        ("P90_SUPP", ws_sup_p90, supp_dl,    tmp_f,      "wstfg:p90_sd+1021 P90 SD"),
+        ("AK1_SUPP", ws_sup_ak1, ffx_sup300, t_ind_6962, "wstfg:762w_sd+T_15 AK47 SD"),
+        ("ASR_SUPP", ws_sup_g36, supp_dl,    ffx_ar_h,   "wstfg:g36_sd+1021 G36C SD"),
+        ("M16_SUPP", ws_sup_m16, supp_trg,   m4_chrg,    "wstfg:556_sd+1088 M4A1 SD"),
+        ("SNR_SUPP", ws_sup_snr, supp_snp,   ffx_sup300, "wstfg:dvl_sd+2536 Sniper SD"),
     ]
     for slot_name, pri, sec, air, desc in supp_map:
         for i in range(3):
-            layers = [(pick(pri, i), 0.72, 0), (pick(sec, i), 0.42, 0), (pick(air, i)[:int(0.26*SR)], 0.22, 0)]
+            layers = [(pick(pri, i), 0.82, 0), (pick(sec, i), 0.36, 0), (pick(air, i)[:int(0.24*SR)], 0.18, 0)]
             add(slot_name, f"{desc} #{i+1}",
-                align_mix(layers, 460),
-                desc.split()[0], eq_bands=eq_sup, transient_boost_db=1.0, comp_ratio=2.0, width_pct=96)
+                align_mix(layers, 480),
+                desc.split()[0], eq_bands=eq_sup, transient_boost_db=1.4, comp_ratio=1.95, width_pct=98)
 
     # =========================================================================
     # 3. DEDICATED TRUE-STEREO ROLLING GUNSHOT TAILS ("MATTAK"), ECHOES, DISTANT & FLYBY
@@ -1597,20 +1714,20 @@ def build_all_clips():
     eq_fly  = [(2600, 1.4, 2.8), (6200, 1.3, 2.2)]
 
     for i in range(5):
-        add("TAIL_PISTOL_OUTDOOR", f"Snake 9mm + GDC4935/6203 Pistol Outdoor Roll #{i+1}",
-            pick(snk_t_9mm + t_m1911 + t_glk100, i), "snake:9mm+4935+6203", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
+        add("TAIL_PISTOL_OUTDOOR", f"WSTFG Pistol Outdoor + GDC4935/6203 Roll #{i+1}",
+            pick(ws_t_pst + t_m1911 + t_glk100, i), "wstfg:pistol_tail+4935+6203", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
     for i in range(5):
-        add("TAIL_SMG_OUTDOOR", f"Snake 9mm + GDC3089/1056 SMG Outdoor Tail #{i+1}",
-            pick(snk_t_9mm + t_smg, i), "snake:9mm+3089+1056", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
+        add("TAIL_SMG_OUTDOOR", f"WSTFG SMG Outdoor + GDC3089/1056 Tail #{i+1}",
+            pick(ws_t_smg + t_smg, i), "wstfg:smg_tail+3089+1056", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=140.0, width_pct=116)
     for i in range(6):
-        add("TAIL_RIFLE_MATTAK", f"Snake 7.62x39/5.56 + GDC2783/3086 Rifle Mattak #{i+1}",
-            pick(snk_t_762 + snk_t_556 + t_mattak, i), "snake:762+556+2783", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=180.0, width_pct=120)
+        add("TAIL_RIFLE_MATTAK", f"WSTFG AR Far/Med + GDC2783/3086 Rifle Mattak #{i+1}",
+            pick(ws_t_ar + t_mattak, i), "wstfg:ar_tail+2783+3086", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=180.0, width_pct=120)
     for i in range(6):
-        add("TAIL_HEAVY_MATTAK", f"Snake 7.62x54R/308 + GDC5034 Heavy Mountain Mattak #{i+1}",
-            pick(snk_t_54r + snk_t_308 + t_heavy, i), "snake:54r+308+5034", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=200.0, width_pct=122)
+        add("TAIL_HEAVY_MATTAK", f"WSTFG Heavy Sniper/Rifle + GDC5034 Mountain Mattak #{i+1}",
+            pick(ws_t_hvy + t_heavy, i), "wstfg:heavy_tail+5034", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=200.0, width_pct=122)
     for i in range(5):
-        add("TAIL_SHOTGUN_OUTDOOR", f"Snake 20ga + GDC6660/6902 12g Outdoor Boom Tail #{i+1}",
-            pick(snk_t_20g + t_shotgun, i), "snake:20g+6660+6902", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=160.0, width_pct=118)
+        add("TAIL_SHOTGUN_OUTDOOR", f"WSTFG 12g Shotgun Tail + GDC6660/6902 Boom #{i+1}",
+            pick(ws_t_shg + t_shotgun, i), "wstfg:shg_tail+6660+6902", eq_bands=eq_tail, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=160.0, width_pct=118)
     for i in range(6):
         add("TAIL_INDOOR_ECHO", f"GDC2780/2779/6964/6965 Corridor Reflections #{i+1}",
             pick(t_indoor, i), "2780+2779", eq_bands=eq_echo, transient_boost_db=0.0, comp_ratio=1.8, fade_out_ms=150.0, width_pct=118)
@@ -1630,7 +1747,7 @@ def build_all_clips():
     for i in range(4):
         add("ENV_TAIL", f"GDC2780/6964 Environment Reflection Tail #{i+1}", pick(t_indoor, i + 1), "2780+6964", eq_bands=eq_echo, transient_boost_db=0.0, fade_out_ms=140.0, width_pct=115)
     for i in range(5):
-        add("ENV_FLYBY", f"PM_BBI + GDC4847/1853 Bullet Flyby #{i+1}", pick(flyby_whz + crk_1853, i), "PM_BBI+4847+1853", eq_bands=eq_fly, transient_boost_db=1.5, width_pct=105)
+        add("ENV_FLYBY", f"WSTFG Whine + PM_BBI + GDC4847/1853 Bullet Flyby #{i+1}", pick(ws_whines + flyby_whz + crk_1853, i), "wstfg:whine+PM_BBI+4847", eq_bands=eq_fly, transient_boost_db=1.5, width_pct=105)
 
     # =========================================================================
     # 4. ENEMY AI & DISTANT GUNFIRE SLOTS (74..83 except 79 — Mono 3D point sources!)
@@ -1676,13 +1793,20 @@ def build_all_clips():
         "FIRE_SELECT": (wj_safe + tmp_f, "WavJnc+1116"), "SILENCER_ON": (sil_scrw, "2537"), "SILENCER_OFF": (sil_scrw[1:], "2537"),
         "SILENCER_CASE": (cas_9mm, "5195"),
         "DEAD_CLICK": (snk_pst_dry + dry_m1911 + ffx_19_h, "snake:dry+4936"), "CHNG_WPN": (snk_ar_chg + m4_chrg + ak74_asmb, "snake:chg+AK0709"),
-        "CASING_BRASS": (cas_ak + cas_9mm + cas_50, "SculpTunes+5195+3088"),
+        "CASING_BRASS": (ws_cas_conc + cas_ak + cas_9mm, "wstfg:cas_conc+5195"),
         "CASING_SHELL": (cas_shg + cas_wd, "1273+2534"),
+        "CASING_METAL": (ws_cas_metal, "wstfg:cas_metal"),
+        "CASING_DIRT":  (ws_cas_dirt, "wstfg:cas_dirt"),
+        "CASING_WOOD":  (ws_cas_wood + cas_wd, "wstfg:cas_wood+2534"),
     }
     for slot_name, (pool, fid_tag) in foley_defs.items():
         n_var = 4 if "CASING_" in slot_name else (3 if any(k in slot_name for k in ("_COCK", "_LD", "_UNLD", "CHNG_WPN", "SILENCER_ON", "SILENCER_OFF", "FIRE_SELECT", "DEAD_CLICK")) else 2)
         for i in range(n_var):
             add(slot_name, f"{fid_tag} {slot_name} #{i+1}", pick(pool, i), fid_tag, eq_bands=eq_f, transient_boost_db=1.2, width_pct=96)
+
+    for i in range(4):
+        add("WEAPON_INSPECT", f"WSTFG Tactical Weapon Inspect #{i+1}", pick(ws_inspects, i), "wstfg:inspect", eq_bands=eq_f, transient_boost_db=1.0, width_pct=98)
+    add("BASS_SUB_PUNCH", "WSTFG Deep Chest Sub-Bass Impulse", pick(ws_bass, 0), "wstfg:bass_pkm", eq_bands=[(52, 1.2, 4.0)], transient_boost_db=0.0, width_pct=90)
 
     # =========================================================================
     # 6. IMPACTS & EXPLOSIONS (86..94 except 91)

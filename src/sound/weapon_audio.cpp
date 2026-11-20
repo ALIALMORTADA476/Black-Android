@@ -66,6 +66,9 @@ constexpr int32_t kSlotTailM91Outdoor = 145, kSlotTailMxmHeavy = 146;
 constexpr int32_t kSlotFlmPilotHum = 147, kSlotFlmFoamSplash = 148, kSlotM91ChamberClose = 149;
 constexpr int32_t kSlotMxmWheelRoll = 150, kSlotMxmBeltAdvance = 151, kSlotTailC96Outdoor = 152;
 constexpr int32_t kSlotM91Equip = 153, kSlotM91Supp = 154;
+constexpr int32_t kSlotCasingBrass = 72, kSlotCasingShell = 73;
+constexpr int32_t kSlotCasingMetal = 155, kSlotCasingDirt = 156, kSlotCasingWood = 157;
+constexpr int32_t kSlotWeaponInspect = 158, kSlotBassSubPunch = 159;
 
 struct ClipRec {
     uint32_t slot_id = 0;
@@ -107,6 +110,8 @@ struct ActiveVoice {
     float pos[3] = {0.0f, 0.0f, 0.0f};
     float min_dist = 2.0f;
     float max_dist = 120.0f;
+    bool has_forced_pan = false;
+    float forced_pan = 0.0f;
 };
 
 enum class SynthKind : uint8_t {
@@ -178,6 +183,13 @@ struct EngineState {
     std::atomic<uint64_t> synth_hit_confirms{0};
     std::atomic<uint64_t> synth_shell_clinks{0};
     std::atomic<uint64_t> synth_overdrive_cues{0};
+
+    // Concussion "Duck & Ring" tinnitus DSP state (mixer thread + atomic UI telemetry)
+    std::atomic<float> concussion_daze{0.0f};
+    float tinnitus_env = 0.0f;
+    double tinnitus_phase_a = 0.0;
+    double tinnitus_phase_b = 0.0;
+    std::array<float, 6> post_lp_state{};
 };
 
 EngineState g_state;
@@ -276,7 +288,9 @@ StemCategory StemForSlot(uint32_t slot_id) {
     // Expanded BWAR v3 non-weapon slots:
     if (slot_id == uint32_t(kSlotMeleeSwing) || slot_id == uint32_t(kSlotMeleeHit) ||
         slot_id == uint32_t(kSlotPickupAmmo) || slot_id == uint32_t(kSlotPickupHealth) ||
-        slot_id == uint32_t(kSlotWeaponDrop)) {
+        slot_id == uint32_t(kSlotWeaponDrop) || slot_id == uint32_t(kSlotWeaponInspect) ||
+        slot_id == uint32_t(kSlotCasingMetal) || slot_id == uint32_t(kSlotCasingDirt) ||
+        slot_id == uint32_t(kSlotCasingWood)) {
         return StemCategory::Mechanical;
     }
     if (slot_id >= uint32_t(kSlotFsConcreteWalk) && slot_id <= uint32_t(kSlotUiHudAlert)) {
@@ -1013,7 +1027,7 @@ void TriggerHitConfirm(bool headshot, bool lethal) {
     g_state.synth_hit_confirms.fetch_add(1, std::memory_order_relaxed);
 }
 
-void TriggerShellClink(float pan_right_ratio, bool is_shotgun_hull) {
+void TriggerShellClink(float pan_right_ratio, bool is_shotgun_hull, SurfaceKind surface) {
     const auto& enh = modsettings::Registry().GetEnhanced();
     if (!enh.shell_casings) return;
     const uint64_t now_ms = NowMs();
@@ -1028,9 +1042,119 @@ void TriggerShellClink(float pan_right_ratio, bool is_shotgun_hull) {
     const float gl = gain * std::sqrt(0.5f * (1.0f - pan * 0.85f));
     const float gr = gain * std::sqrt(0.5f * (1.0f + pan * 0.85f));
     const float pitch = 1.0f + NextRandBipolar(g_state.rng_state) * 0.08f;
+
+    // Layer real surface-specific WSTFG casing foley when pack is loaded & occlusion/surface audio enabled
+    if (enh.mod_audio_pack_enabled && enh.audio_occlusion_enabled &&
+        g_state.loaded.load(std::memory_order_acquire) && enh.mechanical_audio_volume > 0) {
+        int32_t slot = is_shotgun_hull ? kSlotCasingShell : kSlotCasingBrass;
+        if (!is_shotgun_hull) {
+            switch (surface) {
+                case SurfaceKind::Metal: slot = kSlotCasingMetal; break;
+                case SurfaceKind::Dirt:  slot = kSlotCasingDirt; break;
+                case SurfaceKind::Wood:  slot = kSlotCasingWood; break;
+                case SurfaceKind::Concrete:
+                default: slot = kSlotCasingBrass; break;
+            }
+        }
+        if (SpawnClipForSlotLocked(uint32_t(slot), 0u, false, 0u, nullptr, 1.0f, 22.0f, 0.24f, 0u, 0.08f, false)) {
+            ActiveVoice* newest = nullptr;
+            for (auto& av : g_state.pool) {
+                if (av.active && av.slot_id == uint32_t(slot)) newest = &av;
+            }
+            if (newest) {
+                newest->has_forced_pan = true;
+                newest->forced_pan = pan;
+            }
+        }
+    }
+
     SpawnSynthLocked(is_shotgun_hull ? SynthKind::PlasticHullClink : SynthKind::BrassClink,
                      is_shotgun_hull ? 2400u : 2200u, 0u, gl, gr, pitch);
     g_state.synth_shell_clinks.fetch_add(1, std::memory_order_relaxed);
+}
+
+void TriggerWeaponInspect() {
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    if (!enh.mod_audio_pack_enabled || !EnsureLoaded()) return;
+    std::lock_guard<std::mutex> lock(g_state.mix_mutex);
+    if (enh.mechanical_audio_volume == 0) return;
+    SpawnClipForSlotLocked(uint32_t(kSlotWeaponInspect), 0u, false, 0u, nullptr, 1.0f, 60.0f, 0.72f, 0u, 0.14f, false);
+}
+
+float ComputeConcussionIntensity(float dist_m) {
+    if (!std::isfinite(dist_m) || dist_m < 0.0f) return 0.0f;
+    if (dist_m >= 16.0f) return 0.0f;
+    const float u = 1.0f - (dist_m / 16.0f);
+    return std::clamp(u * u * 1.15f, 0.0f, 1.0f);
+}
+
+float ComputeAcousticLowPassAlpha(bool occluded_by_geometry, float dist_m) {
+    const float d = std::isfinite(dist_m) ? std::max(dist_m, 0.0f) : 0.0f;
+    const float air = (d > 12.0f) ? std::clamp(18.0f / (d + 6.0f), 0.18f, 1.0f) : 1.0f;
+    if (!occluded_by_geometry) return air;
+    // Behind-wall / behind-listener occlusion gently rolls off harsh highs cleanly
+    return std::clamp(air * 0.34f, 0.08f, 0.42f);
+}
+
+void TriggerExplosionConcussion(float dist_m) {
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    if (!enh.audio_tinnitus_enabled) return;
+    const float strength = ComputeConcussionIntensity(dist_m);
+    if (strength <= 0.10f) return;
+    std::lock_guard<std::mutex> lock(g_state.mix_mutex);
+    g_state.tinnitus_env = std::max(g_state.tinnitus_env, strength);
+    g_state.concussion_daze.store(g_state.tinnitus_env, std::memory_order_relaxed);
+}
+
+float CurrentConcussionDaze() {
+    return g_state.concussion_daze.load(std::memory_order_relaxed);
+}
+
+void ApplyMasterPostDsp(float* out, uint32_t frames, uint32_t out_channels,
+                        uint32_t fl_ch, uint32_t fr_ch) {
+    if (!out || frames == 0 || out_channels < 2) return;
+    const auto& enh = modsettings::Registry().GetEnhanced();
+    std::lock_guard<std::mutex> lock(g_state.mix_mutex);
+    if (!enh.audio_tinnitus_enabled || g_state.tinnitus_env <= 0.002f) {
+        g_state.tinnitus_env = 0.0f;
+        g_state.concussion_daze.store(0.0f, std::memory_order_relaxed);
+        return;
+    }
+
+    const uint32_t ch_limit = std::min<uint32_t>(out_channels, uint32_t(g_state.post_lp_state.size()));
+    const float master = std::clamp(float(enh.master_gain_percent) * 0.01f, 0.10f, 1.50f);
+    // Logarithmic decay (~2.3s recovery) + smooth hearing un-muffling
+    constexpr double kTwoPi = 6.283185307179586;
+    constexpr double kIncA = kTwoPi * 3920.0 / double(kExpectedRate);
+    constexpr double kIncB = kTwoPi * 4185.0 / double(kExpectedRate);
+    const float decay_per_sample = std::exp(-1.0f / (float(kExpectedRate) * 1.15f));
+
+    for (uint32_t f = 0; f < frames; ++f) {
+        const float env = g_state.tinnitus_env;
+        g_state.tinnitus_env *= decay_per_sample;
+        if (env <= 0.0015f) break;
+
+        // Hearing occlusion sweeps back open gradually as tinnitus subsides
+        const float lp_alpha = std::clamp(1.0f - env * 0.86f, 0.10f, 1.0f);
+        const float duck_gain = std::clamp(1.0f - env * 0.34f, 0.58f, 1.0f);
+        float* row = out + size_t(f) * out_channels;
+        for (uint32_t c = 0; c < ch_limit; ++c) {
+            g_state.post_lp_state[c] += lp_alpha * (row[c] - g_state.post_lp_state[c]);
+            row[c] = g_state.post_lp_state[c] * duck_gain;
+        }
+        const float ring = (float(std::sin(g_state.tinnitus_phase_a)) * 0.65f +
+                            float(std::sin(g_state.tinnitus_phase_b)) * 0.35f) *
+                           (env * env) * 0.085f * master;
+        g_state.tinnitus_phase_a += kIncA;
+        if (g_state.tinnitus_phase_a > kTwoPi) g_state.tinnitus_phase_a -= kTwoPi;
+        g_state.tinnitus_phase_b += kIncB;
+        if (g_state.tinnitus_phase_b > kTwoPi) g_state.tinnitus_phase_b -= kTwoPi;
+
+        if (fl_ch < out_channels) row[fl_ch] = std::clamp(row[fl_ch] + ring, -0.994f, 0.994f);
+        if (fr_ch < out_channels) row[fr_ch] = std::clamp(row[fr_ch] + ring * 0.92f, -0.994f, 0.994f);
+    }
+    if (g_state.tinnitus_env <= 0.002f) g_state.tinnitus_env = 0.0f;
+    g_state.concussion_daze.store(g_state.tinnitus_env, std::memory_order_relaxed);
 }
 
 void TriggerKineticDash(bool with_shockwave) {
@@ -1165,9 +1289,26 @@ void RenderMix(float* out, float* send, uint32_t frames,
                     pan_l = 0.95f;
                     pan_r = 0.95f;
                 }
+                if (av.has_forced_pan) {
+                    const float p = std::clamp(av.forced_pan, -1.0f, 1.0f);
+                    pan_l = std::sqrt(0.5f * (1.0f - p * 0.85f));
+                    pan_r = std::sqrt(0.5f * (1.0f + p * 0.85f));
+                }
                 const float total_gain = av.gain * stem_gain * att;
-                const float air_alpha = (av.is3d && dist > 12.0f)
-                    ? std::clamp(18.0f / (dist + 6.0f), 0.16f, 1.0f)
+                bool occluded = false;
+                if (enh.audio_occlusion_enabled && av.is3d && listener_pos && listener_front && dist > 3.5f) {
+                    const float dx = av.pos[0] - listener_pos[0];
+                    const float dz = av.pos[2] - listener_pos[2];
+                    const float dlen = std::sqrt(dx * dx + dz * dz);
+                    if (dlen > 1e-4f) {
+                        const float dot_f = (dx * listener_front[0] + dz * listener_front[2]) / dlen;
+                        occluded = (dot_f < -0.20f) || (dist > 34.0f && av.stem == StemCategory::DistantGunfire);
+                    }
+                }
+                const float air_alpha = av.is3d
+                    ? (enh.audio_occlusion_enabled
+                           ? ComputeAcousticLowPassAlpha(occluded, dist)
+                           : ((dist > 12.0f) ? std::clamp(18.0f / (dist + 6.0f), 0.16f, 1.0f) : 1.0f))
                     : 1.0f;
                 const float rev_send = av.reverb_send * att * stem_gain * av.gain;
                 const uint32_t tail_fade_samples = (av.frame_count > 1200) ? 720u : 120u;

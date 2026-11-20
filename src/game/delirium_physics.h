@@ -25,6 +25,8 @@ bool ApplyDeathCollapseVariation(uint32_t approx_owner,
 
 uint8_t GetDismemberMask(uint32_t soldier_ea) noexcept;
 void TrackSoldierPtr(uint32_t soldier_ea) noexcept;
+void OnPlayerTracerNearSoldiers(const float start[3], const float end[3]) noexcept;
+void OnGrenadeWorldThreat(const float grenade_pos[3]) noexcept;
 
 void ResetAll() noexcept;
 

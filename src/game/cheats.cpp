@@ -94,6 +94,39 @@ X86_FUNC(sub_001E74B0) {
     uint32_t hit_dir_ea = R32(ctx.esp + 0x08);
     float raw_force = G<float>(ctx.esp + 0x0C);
     uint8_t zone_byte = static_cast<uint8_t>(R32(ctx.esp + 0x10) & 0xFFu);
+    if (!victim || !mem::IsCommitted(victim) || !mem::IsCommitted(victim + 0x388u)) {
+        ctx.esp += 32;
+        return;
+    }
+    const uint32_t v_node = R32(victim + 0x324u);
+    const uint32_t v_268 = R32(victim + 0x268u);
+    const bool valid_node = (v_node != 0u && mem::IsCommitted(v_node) && mem::IsCommitted(v_node + 0x94u));
+    bool prop_hit_path = false;
+    if (v_268 != 0u && mem::IsCommitted(v_268) && mem::IsCommitted(v_268 + 0x24u)) {
+        const uint32_t slot = static_cast<uint8_t>(R32(v_268 + 0x18u) >> 8);
+        if (mem::IsCommitted(v_268 + slot * 4u + 0x10u) &&
+            R32(v_268 + slot * 4u + 0xCu) != 0u) {
+            if (zone_byte == 0xFFu) {
+                prop_hit_path = true;
+            } else if (zone_byte == 0x04u) {
+                const uint32_t v_320 = R32(victim + 0x320u);
+                if (v_320 != 0u && mem::IsCommitted(v_320 + 8u)) {
+                    const uint32_t kind = R32(v_320 + 4u);
+                    prop_hit_path = (kind == 0x28u || kind == 0x2Au);
+                }
+            }
+        }
+    }
+    const bool valid_attacker =
+        (attacker != 0u && mem::IsCommitted(attacker) && mem::IsCommitted(attacker + 0x3A0u));
+    if (!valid_node && !prop_hit_path) {
+        ctx.esp += 32;
+        return;
+    }
+    if (!prop_hit_path && !valid_attacker) {
+        ctx.esp += 32;
+        return;
+    }
     uint32_t me = Player();
     const bool is_headshot = (zone_byte == 0x08u);
     const float imp = game::physics_lab::Params().impact_force.load(std::memory_order_relaxed);
@@ -135,11 +168,30 @@ X86_FUNC(sub_001E74B0) {
     Doomed doomed = Doom(victim, attacker);
     __imp__sub_001E74B0(ctx, base);
     Spare(doomed);
-    if (me && attacker == me && victim && victim != me &&
-        mem::IsCommitted(victim + kCharDying)) {
-        const bool is_lethal_hit = was_alive_before_hit && (R32(victim + kCharDying) != 0u);
-        game::combat_feedback::RecordPlayerHit(is_headshot, is_lethal_hit);
-    }
+        if (me && attacker == me && victim && victim != me &&
+            mem::IsCommitted(victim + kCharDying)) {
+            const bool is_lethal_hit = was_alive_before_hit && (R32(victim + kCharDying) != 0u);
+            game::combat_feedback::RecordPlayerHit(is_headshot, is_lethal_hit);
+            float dist_m = 12.0f;
+            if (mem::IsCommitted(victim + 0xA8u) && mem::IsCommitted(me + 0xA8u)) {
+                const float dx = G<float>(victim + 0xA0u) - G<float>(me + 0xA0u);
+                const float dz = G<float>(victim + 0xA8u) - G<float>(me + 0xA8u);
+                dist_m = std::sqrt(dx * dx + dz * dz);
+            }
+            const uint8_t tier = (raw_force >= 3.2f) ? 2u : ((raw_force >= 1.7f) ? 1u : 0u);
+            game::combat_feedback::TriggerHitstop(is_headshot, is_lethal_hit, tier, dist_m);
+        } else if (me && victim == me && attacker && attacker != me &&
+                   mem::IsCommitted(attacker + 0xA8u)) {
+            float eye[3]{}, right[3]{}, up[3]{}, fwd[3]{}, view[16]{}, proj[16]{};
+            if (game::ballistics::GetSceneCameraVectors(eye, right, up, fwd, view, proj)) {
+                const float atk_pos[3] = {
+                    G<float>(attacker + 0xA0u),
+                    G<float>(attacker + 0xA4u) + 1.25f,
+                    G<float>(attacker + 0xA8u),
+                };
+                game::combat_feedback::RecordDirectionalDamage(eye, fwd, right, atk_pos, 0.72f);
+            }
+        }
     if (health_scale > 1.0f && victim && !R32(victim + kCharDying)) {
         float& hp = G<float>(victim + kCharHealth);
         if (std::isfinite(hp) && hp > 0.0f) {
@@ -161,7 +213,7 @@ X86_FUNC(sub_001E74B0) {
             hit_dir[2] = G<float>(hit_dir_ea + 8u);
         }
         const bool is_lethal = (R32(victim + kCharDying) != 0u);
-        game::ballistics::OnEnemyBloodHit(victim, blood_pos, feet_y + 0.025f, y_off,
+        game::ballistics::OnEnemyBloodHit(victim, blood_pos, feet_y + 0.008f, y_off,
                                           hit_dir, raw_force, is_headshot, is_lethal);
         if (me && attacker == me) {
             const bool newly_lethal = was_alive_before_hit && is_lethal;

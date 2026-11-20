@@ -2052,11 +2052,73 @@ uint32_t EnsureVfxAtlasTexture() {
   return g_vfx_atlas_hdr;
 }
 
+std::array<uint32_t, 16> g_custom_vfx_hdrs{};
+int32_t g_bound_vfx_slot = -1;
+
 } // namespace
+
+void SetWorldOverlayCustomTexture(uint32_t slot_id,
+                                  const uint32_t *pixels_argb8888,
+                                  uint32_t width, uint32_t height) {
+  if (slot_id >= g_custom_vfx_hdrs.size())
+    return;
+  if (!pixels_argb8888 || width == 0u || width != height ||
+      (width & (width - 1u)) != 0u) {
+    g_custom_vfx_hdrs[slot_id] = 0u;
+    return;
+  }
+  uint32_t log2_dim = 0u;
+  while ((1u << log2_dim) < width && log2_dim < 15u)
+    log2_dim++;
+  if ((1u << log2_dim) != width || log2_dim < 4u || log2_dim > 12u)
+    return;
+
+  std::lock_guard<std::recursive_mutex> lock(g_lock);
+  const uint32_t texel_count = width * height;
+  const uint32_t data_va = mem::AllocSystem(texel_count * 4u, 256u);
+  const uint32_t hdr = mem::AllocSystem(kHeaderBytes);
+  if (!data_va || !hdr) {
+    LOGE("d3d: SetWorldOverlayCustomTexture(%u, %ux%u) AllocSystem failed (data=%08X, hdr=%08X)",
+         slot_id, width, height, data_va, hdr);
+    return;
+  }
+  uint32_t *px = reinterpret_cast<uint32_t *>(HostPtr(data_va));
+  if (!px) {
+    LOGE("d3d: SetWorldOverlayCustomTexture(%u) HostPtr(%08X) failed", slot_id, data_va);
+    return;
+  }
+
+  for (uint32_t y = 0u; y < height; ++y) {
+    const uint32_t *row = pixels_argb8888 + size_t(y) * width;
+    for (uint32_t x = 0u; x < width; ++x) {
+      uint32_t morton = 0u;
+      for (uint32_t bit = 0u; bit < log2_dim; ++bit) {
+        morton |= ((x >> bit) & 1u) << (bit * 2u);
+        morton |= ((y >> bit) & 1u) << (bit * 2u + 1u);
+      }
+      px[morton] = row[x];
+    }
+  }
+
+  std::memset(HostPtr(hdr), 0, kHeaderBytes);
+  W32(hdr + kResCommon, 0x00040000u); // D3DCOMMON_TYPE_TEXTURE
+  W32(hdr + kResData, mem::PhysicalFromVirtual(data_va));
+  W32(hdr + kResLock, 0u);
+  W32(hdr + kContainerFormat,
+      0x00010621u | (log2_dim << 20) | (log2_dim << 24));
+  W32(hdr + kContainerSize, 0u);
+  gpu::MarkDirty(hdr);
+  g_custom_vfx_hdrs[slot_id] = hdr;
+}
+
+void BindWorldOverlayCustomSlot(int32_t slot_id) {
+  g_bound_vfx_slot = slot_id;
+}
 
 void DrawTexturedWorldOverlay(const TexturedWorldVertex *verts,
                               uint32_t vertex_count, const float view[16],
-                              const float proj[16], bool additive) {
+                              const float proj[16], bool additive,
+                              int color_gain_x) {
   if (!g_backend || !verts || vertex_count < 3 || !view || !proj)
     return;
   uint32_t tri_verts = vertex_count - (vertex_count % 3u);
@@ -2066,7 +2128,14 @@ void DrawTexturedWorldOverlay(const TexturedWorldVertex *verts,
   std::lock_guard<std::recursive_mutex> lock(g_lock);
   if (!g_state.rt.header || !g_state.zs.header)
     return;
-  const uint32_t atlas_hdr = EnsureVfxAtlasTexture();
+  uint32_t atlas_hdr = 0u;
+  if (g_bound_vfx_slot >= 0 &&
+      size_t(g_bound_vfx_slot) < g_custom_vfx_hdrs.size()) {
+    atlas_hdr = g_custom_vfx_hdrs[size_t(g_bound_vfx_slot)];
+  }
+  if (!atlas_hdr) {
+    atlas_hdr = EnsureVfxAtlasTexture();
+  }
   if (!atlas_hdr)
     return;
 
@@ -2148,7 +2217,8 @@ void DrawTexturedWorldOverlay(const TexturedWorldVertex *verts,
   g_state.tss[0][gpu::kTssMinFilter] = 2u;
   g_state.tss[0][gpu::kTssTexCoordIndex] = 0u;
   g_state.tss[0][gpu::kTssAlphaKill] = 0u;
-  g_state.tss[0][gpu::kTssColorOp] = 4u;   // D3DTOP_MODULATE
+  g_state.tss[0][gpu::kTssColorOp] =
+      (color_gain_x >= 4) ? 6u : ((color_gain_x >= 2) ? 5u : 4u); // MODULATE[4X|2X]
   g_state.tss[0][gpu::kTssColorArg1] = 2u; // D3DTA_TEXTURE
   g_state.tss[0][gpu::kTssColorArg2] = 0u; // D3DTA_DIFFUSE
   g_state.tss[0][gpu::kTssAlphaOp] = 4u;   // D3DTOP_MODULATE
@@ -2377,7 +2447,7 @@ bool DrawScreenWarp(const TexturedWorldVertex *verts, uint32_t vertex_count) {
   g_state.tss[0][gpu::kTssMinFilter] = 2u;
   g_state.tss[0][gpu::kTssTexCoordIndex] = 0u;
   g_state.tss[0][gpu::kTssAlphaKill] = 0u;
-  g_state.tss[0][gpu::kTssColorOp] = 4u;   // D3DTOP_MODULATE
+  g_state.tss[0][gpu::kTssColorOp] = 4u; // D3DTOP_MODULATE
   g_state.tss[0][gpu::kTssColorArg1] = 2u; // D3DTA_TEXTURE
   g_state.tss[0][gpu::kTssColorArg2] = 0u; // D3DTA_DIFFUSE
   // The captured frame's alpha channel is meaningless for the back buffer, so

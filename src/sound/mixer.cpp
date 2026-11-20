@@ -447,6 +447,7 @@ void Render(float* out, uint32_t frames) {
     game::flamethrower::RenderAudioMix(out, frames, audio::kRate,
                                        kOuts, audio::FrontLeft, audio::FrontRight);
     g_reverb.Run(send.data(), out, frames);
+    weapon_audio::ApplyMasterPostDsp(out, frames, kOuts, audio::FrontLeft, audio::FrontRight);
 
     const auto& enh = modsettings::Registry().GetEnhanced();
     const bool boost = enh.combat_dynamic_boost;

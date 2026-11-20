@@ -44,6 +44,36 @@ bool ShouldEmitTracer(uint32_t freq_mode, uint64_t shot_seq, WeaponClass cls, bo
     }
 }
 
+float StepMuzzleHeat(float cur_heat, float dt, bool shot_fired) noexcept {
+    float h = std::isfinite(cur_heat) ? std::clamp(cur_heat, 0.0f, 1.0f) : 0.0f;
+    if (std::isfinite(dt) && dt > 0.0f) {
+        h *= std::exp(-0.95f * std::clamp(dt, 0.0f, 1.0f));
+    }
+    if (shot_fired) {
+        h = std::min(1.0f, h + 0.145f);
+    }
+    return h;
+}
+
+bool ApplySmokeBlastImpulse(float pos[3], float vel[3], const float blast_pos[3],
+                            float radius, float force) noexcept {
+    if (!pos || !vel || !blast_pos) return false;
+    const float reach = std::max(1.0f, radius * 1.35f);
+    const float dx = pos[0] - blast_pos[0];
+    const float dy = pos[1] - blast_pos[1];
+    const float dz = pos[2] - blast_pos[2];
+    const float d2 = dx * dx + dy * dy + dz * dz;
+    if (!std::isfinite(d2) || d2 >= reach * reach) return false;
+    const float d = std::sqrt(std::max(d2, 0.04f));
+    const float att = 1.0f - (d / reach);
+    const float mag = std::clamp(force, 0.5f, 4.0f) * att * 7.5f;
+    const float inv = 1.0f / d;
+    vel[0] += dx * inv * mag;
+    vel[1] += (dy * inv * 0.45f + 0.35f) * mag;
+    vel[2] += dz * inv * mag;
+    return true;
+}
+
 namespace {
 
 inline float Clamp01(float v) {

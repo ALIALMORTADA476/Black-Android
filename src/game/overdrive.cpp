@@ -92,6 +92,7 @@ constexpr size_t kMaxBurnSlots = 24;
 std::mutex g_od_mutex;
 overdrive_rules::AdrenalineEngine g_adrenaline;
 overdrive_rules::KineticDashController g_dash;
+overdrive_rules::KillCamSlowmoController g_killcam;
 std::array<BurningEnemy, kMaxBurnSlots> g_burning{};
 
 bool g_pending_dash = false;
@@ -330,6 +331,8 @@ void OnPlayerFramePreUpdate(X86Context& ctx, uint8_t* base, uint32_t player_ea) 
         }
 
         auto dash = g_dash.Step(dt);
+        const float kc_scale = g_killcam.Step(dt, enh.killcam_slowmo_enabled);
+        g_pub_world_time_scale.store(kc_scale, std::memory_order_relaxed);
         g_shockwave_pending_exec = false;
         if (dash.dashing && dash.speed_mps > 0.1f) {
             move_delta[0] = g_dash_dir[0] * dash.speed_mps * dt;
@@ -428,11 +431,20 @@ void ModifyPlayerBulletHit(uint32_t victim_ea, bool is_headshot, float& raw_forc
 
 void OnPlayerBulletPostHit(X86Context& ctx, uint8_t* base, uint32_t victim_ea, uint32_t me_ea,
                            const float hit_pos[3], const float hit_dir[3],
-                           bool /*is_headshot*/, bool is_lethal) {
+                           bool is_headshot, bool is_lethal) {
     if (!me_ea || !victim_ea || !ValidAddr(me_ea, 0x3A0u)) return;
     if (g_in_splash_or_burn) return;
 
     const auto& enh = modsettings::Registry().GetEnhanced();
+    if (is_lethal && enh.killcam_slowmo_enabled && hit_pos) {
+        const float dx = hit_pos[0] - G<float>(me_ea + kCharPos);
+        const float dz = hit_pos[2] - G<float>(me_ea + kCharPos + 8u);
+        const float d = std::sqrt(dx * dx + dz * dz);
+        if (is_headshot || d > 24.0f) {
+            std::lock_guard<std::mutex> lock(g_od_mutex);
+            g_killcam.Trigger(true, is_headshot ? 1.15f : 0.85f);
+        }
+    }
     const auto ammo = overdrive_rules::SanitizeSpecialAmmo(enh.special_ammo_mode);
     const auto prof = overdrive_rules::GetSpecialAmmoProfile(ammo);
 
@@ -489,7 +501,8 @@ float GetDashFovBoostDeg() noexcept {
 }
 
 float GetWorldTimeScaleMultiplier() noexcept {
-    return 1.0f;
+    if (!modsettings::Registry().GetEnhanced().killcam_slowmo_enabled) return 1.0f;
+    return g_pub_world_time_scale.load(std::memory_order_relaxed);
 }
 
 void GetShaderPostParams(float& out_thermal_mix, float& out_overdrive_edge) noexcept {

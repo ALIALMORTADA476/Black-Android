@@ -9,6 +9,7 @@
 #include <cstring>
 #include <mutex>
 
+#include "common/mod_schema.h"
 #include "game/ballistics_fx.h"
 #include "game/blood_decal_rules.h"
 #include "game/delirium_rules.h"
@@ -495,6 +496,34 @@ void TrackSoldierPtr(uint32_t soldier_ea) noexcept {
     RememberSoldier(soldier_ea);
 }
 
+void OnPlayerTracerNearSoldiers(const float start[3], const float end[3]) noexcept {
+    if (!start || !end) return;
+    if (!modsettings::Registry().GetEnhanced().ai_suppression_enabled) return;
+    std::lock_guard<std::mutex> lock(g_sim_mutex);
+    for (size_t i = 0; i < kMaxRecentSoldiers; ++i) {
+        const uint32_t who = g_recent_soldiers[i];
+        if (!IsNonPlayerSoldier(who) || !IsValidGuestAddr(who + kCharPosOffset, 12u)) continue;
+        if (R32(who + kCharDyingOffset) != 0u) continue;
+        const float* sp = &G<float>(who + kCharPosOffset);
+        if (!std::isfinite(sp[0]) || !std::isfinite(sp[1]) || !std::isfinite(sp[2])) continue;
+        g_sim.RecordNearMissTracer(who, sp, start, end);
+    }
+}
+
+void OnGrenadeWorldThreat(const float grenade_pos[3]) noexcept {
+    if (!grenade_pos) return;
+    if (!modsettings::Registry().GetEnhanced().ai_suppression_enabled) return;
+    std::lock_guard<std::mutex> lock(g_sim_mutex);
+    for (size_t i = 0; i < kMaxRecentSoldiers; ++i) {
+        const uint32_t who = g_recent_soldiers[i];
+        if (!IsNonPlayerSoldier(who) || !IsValidGuestAddr(who + kCharPosOffset, 12u)) continue;
+        if (R32(who + kCharDyingOffset) != 0u) continue;
+        const float* sp = &G<float>(who + kCharPosOffset);
+        if (!std::isfinite(sp[0]) || !std::isfinite(sp[1]) || !std::isfinite(sp[2])) continue;
+        g_sim.RecordGrenadeThreat(who, sp, grenade_pos);
+    }
+}
+
 void ResetAll() noexcept {
     std::lock_guard<std::mutex> lock(g_sim_mutex);
     g_sim.Reset();
@@ -643,26 +672,27 @@ X86_FUNC(sub_001B6AA0) {
 // in state 1 from timing out and fading into invisibility.
 X86_FUNC(sub_001C6150) {
     const uint32_t soldier = ctx.ecx;
+    const uint32_t c_mode = modsettings::Registry().GetEnhanced().corpse_persistence_mode;
     if (soldier && game::delirium_phys::IsValidGuestAddr(soldier, 0x390u)) {
         game::delirium_phys::TrackSoldierPtr(soldier);
-        if (R32(soldier + 0x384u) == 1u) {
+        if (c_mode >= 1u && R32(soldier + 0x384u) == 1u) {
             const uint32_t tbits = ReadWorldTimeBits();
             if (tbits != 0u) {
                 W32(soldier + 0x2F8u, tbits);
             }
-            W32(soldier + 0x254u, 0x3F800000u); // 1.0f permanent full opacity
+            W32(soldier + 0x254u, 0x3F800000u); // 1.0f full opacity
         }
     }
     __imp__sub_001C6150(ctx, base);
 }
 
-// Dead corpse queue enqueue: expand queue [+0x79C0] from 8 to 24 slots
-// (safe under the 32-entry sub_001CCA60 sort limit) so corpses do not evict.
+// Dead corpse queue enqueue: expand queue [+0x79C0] from 8 to 24 slots when Extended/Permanent enabled
 X86_FUNC(sub_001DA240) {
     static const uint32_t kCorpseQueueCBuf = mem::AllocSystem(24u * 4u, 16u);
     const uint32_t mgr = ctx.ecx;
     const uint32_t soldier = ctx.eax;
-    if (mgr && game::delirium_phys::IsValidGuestAddr(mgr + 0x79C0u, 0x10u)) {
+    const uint32_t c_mode = modsettings::Registry().GetEnhanced().corpse_persistence_mode;
+    if (c_mode >= 1u && mgr && game::delirium_phys::IsValidGuestAddr(mgr + 0x79C0u, 0x10u)) {
         ExpandCorpseQueue(base, mgr + 0x79C0u, kCorpseQueueCBuf, 24u);
     }
     if (soldier) {
@@ -671,17 +701,17 @@ X86_FUNC(sub_001DA240) {
     __imp__sub_001DA240(ctx, base);
 }
 
-// Settled ragdoll retire: expand queue [+0x79D0] from 8 to 96 slots and keep
-// settled corpses in render state 1 so killed enemies remain on the battlefield forever.
+// Settled ragdoll retire: mode 2 keeps up to 96 corpses visible on battlefield; mode 0/1 lets default retire run
 X86_FUNC(sub_001E68B0) {
     static const uint32_t kCorpseQueueDBuf = mem::AllocSystem(96u * 4u, 16u);
     const uint32_t mgr = ctx.ecx;
     const uint32_t soldier = ctx.eax;
-    if (mgr && game::delirium_phys::IsValidGuestAddr(mgr + 0x79D0u, 0x10u)) {
+    const uint32_t c_mode = modsettings::Registry().GetEnhanced().corpse_persistence_mode;
+    if (c_mode >= 2u && mgr && game::delirium_phys::IsValidGuestAddr(mgr + 0x79D0u, 0x10u)) {
         ExpandCorpseQueue(base, mgr + 0x79D0u, kCorpseQueueDBuf, 96u);
     }
     __imp__sub_001E68B0(ctx, base);
-    if (soldier && game::delirium_phys::IsValidGuestAddr(soldier, 0x390u)) {
+    if (c_mode >= 2u && soldier && game::delirium_phys::IsValidGuestAddr(soldier, 0x390u)) {
         W32(soldier + 0x384u, 1u); // stay visible static corpse instead of state 2 hidden
         const uint32_t tbits = ReadWorldTimeBits();
         if (tbits != 0u) {

@@ -123,8 +123,19 @@ void EndThermalImpact(bool prev);
 // Frame update + true 3D Z-buffered world render (called inside sub_00176F60 after kAlphaDrawList)
 void RenderWorldScene();
 
+// Pure barrel heat shimmer & interactive smoke shockwave dispersion rules
+float StepMuzzleHeat(float cur_heat, float dt, bool shot_fired) noexcept;
+bool ApplySmokeBlastImpulse(float pos[3], float vel[3], const float blast_pos[3],
+                            float radius, float force) noexcept;
+
 // Reset buffers on map load / mode reset
 void ResetAll();
+
+// Active screen-space explosion shockwave distortion & rising heat haze parameters for Vulkan post-process.
+bool GetActiveShockwaveDistortion(float out_screen_uv[2], float& out_ring_radius_uv,
+                                  float& out_ring_thickness_uv, float& out_refraction_strength,
+                                  float& out_chromatic_aberration, float& out_radial_blur_strength,
+                                  float& out_heat_haze_strength, float& out_anim_time);
 
 TelemetrySnapshot GetTelemetry();
 

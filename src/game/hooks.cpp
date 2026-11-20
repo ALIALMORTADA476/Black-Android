@@ -11,6 +11,7 @@
 #include "core/input.h"
 #include "d3d/world_overlay.h"
 #include "game/ballistics_fx.h"
+#include "game/combat_feedback.h"
 #include "game/combat_feedback_rules.h"
 #include "game/flamethrower.h"
 #include "game/layout.h"
@@ -493,6 +494,24 @@ X86_FUNC(sub_001EEFD0) {
     wait *= game::overdrive::GetWeaponWaitMultiplier();
   }
   if (me == Player()) {
+    game::combat_feedback::StepCombatFeedbackFrame(dt);
+    // Active Reload tactical tap OR full-mag mechanical weapon inspect via Reload key/button
+    static bool s_reload_was_down = false;
+    bool reload_down = false;
+    for (int port = 0; port < 4 && !reload_down; ++port) {
+      if (input::Poll(port).analog[2] > 0) reload_down = true;
+    }
+    const bool reload_pressed = reload_down && !s_reload_was_down;
+    s_reload_was_down = reload_down;
+    if (reload_pressed && modsettings::Registry().GetEnhanced().active_reload_enabled) {
+      const float scale = game::combat_feedback::TryActiveReloadTap();
+      if (scale != 1.0f && wait > 0.05f) {
+        wait *= scale;
+      } else if (ammo_main_ptr && G<uint16_t>(ammo_main_ptr + kAmmoClip) > 0 &&
+                 R32(weapon + kWeaponState) <= 1u && rest <= 0.02f) {
+        sound::weapon_audio::TriggerWeaponInspect();
+      }
+    }
     if (R32(weapon + kWeaponState) != 1 || wait != rest)
       g_idle_early = false;
     else if (g_idle_early)
@@ -853,7 +872,9 @@ bool ReloadBlur(X86Context &, uint8_t *) { return game::Opt().reload_blur; }
 constexpr uint32_t kAnimationFrames = 0x1C;
 void ReloadBlurHold(X86Context &ctx, uint8_t *) {
   float frames = G<float>(ctx.ecx + kAnimationFrames);
-  ctx.xmm[0].f[0] = frames * G<float>(kGameFrameTime);
+  const float dur = frames * G<float>(kGameFrameTime);
+  ctx.xmm[0].f[0] = dur;
+  game::combat_feedback::StartActiveReload(dur);
 }
 
 // A or Start on any pad, or the left mouse button, on the press

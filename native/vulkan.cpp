@@ -35,10 +35,12 @@
 #include "gpu/shaders.h"
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
+#include "game/ballistics_fx.h"
 #include "game/overdrive.h"
 #include "host.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
+#include "sound/weapon_audio.h"
 #include "vk_shader.h"
 
 namespace gpu {
@@ -90,11 +92,13 @@ float4 psmain(O i) : SV_Target {
 // corners' shade, look.y the brightness the lines and mask take back. post.x
 // HDR on, post.y FXAA on; both go before the filter, psplain is them alone
 const char *kFilterHlsl = R"(
-cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 crt; float4 look; float4 src; float4 post; float4 enhfx; float4 cine; };
+cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 crt; float4 look; float4 src; float4 post; float4 enhfx; float4 cine; float4 sw0; float4 sw1; float4 sw2; };
 Texture2D img : register(t0);
 Texture2D lut : register(t1);
+Texture2D shock_norm : register(t2);
 SamplerState ls : register(s0);
 SamplerState ps : register(s1);
+SamplerState sw_s : register(s2);
 struct O { float4 p : SV_Position; float2 uv : TEXCOORD0; };
 O vs(uint id : SV_VertexID) {
     O o;
@@ -213,6 +217,26 @@ float3 ApplyEnh(float2 uv, float3 c) {
         c = lerp(min(c, 0.86), c, max(enhfx.x, 0.0));
     }
     c = Tone(c);
+    if (look.z > 0.005) {
+        float c_lum = Luma(c);
+        float2 p1 = src.xy * 2.5;
+        float2 p2 = src.xy * 6.0;
+        float n1 = Luma(Fetch(uv + float2(p1.x, p1.y))) + Luma(Fetch(uv + float2(-p1.x, p1.y)))
+                 + Luma(Fetch(uv + float2(p1.x, -p1.y))) + Luma(Fetch(uv + float2(-p1.x, -p1.y)));
+        float n2 = Luma(Fetch(uv + float2(p2.x, 0))) + Luma(Fetch(uv - float2(p2.x, 0)))
+                 + Luma(Fetch(uv + float2(0, p2.y))) + Luma(Fetch(uv - float2(0, p2.y)));
+        float avg_lum = (n1 + n2) * 0.125;
+        float cavity = saturate((avg_lum - c_lum) * 3.4);
+        float ao = 1.0 - cavity * saturate(look.z) * smoothstep(0.02, 0.25, c_lum) * (1.0 - smoothstep(0.55, 0.92, c_lum));
+        c *= saturate(ao);
+    }
+    if (look.w > 0.005) {
+        float2 dir_r = d * (0.0085 * look.w);
+        float3 blur_c = (c + Fetch(uv + dir_r) + Fetch(uv - dir_r) + Fetch(uv + dir_r * 2.0)) * 0.25;
+        c = lerp(c, blur_c, saturate(look.w * 0.72));
+        float d_lum = Luma(c);
+        c = lerp(c, d_lum.xxx, saturate(look.w * 0.34));
+    }
     c = CinematicGrade(c);
     if (post.z > 0.005) {
         float tl = Luma(Fetch(uv + float2(-src.x, -src.y) * 1.4));
@@ -256,8 +280,77 @@ float3 ApplyEnh(float2 uv, float3 c) {
     return saturate(c);
 }
 
+// Refractive Shockwave + Clean Ring Chromatic Accent + Rising Thermal Heat Haze
+float3 SampleSceneWithShockwave(float2 uv) {
+    if (sw2.z <= 0.5) {
+        return post.y > 0 ? Fxaa(uv) : Fetch(uv);
+    }
+    float2 base_uv = uvrect.xy + sw0.xy * uvrect.zw;
+    float2 inv_rect = 1.0 / max(uvrect.zw, float2(0.001, 0.001));
+    float2 rel_uv = (uv - base_uv) * inv_rect;
+    float aspect = max(sw2.x, 0.1);
+
+    float2 refract_offset = float2(0.0, 0.0);
+    float2 ca_shift = float2(0.0, 0.0);
+    float ring_mask = 0.0;
+    float2 dir = float2(0.0, 1.0);
+
+    if (sw1.x > 0.0002) {
+        float2 delta = float2(rel_uv.x * aspect, rel_uv.y);
+        float dist = length(delta);
+        dir = (dist > 1e-5) ? (delta / dist) : float2(0.0, 1.0);
+
+        float thick = max(0.012, sw0.w);
+        float band = (dist - sw0.z) / thick;
+        ring_mask = exp(-band * band * 1.85) * (1.0 - smoothstep(0.0, 1.0, abs(band)));
+
+        // Subtle pressure-dome refraction inside the blast bubble (smoothly vanishes at center/rim)
+        float inside = 1.0 - smoothstep(max(0.02, sw0.z * 0.75), max(0.04, sw0.z * 1.02), dist);
+        float dome_warp = inside * (dist / max(0.04, sw0.z)) * 0.24;
+
+        float2 norm_uv = clamp(float2(0.5, 0.5) + (delta / max(0.05, sw0.z * 2.0)), 0.01, 0.99);
+        float4 ns = shock_norm.SampleLevel(sw_s, norm_uv, 0);
+        float2 n_vec = (ns.rg * 2.0 - 1.0) * (0.45 + 0.85 * saturate(ns.a * 1.5));
+
+        refract_offset = ((dir * (-band * 1.25 - dome_warp) + n_vec * 0.90) * ring_mask +
+                          dir * (-dome_warp * 0.35)) * sw1.x;
+        refract_offset.x /= aspect;
+
+        // Sharp thin prism edge strictly along the shockwave compression ring
+        ca_shift = dir * (ring_mask * sw1.y);
+        ca_shift.x /= aspect;
+        ca_shift *= uvrect.zw;
+    }
+
+    // Tall, visible convective thermal shimmer rising above fires & blasts
+    float2 haze_norm = float2(0.0, 0.0);
+    if (sw1.w > 0.0002) {
+        float2 haze_delta = rel_uv - float2(0.0, -0.10);
+        haze_delta.x *= aspect * 1.25;
+        haze_delta.y *= 0.65;
+        float haze_mask = exp(-dot(haze_delta, haze_delta) / 0.055);
+        float t = sw2.y;
+        float w1 = sin(rel_uv.y * 46.0 + t * 13.5 + sin(rel_uv.x * 28.0 - t * 5.2));
+        float w2 = cos(rel_uv.x * 40.0 - t * 7.8 + rel_uv.y * 31.0);
+        haze_norm = float2(w1 * 0.72, w2 * 0.32) * haze_mask * sw1.w;
+        haze_norm.x /= aspect;
+    }
+
+    if (ring_mask <= 0.001 && sw1.w <= 0.0002 && length(refract_offset) <= 1e-5) {
+        return post.y > 0 ? Fxaa(uv) : Fetch(uv);
+    }
+
+    // Razor-sharp glass refraction with minimal prism chromatic separation (zero blurry smudge)
+    float2 final_uv = clamp(uv + (refract_offset + haze_norm) * uvrect.zw, 0.001, 0.999);
+    float3 sc = float3(
+        Fetch(clamp(final_uv + ca_shift, 0.001, 0.999)).r,
+        Fetch(final_uv).g,
+        Fetch(clamp(final_uv - ca_shift, 0.001, 0.999)).b);
+    return sc;
+}
+
 // the frame at a point with what the graphics settings add before a filter
-float3 Frame(float2 uv) { return ApplyEnh(uv, CasSharpen(uv, post.y > 0 ? Fxaa(uv) : Fetch(uv))); }
+float3 Frame(float2 uv) { return ApplyEnh(uv, CasSharpen(uv, SampleSceneWithShockwave(uv))); }
 
 float4 psplain(O i) : SV_Target { return float4(Frame(i.uv), 1); }
 
@@ -1439,6 +1532,7 @@ private:
   void RenderUi();
   void UploadGammaRamp();
   void UploadSkin();
+  void UploadShockwaveNormal();
   void ReleaseOldTextures();
   void ApplySettings();
   void SavePipelineCache();
@@ -1526,6 +1620,8 @@ private:
   bool ramp_dirty_ = false;
   Image skin_; // the touch controls' button skins (touch.cpp), made once
   bool skin_tried_ = false;
+  Image shock_norm_img_;
+  bool shock_norm_tried_ = false;
   bool gamma_ = false;
   Target *draw_rt_ = nullptr;
   Target *draw_ds_ = nullptr;
@@ -2968,7 +3064,7 @@ VkSampler VulkanBackend::StageSampler(const State &s, int i,
   if (stages.info[i].shadow) {
     // the console tests texel OP r, Vulkan r OP texel
     static const uint8_t swap[8] = {0, 4, 2, 6, 1, 5, 3, 7};
-    bool linear = (lin(min) || lin(mag)) && depth_linear_;
+    bool linear = (lin(min) || lin(mag) || enh.soft_shadows > 0) && depth_linear_;
     sd.minFilter = sd.magFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
     sd.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sd.compareEnable = VK_TRUE;
@@ -3388,8 +3484,11 @@ void VulkanBackend::UploadTexture(Tex &tx, const TextureDesc &d,
       uint32_t rows = bc ? std::max(1u, (mh + 3) / 4) : mh;
       size_t src_rows = pitch ? src->size() / pitch / md : 0;
       Alloc a = Upload(VkDeviceSize(row) * rows * md, 16);
-      if (!a.cpu)
+      if (!a.cpu) {
+        LOGR("VFX/VK: UploadTexture alloc failed (%ux%u, %llu bytes)", mw, mh,
+             static_cast<unsigned long long>(VkDeviceSize(row) * rows * md));
         continue;
+      }
       for (uint32_t z = 0; z < md; z++)
         for (uint32_t y = 0; y < rows; y++) {
           uint8_t *dst = a.cpu + (size_t(z) * rows + y) * row;
@@ -4049,19 +4148,45 @@ void VulkanBackend::DrawFrame(Target *t, uint32_t index) {
   float thermal_mix = 0.0f;
   float overdrive_edge = 0.0f;
   game::overdrive::GetShaderPostParams(thermal_mix, overdrive_edge);
+  const float ao_strength = (t && enh.ambient_occlusion > 0) ? 0.42f : 0.0f;
+  const float concussion_daze =
+      (t && enh.audio_tinnitus_enabled)
+          ? std::clamp(sound::weapon_audio::CurrentConcussionDaze(), 0.0f, 1.0f)
+          : 0.0f;
   if (!t) {
     thermal_mix = 0.0f;
     overdrive_edge = 0.0f;
   }
+
+  float sw_uv[2] = {0.5f, 0.5f};
+  float sw_r = 0.0f, sw_thick = 0.08f, sw_refract = 0.0f, sw_ca = 0.0f,
+        sw_blur = 0.0f, sw_haze = 0.0f, sw_time = 0.0f;
+  const bool sw_active =
+      t && enh.scorch_and_heat_fx_enabled &&
+      game::ballistics::GetActiveShockwaveDistortion(
+          sw_uv, sw_r, sw_thick, sw_refract, sw_ca, sw_blur, sw_haze, sw_time);
 
   bool post =
       (tone_mode > 0.0f) || fxaa || (std::fabs(glow_scale - 1.0f) > 0.02f) ||
       (vig_strength > 0.001f) || (desat_strength > 0.001f) ||
       (cas_strength > 0.005f) || (grade_mode > 0.5f) || (lens_vig > 0.005f) ||
       (film_grain > 0.005f) || (blast_pulse > 0.005f) ||
-      (thermal_mix > 0.005f) || (overdrive_edge > 0.005f);
+      (thermal_mix > 0.005f) || (overdrive_edge > 0.005f) ||
+      (ao_strength > 0.005f) || (concussion_daze > 0.005f) || sw_active;
   // opts.z: the taps a side over each screen pixel, 2 averaging SSAA's samples
-  float c[32] = {0, 0, 1, 1, gamma_ ? 1.0f : 0.0f, 0, ssaa ? 2.0f : 1.0f, 1};
+  float c[44] = {0, 0, 1, 1, gamma_ ? 1.0f : 0.0f, 0, ssaa ? 2.0f : 1.0f, 1};
+  c[32] = sw_uv[0];
+  c[33] = sw_uv[1];
+  c[34] = sw_r;
+  c[35] = sw_thick;
+  c[36] = sw_refract;
+  c[37] = sw_ca;
+  c[38] = sw_blur;
+  c[39] = sw_haze;
+  c[40] = (vw > 0.0f && vh > 0.0f) ? (vw / vh) : 1.7777f;
+  c[41] = sw_time;
+  c[42] = sw_active ? 1.0f : 0.0f;
+  c[43] = 0.0f;
   c[20] = tone_mode;
   c[21] = fxaa ? 1.0f : 0.0f;
   c[22] = thermal_mix;
@@ -4104,6 +4229,8 @@ void VulkanBackend::DrawFrame(Target *t, uint32_t index) {
                      0,        0};
     std::memcpy(c + 8, rest, sizeof(rest));
   }
+  c[14] = ao_strength;
+  c[15] = concussion_daze;
   Alloc cbuf = Constants(c, sizeof(c));
   const char *hlsl = filter || post ? kFilterHlsl : kBlitHlsl;
   const char *entry = crt           ? "pscrt"
@@ -4118,9 +4245,13 @@ void VulkanBackend::DrawFrame(Target *t, uint32_t index) {
   if (pipe) {
     Transition(t->img, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     Transition(lut_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    const VkImageView views[4] = {t->img.view, lut_.view, VK_NULL_HANDLE,
-                                  VK_NULL_HANDLE};
-    const VkSampler samplers[4] = {linear_, point_, point_, point_};
+    if (shock_norm_img_.view)
+      Transition(shock_norm_img_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    const VkImageView views[4] = {
+        t->img.view, lut_.view,
+        shock_norm_img_.view ? shock_norm_img_.view : dummy_[0].view,
+        VK_NULL_HANDLE};
+    const VkSampler samplers[4] = {linear_, point_, linear_, point_};
     set = Set(views, samplers);
   }
   VkRenderingAttachmentInfoKHR ca{
@@ -4237,6 +4368,44 @@ void VulkanBackend::UploadSkin() {
   touch::SetSkinTexture(uint64_t(reinterpret_cast<uintptr_t>(set)));
 }
 
+void VulkanBackend::UploadShockwaveNormal() {
+  shock_norm_tried_ = true;
+  SDL_Surface *png = SDL_LoadPNG("vfx/shockwave_normal.png");
+  SDL_Surface *s =
+      png ? SDL_ConvertSurface(png, SDL_PIXELFORMAT_ABGR8888) : nullptr;
+  SDL_DestroySurface(png);
+  if (!s)
+    return;
+  const uint32_t w = uint32_t(s->w), h = uint32_t(s->h);
+  const size_t bytes = size_t(w) * size_t(h) * 4u;
+  constexpr VkImageUsageFlags kSampled =
+      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  if (!CreateImage(shock_norm_img_, VK_FORMAT_R8G8B8A8_UNORM, w, h, 1, 1, 1,
+                   kSampled, VK_IMAGE_VIEW_TYPE_2D)) {
+    SDL_DestroySurface(s);
+    return;
+  }
+  Alloc a = Upload(bytes, 16);
+  if (!a.cpu) {
+    Destroy(shock_norm_img_);
+    SDL_DestroySurface(s);
+    return;
+  }
+  for (uint32_t y = 0; y < h; ++y) {
+    std::memcpy(static_cast<uint8_t *>(a.cpu) + size_t(y) * w * 4u,
+                static_cast<const uint8_t *>(s->pixels) + size_t(y) * s->pitch,
+                size_t(w) * 4u);
+  }
+  SDL_DestroySurface(s);
+  Transition(shock_norm_img_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+  VkBufferImageCopy c{
+      a.off, 0, 0, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {0, 0, 0}, {w, h, 1}};
+  vkCmdCopyBufferToImage(Cb(), a.buf, shock_norm_img_.image,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &c);
+  Transition(shock_norm_img_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  LOGR("VFX: uploaded Vulkan shockwave normal map (%ux%u)", w, h);
+}
+
 void VulkanBackend::ReleaseOldTextures() {
   constexpr uint64_t kSweepEvery = 60;
   constexpr size_t kTexturesKept =
@@ -4299,6 +4468,8 @@ void VulkanBackend::Present(const Surface &front) {
     UploadGammaRamp();
   if (!skin_tried_)
     UploadSkin();
+  if (!shock_norm_tried_)
+    UploadShockwaveNormal();
   uint32_t index = 0;
   bool shown = AcquireImage(index);
   if (shown) {

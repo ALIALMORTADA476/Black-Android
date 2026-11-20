@@ -22,7 +22,7 @@ import tempfile
 import tomllib
 from typing import Any, Dict, List, Optional, Tuple
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 DEFAULTS_VERSION = 2
 
 PRESET_MANAGED_KEYS = {
@@ -44,10 +44,8 @@ EXCLUDED_FROM_PRESETS = {
 }
 
 PLANNED_LOCKED_KEYS = {
-    "soft_shadows", "ambient_occlusion",
     "hd_texture_packs", "blood_particle_multiplier", "persistent_blood_decals",
-    "max_blood_decals", "corpse_persistence_mode", "diverse_bullet_impacts",
-    "custom_character_models", "arabic_flash_menus",
+    "diverse_bullet_impacts", "custom_character_models",
     "arabic_voice_pack", "overlay_enabled"
 }
 
@@ -205,8 +203,8 @@ class SettingsRegistryModel:
             "particle_fade_scale": 100,
             "blood_particle_multiplier": 1,
             "persistent_blood_decals": False,
-            "max_blood_decals": 128,
-            "corpse_persistence_mode": 0,
+            "max_blood_decals": 512,
+            "corpse_persistence_mode": 2,
             "diverse_bullet_impacts": False,
             "hitmarker_feedback": True,
             "shell_casings": True,
@@ -234,7 +232,7 @@ class SettingsRegistryModel:
             "arabic_ui_enabled": True,
             "arabic_rtl_mirror": True,
             "arabic_subtitles_overlay": False,
-            "arabic_flash_menus": False,
+            "arabic_flash_menus": True,
             "arabic_voice_pack": False,
         }
         self.gameplay: Dict[str, Any] = {
@@ -646,10 +644,10 @@ def test_1_default_settings():
     assert reg.god_mode is False
     assert reg.infinite_ammo is False
     # Anti-cosmetic check: setting locked feature must be rejected
-    ok, reason = reg.set_value("soft_shadows", 1, "graphics")
+    ok, reason = reg.set_value("overlay_enabled", True, "packages")
     assert not ok, "Locked feature must not be accepted"
     assert "Planned" in reason
-    assert reg.graphics["soft_shadows"] == 0
+    assert reg.packages["overlay_enabled"] is False
     print("[PASS] Test 1: Default Settings")
     return True
 
@@ -682,7 +680,7 @@ def test_2_settings_save_and_load():
         assert parsed["bloom"] is False
         assert parsed["infinite_ammo"] is True
         assert parsed["keys"]["fire"] == "LeftMouse"
-        assert parsed["schema_version"] == 3
+        assert parsed["schema_version"] == 4
 
         reg2 = SettingsRegistryModel()
         reg2.load_from_dict(parsed)
@@ -966,7 +964,7 @@ fov = 85
     assert reg.graphics["bloom_intensity"] == 0
 
     serialized = reg.serialize_to_dict()
-    assert serialized["schema_version"] == 3
+    assert serialized["schema_version"] == 4
     assert serialized["defaults"] == 2
 
     print("[PASS] Test 9: Schema Migration")
@@ -1218,6 +1216,65 @@ def test_15_overdrive_protocol_and_arabic():
     return True
 
 
+def test_16_full_mod_overhaul_and_unlocked_features():
+    print("[RUN ] Test 16: Full Mod Overhaul, Unlocked Graphics/Gore, Audio DSP, HUD & Arabic")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    schema_h = open(os.path.join(root, "src", "common", "mod_schema.h"), encoding="utf-8").read()
+    schema_cpp = open(os.path.join(root, "src", "common", "mod_schema.cpp"), encoding="utf-8").read()
+    menu_cpp = open(os.path.join(root, "src", "common", "menu.cpp"), encoding="utf-8").read()
+    tr_cpp = open(os.path.join(root, "src", "common", "translations.cpp"), encoding="utf-8").read()
+    vulkan_cpp = open(os.path.join(root, "native", "vulkan.cpp"), encoding="utf-8").read()
+    gyro_cpp = open(os.path.join(root, "native", "gyro.cpp"), encoding="utf-8").read()
+    touch_cpp = open(os.path.join(root, "native", "touch.cpp"), encoding="utf-8").read()
+    flash_cpp = open(os.path.join(root, "src", "game", "flash_arabic.cpp"), encoding="utf-8").read()
+
+    for sym in [
+        "GraphicsSoftShadows",
+        "GraphicsAmbientOcclusion",
+        "CombatMaxBloodDecals",
+        "CombatCorpsePersistenceMode",
+        "CombatDirectionalDamage",
+        "CombatHitstopEnabled",
+        "CombatScorchAndHeatEnabled",
+        "AudioTinnitusEnabled",
+        "AudioOcclusionEnabled",
+        "ArabicFlashMenus",
+        "GameplayAiSuppressionEnabled",
+        "GameplayKillCamEnabled",
+        "GameplayActiveReloadEnabled",
+        "ControlsTouchHudPreset",
+    ]:
+        assert sym in schema_h and sym in schema_cpp and sym in menu_cpp, f"Unwired SettingId: {sym}"
+
+    for label in [
+        "SOFT SHADOWS (PCF)",
+        "AMBIENT OCCLUSION (SSAO)",
+        "MAX BLOOD & SCORCH DECALS",
+        "CORPSE PERSISTENCE",
+        "DIRECTIONAL DAMAGE & KICK",
+        "TACTICAL HITSTOP",
+        "BLAST SCORCH & HEAT SHIMMER",
+        "AI SUPPRESSION & GRENADE SCATTER",
+        "CRITICAL / SNIPER KILL-CAM",
+        "ACTIVE RELOAD & INSPECT",
+        "TINNITUS & CONCUSSION",
+        "ACOUSTIC OCCLUSION & CLINKS",
+        "ARABIC FLASH MENUS",
+        "TOUCH HUD PRESET",
+        "ADS ONLY",
+    ]:
+        assert label in menu_cpp, f"Missing menu row: {label}"
+        assert label in tr_cpp, f"Missing Arabic translation: {label}"
+
+    assert "concussion_daze" in vulkan_cpp and "ao_strength" in vulkan_cpp
+    assert "enh.soft_shadows > 0" in vulkan_cpp
+    assert "ShouldRunForMode" in gyro_cpp
+    assert "touch_hud_preset" in touch_cpp
+    assert "arabic_flash_menus" in flash_cpp
+    print("[PASS] Test 16: Full Mod Overhaul, Unlocked Graphics/Gore, Audio DSP, HUD & Arabic")
+    return True
+
+
 def main():
     tests = [
         test_1_default_settings,
@@ -1235,6 +1292,7 @@ def main():
         test_13_ballistics_tracers_and_arabic,
         test_14_combat_juice_gyro_and_arabic,
         test_15_overdrive_protocol_and_arabic,
+        test_16_full_mod_overhaul_and_unlocked_features,
     ]
     passed = 0
     failed = 0

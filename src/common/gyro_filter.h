@@ -38,4 +38,7 @@ private:
     float dx_hat_pitch_ = 0.0f;
 };
 
+// Mode gate: 0=Off, 1=Always On, 2=Firing Only, 3=ADS/Scoped Only
+bool ShouldRunForMode(uint32_t mode, bool is_ads, bool is_firing, bool look_active) noexcept;
+
 }  // namespace gyro

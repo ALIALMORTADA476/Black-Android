@@ -14,6 +14,7 @@
 #include "app/app.h"
 #include "common/gyro_filter.h"
 #include "common/mouse_keyboard.h"
+#include "common/options.h"
 #include "core/log.h"
 #include "host.h"
 
@@ -23,7 +24,7 @@ namespace {
 
 constexpr float kDegreesPerCount = 0.05f;  // src/game/mouse.cpp's kDegrees
 constexpr float kIdleThreshold = 0.015f;   // coarse gamepad wake threshold
-constexpr const char* kNames[kModes] = {"OFF", "ON", "FIRE"};
+constexpr const char* kNames[kModes] = {"OFF", "ON", "FIRE", "ADS"};
 
 OneEuroGyroFilter g_phone_filter;
 OneEuroGyroFilter g_pad_filter;
@@ -185,8 +186,9 @@ void Turn(float yaw, float pitch, uint64_t now, uint64_t& last, OneEuroGyroFilte
     float dt = last && now > last ? float(now - last) * 1e-9f : 0;
     last = now;
     if (dt <= 0 || dt > 0.1f) return;
-    bool firing = g_mode == kFiring ? touch::Firing() : true;
-    if (!firing || !touch::LookActive()) return;
+    const bool is_ads = game::g_zoom.load(std::memory_order_relaxed) < 0.95f;
+    if (!gyro::ShouldRunForMode(g_mode.load(std::memory_order_relaxed), is_ads, touch::Firing(), touch::LookActive()))
+        return;
     float filt_yaw = 0.0f;
     float filt_pitch = 0.0f;
     filter.Update(yaw, pitch, dt, filt_yaw, filt_pitch);

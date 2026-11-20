@@ -108,4 +108,18 @@ VisorShaderParams ComputeVisorShaderParams(bool thermal_enabled, bool in_gamepla
 
 bool ShouldRenderThermalBracket(bool thermal_enabled, bool target_alive, float clip_w) noexcept;
 
+// Cinematic brief Slow-Motion Kill-Cam controller (sniper headshots & heavy critical kills)
+class KillCamSlowmoController {
+public:
+    void Reset() noexcept;
+    void Trigger(bool enabled, float intensity = 1.0f) noexcept;
+    float Step(float dt, bool enabled) noexcept;
+    bool IsActive() const noexcept { return remaining_ > 0.0f; }
+
+private:
+    float remaining_ = 0.0f;
+    float duration_ = 1.15f;
+    float min_scale_ = 0.40f;
+};
+
 }  // namespace game::overdrive_rules

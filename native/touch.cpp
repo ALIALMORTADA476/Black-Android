@@ -717,6 +717,7 @@ float g_scale = 1.0f;  // every control's size, on top of its own
 bool g_fixed_stick = false;  // the stick stays in its place, else it comes down under the thumb
 bool g_loaded = false;
 // the editor: the layout before it opened (for Cancel), the control picked
+uint32_t g_last_synced_hud_preset = 0xFFFFFFFFu;
 std::atomic<bool> g_editing{false};
 Layout g_before = kTwoFinger;
 float g_before_opacity = 0.85f;
@@ -1622,6 +1623,16 @@ void DrawEditorBar(ImDrawList* dl, float th) {
 void Draw() {
     std::lock_guard lock(g_lock);
     EnsureLayout();
+    const uint32_t enh_preset = std::min<uint32_t>(
+        modsettings::Registry().GetEnhanced().touch_hud_preset,
+        uint32_t(std::size(kPresets) - 1));
+    if (g_last_synced_hud_preset == 0xFFFFFFFFu) {
+        g_last_synced_hud_preset = enh_preset;
+    } else if (enh_preset != g_last_synced_hud_preset) {
+        g_last_synced_hud_preset = enh_preset;
+        ApplyPreset(enh_preset);
+        SaveLayout();
+    }
     bool editing = g_editing;
     g_hud_cycle_pill.active = false;
     g_hud_mode_pill.active = false;
@@ -1868,6 +1879,8 @@ void StepLayout(int step) {
     size_t n = std::size(kPresets);
     size_t i = Custom() ? (step > 0 ? g_preset : (g_preset + n - 1) % n) : (g_preset + n + (step > 0 ? 1 : n - 1)) % n;
     ApplyPreset(i);
+    g_last_synced_hud_preset = uint32_t(i);
+    modsettings::Registry().GetEnhanced().touch_hud_preset = uint32_t(i);
     SaveLayout();
 }
 

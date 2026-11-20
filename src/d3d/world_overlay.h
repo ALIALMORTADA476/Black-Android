@@ -43,9 +43,18 @@ void DrawWorldOverlay(const WorldVertex* verts, uint32_t vertex_count, const flo
                       const float proj[16], bool additive);
 
 // Submits a textured 3D triangle list (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1)
-// bound to the procedural 4x4 VFX atlas (FBM smoke, sharp flames, organic blood splatters).
+// bound to the procedural 4x4 VFX atlas (or custom FlipbookSlot if bound).
+// color_gain_x: 1 = D3DTOP_MODULATE, 2 = MODULATE2X, 4 = MODULATE4X.
 void DrawTexturedWorldOverlay(const TexturedWorldVertex* verts, uint32_t vertex_count,
-                              const float view[16], const float proj[16], bool additive);
+                              const float view[16], const float proj[16], bool additive,
+                              int color_gain_x = 1);
+
+// Uploads a linear ARGB8888 (0xAARRGGBB) PNG flipbook/normal map into a cached D3D/Vulkan texture slot [0..15].
+void SetWorldOverlayCustomTexture(uint32_t slot_id, const uint32_t* pixels_argb8888,
+                                  uint32_t width, uint32_t height);
+
+// Selects custom texture slot [0..15] for subsequent DrawTexturedWorldOverlay calls, or -1 for default 4x4 atlas.
+void BindWorldOverlayCustomSlot(int32_t slot_id);
 
 // Screen-space refraction lens used for explosion heat haze / air-blast bending.
 // Vertices are supplied already in clip space (x,y in [-1,1], z is ignored) and

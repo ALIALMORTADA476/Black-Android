@@ -71,6 +71,11 @@ public:
     void OnExplosionShockwave(uint32_t soldier_ea, const float blast_pos[3],
                               const float soldier_pos[3], float blast_radius,
                               float blast_force) noexcept;
+    void RecordNearMissTracer(uint32_t soldier_ea, const float soldier_pos[3],
+                              const float tracer_start[3], const float tracer_end[3]) noexcept;
+    void RecordGrenadeThreat(uint32_t soldier_ea, const float soldier_pos[3],
+                             const float grenade_pos[3]) noexcept;
+    float SuppressionLevel(uint32_t soldier_ea) const noexcept;
     StepOutput StepAlive(uint32_t soldier_ea, float dt) noexcept;
     bool ApplyBlindFireScatter(uint32_t soldier_ea, float in_out_target[3]) noexcept;
     CollapseProfile ConsumeCollapseProfile(uint32_t soldier_ea) noexcept;
@@ -101,7 +106,8 @@ private:
         float blind_fire_timer = 0.0f;
         float scatter_phase = 0.0f;
 
-        // Collapse momentum & agony writhing
+        // Collapse momentum & agony writhing + suppression state
+        float suppression = 0.0f;
         bool collapse_ready = false;
         CollapseProfile pending_collapse{};
         bool agony_started = false;

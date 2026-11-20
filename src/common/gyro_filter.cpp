@@ -85,4 +85,14 @@ void OneEuroGyroFilter::Update(float raw_yaw, float raw_pitch, float dt,
     out_pitch = ApplyMicroDeadzone(x_hat_pitch_, params_.deadzone);
 }
 
+bool ShouldRunForMode(uint32_t mode, bool is_ads, bool is_firing, bool look_active) noexcept {
+    if (!look_active) return false;
+    switch (mode) {
+        case 1u: return true;       // ON
+        case 2u: return is_firing;  // FIRE
+        case 3u: return is_ads;     // ADS / Scope only
+        default: return false;      // OFF
+    }
+}
+
 }  // namespace gyro

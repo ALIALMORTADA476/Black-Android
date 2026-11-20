@@ -927,13 +927,14 @@ void StepInputRow(int id, int step, char (&text)[64]) {
     std::snprintf(text, sizeof(text), "%u%%", o.walk_speed);
     break;
   case kGyro:
-    // off, always on, while firing
+    // off, always on, while firing, while ADS
     if (step)
-      gyro::SetMode(uint32_t(StepIndex(int(gyro::CurrentMode()), step, 3)));
+      gyro::SetMode(uint32_t(StepIndex(int(gyro::CurrentMode()), step, 4)));
     std::snprintf(text, sizeof(text), "%s",
                   gyro::CurrentMode() == 0   ? "OFF"
                   : gyro::CurrentMode() == 1 ? "ALWAYS"
-                                             : "WHILE FIRING");
+                  : gyro::CurrentMode() == 2 ? "WHILE FIRING"
+                                             : "ADS ONLY");
     break;
   case kTouchLayout:
     // the presets, CUSTOM once a control was moved
@@ -2306,6 +2307,34 @@ void DrawCategoryGraphics(float em) {
     if (step)
       StepWeaponReflections(step);
   }
+  {
+    constexpr const char *kShadowNames[] = {"OFF", "4-TAP PCF", "9-TAP PCF"};
+    int cur = int(std::min<uint32_t>(enh.soft_shadows, 2u));
+    int step = OptionRow("SOFT SHADOWS (PCF)", kShadowNames[cur]);
+    if (step) {
+      int next = StepIndex(cur, step, 3);
+      reg.SetUint(modsettings::SettingId::GraphicsSoftShadows, uint32_t(next),
+                  app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::GraphicsSoftShadows, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
+  {
+    constexpr const char *kAoNames[] = {"OFF", "HALF-RES"};
+    int cur = (enh.ambient_occlusion > 0u) ? 1 : 0;
+    int step = OptionRow("AMBIENT OCCLUSION (SSAO)", kAoNames[cur]);
+    if (step) {
+      uint32_t next = (cur == 0) ? 1u : 0u;
+      reg.SetUint(modsettings::SettingId::GraphicsAmbientOcclusion, next,
+                  app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::GraphicsAmbientOcclusion, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
 
   Section("PERFORMANCE & PACING");
   ValueRow(kVsync, "VERTICAL SYNC");
@@ -2466,6 +2495,44 @@ void DrawCategoryCombatGameplay(float em) {
   toggleCombatBool("3D SHELL CASINGS",
                    modsettings::SettingId::CombatShellCasings,
                    enh.shell_casings);
+  {
+    char dtext[32];
+    std::snprintf(dtext, sizeof(dtext), "%u", enh.max_blood_decals);
+    int step = OptionRow("MAX BLOOD & SCORCH DECALS", dtext);
+    if (step) {
+      int next = StepRange(int(enh.max_blood_decals), 64, 1024, 64, step);
+      reg.SetUint(modsettings::SettingId::CombatMaxBloodDecals, uint32_t(next),
+                  app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::CombatMaxBloodDecals, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
+  {
+    constexpr const char *kCorpseNames[] = {"ORIGINAL", "EXTENDED (24)",
+                                            "PERMANENT ALL"};
+    int cur = int(std::min<uint32_t>(enh.corpse_persistence_mode, 2u));
+    int step = OptionRow("CORPSE PERSISTENCE", kCorpseNames[cur]);
+    if (step) {
+      int next = StepIndex(cur, step, 3);
+      reg.SetUint(modsettings::SettingId::CombatCorpsePersistenceMode,
+                  uint32_t(next), app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::CombatCorpsePersistenceMode, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
+  toggleCombatBool("DIRECTIONAL DAMAGE & KICK",
+                   modsettings::SettingId::CombatDirectionalDamage,
+                   enh.directional_damage_indicator);
+  toggleCombatBool("TACTICAL HITSTOP",
+                   modsettings::SettingId::CombatHitstopEnabled,
+                   enh.tactical_hitstop_enabled);
+  toggleCombatBool("BLAST SCORCH & HEAT SHIMMER",
+                   modsettings::SettingId::CombatScorchAndHeatEnabled,
+                   enh.scorch_and_heat_fx_enabled);
 
   Section("GUNPLAY & SPEED");
   {
@@ -2495,6 +2562,15 @@ void DrawCategoryCombatGameplay(float em) {
   toggleCombatBool("ENHANCED RECOIL CURVES",
                    modsettings::SettingId::GameplayEnhancedRecoil,
                    enh.enhanced_recoil_feedback);
+  toggleCombatBool("AI SUPPRESSION & GRENADE SCATTER",
+                   modsettings::SettingId::GameplayAiSuppressionEnabled,
+                   enh.ai_suppression_enabled);
+  toggleCombatBool("CRITICAL / SNIPER KILL-CAM",
+                   modsettings::SettingId::GameplayKillCamEnabled,
+                   enh.killcam_slowmo_enabled);
+  toggleCombatBool("ACTIVE RELOAD & INSPECT",
+                   modsettings::SettingId::GameplayActiveReloadEnabled,
+                   enh.active_reload_enabled);
 
   Section("KINETIC DASH & TACTICAL GEAR");
   toggleCombatBool("KINETIC DASH", modsettings::SettingId::KineticDashEnabled,
@@ -3515,6 +3591,30 @@ void DrawCategoryAudioLanguage(float em) {
   draw_pct_row("AUDIO VARIATION", enh.audio_variation_percent, 50u,
                modsettings::SettingId::AudioVariationPercent, 100);
   {
+    int step = OptionRow("TINNITUS & CONCUSSION",
+                         OnOff(enh.audio_tinnitus_enabled));
+    if (step) {
+      reg.SetBool(modsettings::SettingId::AudioTinnitusEnabled,
+                  !enh.audio_tinnitus_enabled, app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::AudioTinnitusEnabled, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
+  {
+    int step = OptionRow("ACOUSTIC OCCLUSION & CLINKS",
+                         OnOff(enh.audio_occlusion_enabled));
+    if (step) {
+      reg.SetBool(modsettings::SettingId::AudioOcclusionEnabled,
+                  !enh.audio_occlusion_enabled, app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::AudioOcclusionEnabled, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
+  {
     const auto tel = sound::weapon_audio::GetTelemetry();
     char stats[160];
     if (tel.pack_loaded) {
@@ -3594,6 +3694,17 @@ void DrawCategoryAudioLanguage(float em) {
     if (step)
       StepArabicSubtitles(step);
   }
+  {
+    int step = OptionRow("ARABIC FLASH MENUS", OnOff(enh.arabic_flash_menus));
+    if (step) {
+      reg.SetBool(modsettings::SettingId::ArabicFlashMenus,
+                  !enh.arabic_flash_menus, app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::ArabicFlashMenus, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
 }
 
 void DrawCategoryInterface(float em) {
@@ -3630,6 +3741,21 @@ void DrawCategoryInterface(float em) {
   }
 
   Section("TOUCH CONTROLS SETUP");
+  {
+    constexpr const char *kHudPresets[] = {"CLASSIC", "3-FINGER TACTICAL",
+                                           "4-FINGER CLAW"};
+    int cur = int(std::min<uint32_t>(enh.touch_hud_preset, 2u));
+    int step = OptionRow("TOUCH HUD PRESET", kHudPresets[cur]);
+    if (step) {
+      int next = StepIndex(cur, step, 3);
+      reg.SetUint(modsettings::SettingId::ControlsTouchHudPreset,
+                  uint32_t(next), app::Get(), game::Opt());
+      modsettings::Presets().NotifySettingChanged(
+          modsettings::SettingId::ControlsTouchHudPreset, reg, app::Get(),
+          game::Opt());
+      Changed();
+    }
+  }
   ValueRow(kTouchSensitivity, "TOUCH SENSITIVITY");
   ValueRow(kTouchLayout, "CONTROLS LAYOUT");
   ValueRow(kTouchOpacity, "CONTROLS OPACITY");

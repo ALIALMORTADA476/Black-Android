@@ -12,6 +12,7 @@
 #include "common/mouse_keyboard.h"
 #include "common/options.h"
 #include "core/log.h"
+#include "game/combat_feedback.h"
 #include "game/flash.h"
 #include "game/layout.h"
 #include "game/mission_select_rules.h"
@@ -43,6 +44,12 @@ constexpr uint32_t kControllerAimHeld = 0x104;
 void MouseLook(X86Context& ctx, uint8_t*) {
     game::g_zoom = ctx.xmm[2].f[0];
     game::Aimbot(ctx);
+    float kick_yaw = 0.0f, kick_pitch = 0.0f;
+    game::combat_feedback::ConsumeCameraKineticKick(kick_yaw, kick_pitch);
+    if (kick_yaw != 0.0f || kick_pitch != 0.0f) {
+        G<float>(ctx.esi + kControllerYaw) = std::remainder(G<float>(ctx.esi + kControllerYaw) + kick_yaw, 360.0f);
+        G<float>(ctx.esi + kControllerPitch) += kick_pitch;
+    }
     float dx;
     float dy;
     if (!input::TakeMouse(dx, dy)) return;
